@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="VinylScan API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="VinylScan API", version="1.0.0", lifespan=lifespan, redirect_slashes=False)
 
 # In dev mode allow any local-network origin (credentials + "*" is invalid per spec,
 # so we use allow_origin_regex to match 192.168.x.x and 10.x.x.x ranges)
