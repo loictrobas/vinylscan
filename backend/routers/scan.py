@@ -3,6 +3,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 
+import aioboto3
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy import select
@@ -17,8 +18,16 @@ from services import claude_vision, discogs as discogs_svc
 
 router = APIRouter(prefix="/scan", tags=["scan"])
 
-IMAGES_DIR = os.getenv("IMAGES_DIR", "/tmp/vinylscan_images")
 MAX_SIZE = 800
+
+R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID", "")
+R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID", "")
+R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY", "")
+R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "vinylscan-images")
+R2_PUBLIC_URL = os.getenv("R2_PUBLIC_URL", "")
+# Fallback to local storage when R2 is not configured (local dev without R2 credentials)
+_USE_LOCAL_STORAGE = not all([R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_URL])
+IMAGES_DIR = os.getenv("IMAGES_DIR", "/tmp/vinylscan_images")
 
 
 def compress_image(data: bytes, content_type: str) -> tuple[bytes, str]:
@@ -50,6 +59,32 @@ def _set_credit_header(response: Response, user: User):
     response.headers["X-Credit-Balance"] = str(user.credits)
 
 
+async def _store_image(data: bytes, filename: str) -> str:
+    """Upload to R2 if configured, else write to local disk. Returns the public URL."""
+    if _USE_LOCAL_STORAGE:
+        os.makedirs(IMAGES_DIR, exist_ok=True)
+        path = os.path.join(IMAGES_DIR, filename)
+        with open(path, "wb") as f:
+            f.write(data)
+        return f"/images/{filename}"
+
+    session = aioboto3.Session()
+    async with session.client(
+        "s3",
+        endpoint_url=f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
+        aws_access_key_id=R2_ACCESS_KEY_ID,
+        aws_secret_access_key=R2_SECRET_ACCESS_KEY,
+        region_name="auto",
+    ) as s3:
+        await s3.put_object(
+            Bucket=R2_BUCKET_NAME,
+            Key=filename,
+            Body=data,
+            ContentType="image/jpeg",
+        )
+    return f"{R2_PUBLIC_URL}/{filename}"
+
+
 @router.post("/upload", response_model=ScanUploadResponse)
 async def upload_scan(
     response: Response,
@@ -79,13 +114,13 @@ async def upload_scan(
     except Exception:
         pass  # use original if compression fails for other reasons
 
-    # save image
-    os.makedirs(IMAGES_DIR, exist_ok=True)
+    # save image (R2 in production, local fallback in dev)
     img_filename = f"{uuid.uuid4()}.jpg"
-    img_path = os.path.join(IMAGES_DIR, img_filename)
-    with open(img_path, "wb") as f:
-        f.write(image_data)
-    image_url = f"/images/{img_filename}"
+    try:
+        image_url = await _store_image(image_data, img_filename)
+    except Exception:
+        # If storage fails, don't consume a credit
+        raise HTTPException(status_code=500, detail="Image storage failed. Please try again.")
 
     # create pending scan
     scan = Scan(user_id=user.id, image_url=image_url, status=ScanStatus.pending)

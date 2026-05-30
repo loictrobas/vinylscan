@@ -34,7 +34,7 @@ async def identify_record(image_bytes: bytes, media_type: str = "image/jpeg") ->
 
     async def _call() -> dict:
         response = await client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-5",
             max_tokens=512,
             messages=[
                 {

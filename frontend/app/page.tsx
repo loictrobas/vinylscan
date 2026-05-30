@@ -30,7 +30,7 @@ export default function LandingPage() {
             </a>
           </div>
           <p className="text-vinyl-muted text-sm">
-            <span className="text-vinyl-gold font-semibold">10 free credits every month</span>, on us. No card required to start.
+            <span className="text-vinyl-gold font-semibold">5 free credits every month</span>, on us. No card required to start.
           </p>
         </div>
       </section>
@@ -59,9 +59,9 @@ export default function LandingPage() {
       <section className="py-16 px-4 bg-vinyl-accent/5 border-t border-vinyl-border">
         <div className="max-w-2xl mx-auto text-center flex flex-col gap-4">
           <CreditCard size={36} className="text-vinyl-gold mx-auto" />
-          <h2 className="text-2xl font-bold">Start free. 10 credits every month, on us.</h2>
+          <h2 className="text-2xl font-bold">Start free. 5 credits every month, on us.</h2>
           <p className="text-vinyl-muted">
-            Every account gets 10 free credits on the 1st of each month. Each scan uses 1 credit — that&apos;s 10 records a month, free. Need more? Buy only what you need.
+            Every account gets 5 free credits on the 1st of each month. Each scan uses 1 credit — that&apos;s 5 records a month, free. Need more? Buy only what you need.
           </p>
         </div>
       </section>
