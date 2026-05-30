@@ -69,7 +69,7 @@ async def search_releases(
 ) -> list[dict]:
     auth = _oauth1(access_token, access_token_secret)
     # Discogs ignores separate artist/title params — use combined q= query
-    params = {"q": f"{artist} {title}".strip(), "type": "release", "per_page": 5}
+    params = {"q": f"{artist} {title}".strip(), "type": "release", "per_page": 10}
 
     import asyncio
     import requests as req
@@ -114,7 +114,7 @@ async def add_to_collection(
 
 def parse_search_results(results: list[dict]) -> list[dict]:
     matches = []
-    for r in results[:3]:
+    for r in results[:5]:
         title_parts = r.get("title", "").split(" - ", 1)
         artist = title_parts[0] if len(title_parts) > 1 else r.get("artist", ["Unknown"])[0] if r.get("artist") else "Unknown"
         title = title_parts[1] if len(title_parts) > 1 else r.get("title", "")

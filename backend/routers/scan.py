@@ -180,19 +180,7 @@ async def upload_scan(
 
     confidence = scan.confidence or 0
     auto_added = False
-
-    if confidence >= 95 and len(raw_results) >= 1:
-        best = matches_data[0]
-        try:
-            await discogs_svc.add_to_collection(
-                user.discogs_username, best["release_id"], access_token, access_token_secret
-            )
-            scan.discogs_release_id = best["release_id"]
-            scan.status = ScanStatus.auto_added
-            await _deduct_credit(user, scan, CreditReason.scan_used, db)
-            auto_added = True
-        except Exception:
-            pass  # fall through to manual selection
+    # Always show results to user — never auto-add silently
 
     await db.commit()
     await db.refresh(scan)
