@@ -1,25 +1,12 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Disc3, Camera, CheckCircle, Clock } from "lucide-react";
-import { cookies } from "next/headers";
 import { CreditBalance } from "@/components/CreditBalance";
 import { StatsCard } from "@/components/StatsCard";
-import type { DashboardStats, Scan } from "@/lib/api";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-async function fetchWithCookie<T>(path: string, cookieHeader: string): Promise<T | null> {
-  try {
-    const res = await fetch(`${API_URL}${path}`, {
-      headers: { Cookie: cookieHeader },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
+import { api, setToken, getToken, type DashboardStats, type Scan } from "@/lib/api";
 
 const STATUS_LABELS: Record<string, string> = {
   auto_added: "Auto-added",
@@ -35,16 +22,48 @@ const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-500/20 text-yellow-400",
 };
 
-export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
+export default function DashboardPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentScans, setRecentScans] = useState<Scan[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [stats, recentScans] = await Promise.all([
-    fetchWithCookie<DashboardStats>("/dashboard/stats", cookieHeader),
-    fetchWithCookie<Scan[]>("/scan/history?page=1&per_page=10", cookieHeader),
-  ]);
+  useEffect(() => {
+    // Capture token from OAuth redirect (?token=...)
+    const urlToken = searchParams.get("token");
+    if (urlToken) {
+      setToken(urlToken);
+      // Clean URL
+      router.replace("/dashboard");
+      return;
+    }
 
-  if (!stats) redirect("/");
+    if (!getToken()) {
+      router.replace("/");
+      return;
+    }
+
+    Promise.all([api.dashboardStats(), api.scanHistory(1, 10)])
+      .then(([s, scans]) => {
+        setStats(s);
+        setRecentScans(scans);
+      })
+      .catch(() => {
+        router.replace("/");
+      })
+      .finally(() => setLoading(false));
+  }, [searchParams, router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Disc3 size={32} className="animate-spin text-vinyl-muted" />
+      </div>
+    );
+  }
+
+  if (!stats) return null;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 flex flex-col gap-8">
@@ -56,7 +75,6 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* Stats row */}
       <div className="grid sm:grid-cols-3 gap-4">
         <CreditBalance initial={stats.credit_balance} />
         <StatsCard
@@ -71,7 +89,6 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Recent scans */}
       <div className="card p-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Recent Scans</h2>
@@ -79,7 +96,7 @@ export default async function DashboardPage() {
             View all →
           </Link>
         </div>
-        {recentScans && recentScans.length > 0 ? (
+        {recentScans.length > 0 ? (
           <div className="flex flex-col gap-2">
             {recentScans.map((scan) => (
               <div key={scan.id} className="flex items-center gap-3 py-2 border-b border-vinyl-border last:border-0">
@@ -103,7 +120,6 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Recent credit transactions */}
       {stats.recent_transactions.length > 0 && (
         <div className="card p-6 flex flex-col gap-4">
           <h2 className="text-lg font-bold">Credit Activity</h2>

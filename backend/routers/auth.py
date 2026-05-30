@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -25,12 +25,18 @@ _request_token_store: dict[str, str] = {}
 
 
 async def get_current_user(
+    request: Request,
     access_token: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    if not access_token:
+    # Accept Bearer token from Authorization header (cross-domain) or cookie (same-domain)
+    token = access_token
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+    if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    user_id = decode_access_token(access_token)
+    user_id = decode_access_token(token)
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token")
     result = await db.execute(select(User).where(User.id == user_id))
@@ -131,16 +137,9 @@ async def discogs_callback(
     await apply_monthly_topup(user, db)
 
     jwt_token = create_access_token(str(user.id))
-    redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard")
-    redirect.set_cookie(
-        key="access_token",
-        value=jwt_token,
-        httponly=True,
-        samesite="lax",
-        secure=FRONTEND_URL.startswith("https"),
-        max_age=60 * 60 * 24 * 30,
-    )
-    return redirect
+    # Cross-domain: pass token in URL so frontend (vercel.app) can store it.
+    # httpOnly cookie set on onrender.com would be silently dropped by browser.
+    return RedirectResponse(url=f"{FRONTEND_URL}/dashboard?token={jwt_token}")
 
 
 @router.get("/me", response_model=UserOut)

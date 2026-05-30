@@ -1,21 +1,33 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { Disc3, LogOut } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { User } from "@/lib/api";
+import { Disc3, LogOut } from "lucide-react";
+import { api, clearToken, getToken, type User } from "@/lib/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export default async function SettingsPage() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
+export default function SettingsPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
 
-  const res = await fetch(`${API_URL}/auth/me`, {
-    headers: { Cookie: cookieHeader },
-    cache: "no-store",
-  });
-  if (!res.ok) redirect("/");
-  const user: User = await res.json();
+  useEffect(() => {
+    if (!getToken()) { router.replace("/"); return; }
+    api.me().then(setUser).catch(() => router.replace("/"));
+  }, [router]);
+
+  const handleLogout = async () => {
+    clearToken();
+    await fetch(`${API_URL}/auth/logout`, { method: "POST" }).catch(() => {});
+    router.replace("/");
+  };
+
+  if (!user) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Disc3 size={32} className="animate-spin text-vinyl-muted" />
+    </div>
+  );
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 flex flex-col gap-8">
@@ -47,13 +59,10 @@ export default async function SettingsPage() {
         <p className="text-vinyl-muted text-sm">
           Member since {new Date(user.created_at).toLocaleDateString()}
         </p>
-        <a
-          href={`${API_URL}/auth/logout`}
-          className="btn-secondary flex items-center gap-2 w-fit"
-        >
+        <button onClick={handleLogout} className="btn-secondary flex items-center gap-2 w-fit">
           <LogOut size={16} />
           Log Out
-        </a>
+        </button>
       </div>
 
       <div className="card p-6 flex flex-col gap-3">

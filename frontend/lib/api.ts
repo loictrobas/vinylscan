@@ -73,6 +73,22 @@ export interface CreditPack {
   price_display: string;
 }
 
+// Token stored in localStorage for cross-domain auth (API on onrender.com, frontend on vercel.app)
+export const TOKEN_KEY = "vinylscan_token";
+
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
 let _creditBalance: number | null = null;
 const _creditListeners: Array<(n: number) => void> = [];
 
@@ -93,14 +109,25 @@ function _updateCreditBalance(value: string | null) {
   }
 }
 
+function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = getToken();
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...extra,
+  };
+}
+
 async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...(options.headers || {}),
+    },
   });
   _updateCreditBalance(res.headers.get("X-Credit-Balance"));
   if (!res.ok) {
@@ -112,14 +139,14 @@ async function apiFetch<T>(
 
 export const api = {
   me: () => apiFetch<User>("/auth/me"),
-  logout: () => apiFetch<void>("/auth/logout", { method: "POST" }),
+  logout: () => { clearToken(); return apiFetch<void>("/auth/logout", { method: "POST" }); },
 
   uploadScan: async (file: File): Promise<ScanUploadResponse> => {
     const form = new FormData();
     form.append("file", file);
     const res = await fetch(`${API_URL}/scan/upload`, {
       method: "POST",
-      credentials: "include",
+      headers: authHeaders(),
       body: form,
     });
     _updateCreditBalance(res.headers.get("X-Credit-Balance"));

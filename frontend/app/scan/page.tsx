@@ -1,18 +1,15 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ScanInterface } from "@/components/ScanInterface";
+import { getToken } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-export default async function ScanPage() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
-
-  const res = await fetch(`${API_URL}/auth/me`, {
-    headers: { Cookie: cookieHeader },
-    cache: "no-store",
-  });
-  if (!res.ok) redirect("/");
+export default function ScanPage() {
+  const router = useRouter();
+  useEffect(() => {
+    if (!getToken()) router.replace("/");
+  }, [router]);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">

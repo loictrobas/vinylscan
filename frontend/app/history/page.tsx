@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { Disc3, ExternalLink } from "lucide-react";
-import type { Scan } from "@/lib/api";
+"use client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Disc3, ExternalLink } from "lucide-react";
+import { api, getToken, type Scan } from "@/lib/api";
 
 const STATUS_LABELS: Record<string, string> = {
   auto_added: "Auto-added",
@@ -19,21 +19,24 @@ const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30",
 };
 
-export default async function HistoryPage() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
+export default function HistoryPage() {
+  const router = useRouter();
+  const [scans, setScans] = useState<Scan[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const meRes = await fetch(`${API_URL}/auth/me`, {
-    headers: { Cookie: cookieHeader },
-    cache: "no-store",
-  });
-  if (!meRes.ok) redirect("/");
+  useEffect(() => {
+    if (!getToken()) { router.replace("/"); return; }
+    api.scanHistory(1, 50)
+      .then(setScans)
+      .catch(() => router.replace("/"))
+      .finally(() => setLoading(false));
+  }, [router]);
 
-  const scansRes = await fetch(`${API_URL}/scan/history?page=1&per_page=50`, {
-    headers: { Cookie: cookieHeader },
-    cache: "no-store",
-  });
-  const scans: Scan[] = scansRes.ok ? await scansRes.json() : [];
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Disc3 size={32} className="animate-spin text-vinyl-muted" />
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 flex flex-col gap-8">
@@ -66,7 +69,6 @@ export default async function HistoryPage() {
                     {STATUS_LABELS[scan.status]}
                   </span>
                 </div>
-
                 <div className="flex items-center gap-4 mt-3">
                   {scan.confidence != null && (
                     <span className="text-xs text-vinyl-muted">
@@ -74,31 +76,13 @@ export default async function HistoryPage() {
                     </span>
                   )}
                   {scan.discogs_release_id && (
-                    <a
-                      href={`https://www.discogs.com/release/${scan.discogs_release_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-vinyl-muted hover:text-vinyl-text text-xs transition-colors"
-                    >
-                      <ExternalLink size={12} />
-                      Discogs
+                    <a href={`https://www.discogs.com/release/${scan.discogs_release_id}`} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-vinyl-muted hover:text-vinyl-text text-xs transition-colors">
+                      <ExternalLink size={12} />Discogs
                     </a>
                   )}
-                  <span className="text-vinyl-muted text-xs ml-auto">
-                    {new Date(scan.created_at).toLocaleString()}
-                  </span>
+                  <span className="text-vinyl-muted text-xs ml-auto">{new Date(scan.created_at).toLocaleString()}</span>
                 </div>
-
-                {scan.claude_raw_response && (
-                  <details className="mt-3">
-                    <summary className="text-xs text-vinyl-muted cursor-pointer hover:text-vinyl-text">
-                      AI raw output
-                    </summary>
-                    <pre className="text-xs bg-vinyl-black border border-vinyl-border rounded p-3 mt-2 overflow-auto max-h-48 text-green-400">
-                      {JSON.stringify(scan.claude_raw_response, null, 2)}
-                    </pre>
-                  </details>
-                )}
               </div>
             </div>
           ))}

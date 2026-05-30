@@ -1,34 +1,35 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Disc3 } from "lucide-react";
+import { api, getToken, type CreditPack, type DashboardStats } from "@/lib/api";
 import { CreditBalance } from "@/components/CreditBalance";
 import { CreditPacks } from "@/components/CreditPacks";
-import type { CreditPack, DashboardStats } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === "true";
 
-export default async function CreditsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ success?: string }>;
-}) {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
-  const { success } = await searchParams;
+export default function CreditsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const success = searchParams.get("success");
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [packs, setPacks] = useState<CreditPack[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const meRes = await fetch(`${API_URL}/auth/me`, {
-    headers: { Cookie: cookieHeader },
-    cache: "no-store",
-  });
-  if (!meRes.ok) redirect("/");
+  useEffect(() => {
+    if (!getToken()) { router.replace("/"); return; }
+    Promise.all([api.dashboardStats(), api.creditPacks()])
+      .then(([s, p]) => { setStats(s); setPacks(p); })
+      .catch(() => router.replace("/"))
+      .finally(() => setLoading(false));
+  }, [router]);
 
-  const [statsRes, packsRes] = await Promise.all([
-    fetch(`${API_URL}/dashboard/stats`, { headers: { Cookie: cookieHeader }, cache: "no-store" }),
-    fetch(`${API_URL}/billing/packs`, { headers: { Cookie: cookieHeader }, cache: "no-store" }),
-  ]);
-
-  const stats: DashboardStats | null = statsRes.ok ? await statsRes.json() : null;
-  const packs: CreditPack[] = packsRes.ok ? await packsRes.json() : [];
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Disc3 size={32} className="animate-spin text-vinyl-muted" />
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 flex flex-col gap-10">
