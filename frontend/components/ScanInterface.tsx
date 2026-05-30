@@ -175,7 +175,7 @@ export function ScanInterface() {
                   key={m.release_id}
                   match={m}
                   onSelect={() => handleConfirm(m.release_id)}
-                  disabled={phase === "confirming"}
+                  disabled={(phase as Phase) === "confirming"}
                   confidence={result.confidence}
                 />
               ))}
@@ -190,7 +190,7 @@ export function ScanInterface() {
             <p className="text-xs text-vinyl-muted">1 credit will be used on confirmation or skip</p>
             <button
               onClick={handleSkip}
-              disabled={phase === "confirming"}
+              disabled={(phase as Phase) === "confirming"}
               className="text-vinyl-muted hover:text-vinyl-text text-sm transition-colors disabled:opacity-50"
             >
               None of these / Skip
