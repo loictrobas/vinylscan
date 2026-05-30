@@ -1,7 +1,11 @@
 import io
+import logging
 import os
+import traceback
 import uuid
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 import aioboto3
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
@@ -131,7 +135,8 @@ async def upload_scan(
     # call Claude Vision
     try:
         claude_result = await claude_vision.identify_record(image_data, content_type)
-    except Exception:
+    except Exception as claude_err:
+        logger.error("Claude vision failed: %s\n%s", claude_err, traceback.format_exc())
         scan.status = ScanStatus.skipped
         await db.commit()
         _set_credit_header(response, user)

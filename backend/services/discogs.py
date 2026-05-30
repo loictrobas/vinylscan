@@ -68,7 +68,8 @@ async def search_releases(
     artist: str, title: str, access_token: str, access_token_secret: str
 ) -> list[dict]:
     auth = _oauth1(access_token, access_token_secret)
-    params = {"artist": artist, "title": title, "type": "release", "per_page": 5}
+    # Discogs ignores separate artist/title params — use combined q= query
+    params = {"q": f"{artist} {title}".strip(), "type": "release", "per_page": 5}
 
     import asyncio
     import requests as req
