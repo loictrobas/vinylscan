@@ -1,0 +1,55 @@
+services:
+  - type: web
+    name: vinylscan-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vinylscan-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: DISCOGS_CONSUMER_KEY
+        sync: false
+      - key: DISCOGS_CONSUMER_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_SMALL
+        sync: false
+      - key: STRIPE_PRICE_MEDIUM
+        sync: false
+      - key: STRIPE_PRICE_LARGE
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        value: vinylscan-images
+      - key: R2_PUBLIC_URL
+        sync: false
+      - key: DEV_MODE
+        value: "false"
+
+databases:
+  - name: vinylscan-db
+    plan: free
+    databaseName: vinylscan
+    user: vinylscan
