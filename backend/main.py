@@ -19,7 +19,17 @@ DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    import asyncio
+    for attempt in range(5):
+        try:
+            await init_db()
+            break
+        except Exception as e:
+            if attempt == 4:
+                print(f"[startup] DB init failed after 5 attempts: {e}", flush=True)
+            else:
+                print(f"[startup] DB not ready (attempt {attempt+1}/5), retrying in 3s: {e}", flush=True)
+                await asyncio.sleep(3)
     os.makedirs(IMAGES_DIR, exist_ok=True)
     yield
 
