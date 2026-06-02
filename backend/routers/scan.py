@@ -262,6 +262,48 @@ async def skip_scan(
     return {"ok": True, "credits_remaining": user.credits}
 
 
+@router.get("/barcode")
+async def barcode_lookup(
+    barcode: str = Query(..., min_length=1),
+    response: Response = None,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    access_token = decrypt(user.discogs_oauth_token)
+    access_token_secret = decrypt(user.discogs_oauth_token_secret)
+
+    try:
+        raw_results = await discogs_svc.search_by_barcode(barcode, access_token, access_token_secret)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Discogs error: {e}")
+
+    matches = discogs_svc.parse_search_results(raw_results)
+    _set_credit_header(response, user)
+    return {"barcode": barcode, "matches": matches}
+
+
+@router.post("/barcode/add")
+async def barcode_add(
+    body: ConfirmRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Add a release found via barcode directly to collection — no credit deducted."""
+    access_token = decrypt(user.discogs_oauth_token)
+    access_token_secret = decrypt(user.discogs_oauth_token_secret)
+
+    try:
+        await discogs_svc.add_to_collection(
+            user.discogs_username, body.release_id, access_token, access_token_secret
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Discogs error: {e}")
+
+    _set_credit_header(response, user)
+    return {"ok": True}
+
+
 @router.get("/history", response_model=list[ScanOut])
 async def scan_history(
     response: Response,

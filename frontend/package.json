@@ -11,6 +11,8 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^3.1.0",
     "@stripe/stripe-js": "^4.9.0",
+    "@zxing/browser": "^0.2.0",
+    "@zxing/library": "^0.22.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.469.0",
     "next": "^16.2.6"

@@ -1,8 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Camera, Upload, CheckCircle, AlertCircle, Loader2, Plus, ExternalLink, Music } from "lucide-react";
+import { useRef, useState, useCallback, useEffect } from "react";
+import { Camera, Upload, CheckCircle, AlertCircle, Loader2, Plus, ExternalLink, Music, Barcode, WifiOff } from "lucide-react";
 import { api, type ScanUploadResponse, type DiscogsMatch } from "@/lib/api";
+import { isOnline, getOfflineQueue, addToOfflineQueue, removeFromOfflineQueue, fileToDataUrl, dataUrlToFile } from "@/lib/offline";
+import dynamic from "next/dynamic";
+
+const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), { ssr: false });
 
 type ItemPhase = "queued" | "uploading" | "result" | "confirming" | "done" | "error";
 
@@ -102,6 +106,7 @@ function ScanItem({
   onConfirm: (itemId: string, releaseId: number) => void;
   onSkip: (itemId: string) => void;
 }) {
+  const [showAllMatches, setShowAllMatches] = useState(false);
   const result = item.result;
 
   if (item.phase === "queued") {
@@ -183,7 +188,7 @@ function ScanItem({
               <p className="text-xs text-vinyl-muted font-medium uppercase tracking-wider">
                 {result.matches.length} Discogs match{result.matches.length > 1 ? "es" : ""} — pick the right one:
               </p>
-              {result.matches.map((m) => (
+              {(showAllMatches ? result.matches : result.matches.slice(0, 2)).map((m) => (
                 <MatchCard
                   key={m.release_id}
                   match={m}
@@ -192,6 +197,14 @@ function ScanItem({
                   isAdding={isConfirming}
                 />
               ))}
+              {result.matches.length > 2 && (
+                <button
+                  onClick={() => setShowAllMatches(!showAllMatches)}
+                  className="text-xs text-vinyl-accent hover:underline text-center py-1"
+                >
+                  {showAllMatches ? "Show less" : `Show ${result.matches.length - 2} more match${result.matches.length - 2 > 1 ? "es" : ""}`}
+                </button>
+              )}
             </>
           ) : (
             <div className="text-center py-4 text-vinyl-muted text-sm">
@@ -221,6 +234,53 @@ export function ScanInterface() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [showBarcode, setShowBarcode] = useState(false);
+  const [barcodeSearching, setBarcodeSearching] = useState(false);
+  const [online, setOnline] = useState(true);
+  const [offlineQueueCount, setOfflineQueueCount] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    setOnline(isOnline());
+    setOfflineQueueCount(getOfflineQueue().length);
+
+    function handleOnline() {
+      setOnline(true);
+      syncOfflineQueue();
+    }
+    function handleOffline() { setOnline(false); }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  async function syncOfflineQueue() {
+    const q = getOfflineQueue();
+    if (q.length === 0) return;
+    setSyncing(true);
+    for (const item of q) {
+      try {
+        const file = dataUrlToFile(item.fileDataUrl, item.fileName);
+        const newItem: QueueItem = {
+          id: item.id,
+          file,
+          preview: item.fileDataUrl,
+          phase: "queued",
+        };
+        setQueue((prev) => [...prev, newItem]);
+        removeFromOfflineQueue(item.id);
+        setOfflineQueueCount(getOfflineQueue().length);
+        await processItem(newItem);
+      } catch {
+        // leave in queue if still failing
+      }
+    }
+    setSyncing(false);
+  }
 
   function updateItem(id: string, patch: Partial<QueueItem>) {
     setQueue((q) => q.map((item) => (item.id === id ? { ...item, ...patch } : item)));
@@ -245,6 +305,21 @@ export function ScanInterface() {
   }
 
   async function handleFiles(files: FileList) {
+    if (!isOnline()) {
+      // Store files for later sync
+      for (const file of Array.from(files)) {
+        const dataUrl = await fileToDataUrl(file);
+        addToOfflineQueue({
+          id: `offline-${Date.now()}-${Math.random()}`,
+          fileName: file.name,
+          fileDataUrl: dataUrl,
+          queuedAt: new Date().toISOString(),
+        });
+      }
+      setOfflineQueueCount(getOfflineQueue().length);
+      return;
+    }
+
     const newItems: QueueItem[] = Array.from(files).map((file) => ({
       id: `${Date.now()}-${Math.random()}`,
       file,
@@ -264,7 +339,11 @@ export function ScanInterface() {
     if (!item?.result) return;
     updateItem(itemId, { phase: "confirming" });
     try {
-      await api.confirmScan(item.result.scan_id, releaseId);
+      if (item.id.startsWith("barcode-")) {
+        await api.barcodeAdd(releaseId);
+      } else {
+        await api.confirmScan(item.result.scan_id, releaseId);
+      }
       updateItem(itemId, { phase: "done", confirmedReleaseId: releaseId });
     } catch {
       updateItem(itemId, { phase: "result", errorMsg: "Failed to add. Try again." });
@@ -274,6 +353,10 @@ export function ScanInterface() {
   async function handleSkip(itemId: string) {
     const item = queue.find((i) => i.id === itemId);
     if (!item?.result) return;
+    if (item.id.startsWith("barcode-")) {
+      updateItem(itemId, { phase: "done", skipped: true });
+      return;
+    }
     updateItem(itemId, { phase: "confirming" });
     try {
       await api.skipScan(item.result.scan_id);
@@ -287,11 +370,79 @@ export function ScanInterface() {
     setQueue((q) => q.filter((i) => i.phase !== "done"));
   }
 
+  const handleBarcodeDetected = useCallback(async (barcode: string) => {
+    setShowBarcode(false);
+    setBarcodeSearching(true);
+    try {
+      const data = await api.barcodeSearch(barcode);
+      if (data.matches.length === 0) {
+        alert(`No Discogs results for barcode ${barcode}`);
+        return;
+      }
+      // Create a synthetic result item so user can confirm via normal flow
+      const fakeResult: ScanUploadResponse = {
+        scan_id: "",
+        status: "pending",
+        artist: data.matches[0].artist,
+        title: data.matches[0].title,
+        year: data.matches[0].year,
+        label: data.matches[0].label,
+        catalog_number: null,
+        confidence: 100,
+        auto_added: false,
+        discogs_release_id: null,
+        matches: data.matches,
+      };
+      const newItem: QueueItem = {
+        id: `barcode-${Date.now()}`,
+        file: new File([], barcode),
+        preview: data.matches[0].cover_image || "",
+        phase: "result",
+        result: fakeResult,
+      };
+      setQueue((q) => [...q, newItem]);
+    } catch {
+      alert("Barcode lookup failed. Try again.");
+    } finally {
+      setBarcodeSearching(false);
+    }
+  }, []);
+
   const doneCount = queue.filter((i) => i.phase === "done").length;
   const pendingCount = queue.filter((i) => !["done", "error"].includes(i.phase)).length;
 
   return (
     <div className="max-w-xl mx-auto flex flex-col gap-4">
+      {showBarcode && (
+        <BarcodeScanner
+          onDetected={handleBarcodeDetected}
+          onClose={() => setShowBarcode(false)}
+        />
+      )}
+
+      {!online && (
+        <div className="card p-3 flex items-center gap-2 border-yellow-500/30 bg-yellow-500/10">
+          <WifiOff size={16} className="text-yellow-400 flex-shrink-0" />
+          <p className="text-sm text-yellow-300">
+            Offline — photos saved locally.{" "}
+            {offlineQueueCount > 0 && `${offlineQueueCount} waiting to sync.`}
+          </p>
+        </div>
+      )}
+
+      {online && offlineQueueCount > 0 && (
+        <div className="card p-3 flex items-center justify-between gap-2">
+          <p className="text-sm text-vinyl-muted">
+            {syncing ? "Syncing..." : `${offlineQueueCount} offline photo${offlineQueueCount > 1 ? "s" : ""} ready to sync`}
+          </p>
+          {!syncing && (
+            <button onClick={syncOfflineQueue} className="text-xs text-vinyl-accent hover:underline">
+              Sync now
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Upload area — always visible */}
       <div className="card p-6 flex flex-col items-center gap-4 text-center">
         <div className="w-16 h-16 rounded-full bg-vinyl-border flex items-center justify-center">
@@ -311,7 +462,7 @@ export function ScanInterface() {
               }
             }}
             className="btn-primary flex-1 flex items-center justify-center gap-2"
-            disabled={processing}
+            disabled={processing || barcodeSearching}
           >
             <Camera size={16} />
             Camera
@@ -325,12 +476,23 @@ export function ScanInterface() {
               }
             }}
             className="btn-secondary flex-1 flex items-center justify-center gap-2"
-            disabled={processing}
+            disabled={processing || barcodeSearching}
           >
             <Upload size={16} />
             Upload {queue.length > 0 ? "More" : "Files"}
           </button>
         </div>
+        <button
+          onClick={() => setShowBarcode(true)}
+          className="btn-secondary w-full flex items-center justify-center gap-2"
+          disabled={processing || barcodeSearching}
+        >
+          {barcodeSearching ? (
+            <><Loader2 size={16} className="animate-spin" /> Looking up barcode...</>
+          ) : (
+            <><Barcode size={16} /> Scan Barcode (free, instant)</>
+          )}
+        </button>
         <input
           ref={fileRef}
           type="file"

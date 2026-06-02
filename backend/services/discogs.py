@@ -90,6 +90,31 @@ async def search_releases(
     return data.get("results", [])
 
 
+async def search_by_barcode(
+    barcode: str, access_token: str, access_token_secret: str
+) -> list[dict]:
+    auth = _oauth1(access_token, access_token_secret)
+    params = {"barcode": barcode, "type": "release", "per_page": 5}
+
+    import asyncio
+    import requests as req
+
+    def _sync_search():
+        resp = req.get(
+            f"{DISCOGS_BASE}/database/search",
+            params=params,
+            auth=auth,
+            headers={"User-Agent": USER_AGENT},
+            timeout=20,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    loop = asyncio.get_running_loop()
+    data = await loop.run_in_executor(None, _sync_search)
+    return data.get("results", [])
+
+
 async def add_to_collection(
     username: str, release_id: int, access_token: str, access_token_secret: str
 ) -> dict:

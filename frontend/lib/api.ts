@@ -181,5 +181,14 @@ export const api = {
       body: JSON.stringify({ pack_id: packId }),
     }),
 
+  barcodeSearch: (barcode: string) =>
+    apiFetch<{ barcode: string; matches: DiscogsMatch[] }>(`/scan/barcode?barcode=${encodeURIComponent(barcode)}`),
+
+  barcodeAdd: (releaseId: number) =>
+    apiFetch<{ ok: boolean }>("/scan/barcode/add", {
+      method: "POST",
+      body: JSON.stringify({ release_id: releaseId }),
+    }),
+
   loginUrl: () => `${API_URL}/auth/discogs/login`,
 };
