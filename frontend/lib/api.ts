@@ -255,10 +255,10 @@ export const api = {
     return res.json();
   },
 
-  confirmScan: (scanId: string, releaseId: number, condition = "VG+", lotId?: string) =>
+  confirmScan: (scanId: string, releaseId: number, condition = "VG+", lotId?: string, coverImage?: string | null) =>
     apiFetch<{ ok: boolean; credits_remaining: number; record_id: string }>(`/scan/${scanId}/confirm`, {
       method: "POST",
-      body: JSON.stringify({ release_id: releaseId, condition, lot_id: lotId ?? null }),
+      body: JSON.stringify({ release_id: releaseId, condition, lot_id: lotId ?? null, cover_image: coverImage ?? null }),
     }),
 
   skipScan: (scanId: string) =>

@@ -392,11 +392,12 @@ export function ScanInterface() {
     const item = queue.find((i) => i.id === itemId);
     if (!item?.result) return;
     updateItem(itemId, { phase: "confirming" });
+    const coverImage = item.result.matches?.find((m) => m.release_id === releaseId)?.cover_image ?? null;
     try {
       if (item.id.startsWith("barcode-")) {
         await api.barcodeAdd(releaseId, item.condition);
       } else {
-        await api.confirmScan(item.result.scan_id, releaseId, item.condition);
+        await api.confirmScan(item.result.scan_id, releaseId, item.condition, undefined, coverImage);
       }
       updateItem(itemId, { phase: "done", confirmedReleaseId: releaseId });
     } catch {

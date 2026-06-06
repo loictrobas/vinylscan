@@ -231,6 +231,7 @@ async def _create_catalog_record(
     label: str | None = None,
     catalog_number: str | None = None,
     format: str | None = None,
+    cover_image_url: str | None = None,
 ) -> Record:
     # Normalise condition to a valid enum value; fall back to VG+
     valid_conditions = {e.value for e in RecordCondition}
@@ -249,6 +250,7 @@ async def _create_catalog_record(
         format=format or (scan.format if scan else None),
         condition=condition,
         discogs_release_id=release_id,
+        cover_image_url=cover_image_url or None,
     )
     db.add(record)
     return record
@@ -318,6 +320,7 @@ async def confirm_scan(
         condition=body.condition,
         lot_id=body.lot_id,
         scan=scan,
+        cover_image_url=body.cover_image,
     )
     await db.flush()
 
@@ -406,6 +409,7 @@ async def barcode_add(
         release_id=body.release_id,
         condition=body.condition,
         lot_id=body.lot_id,
+        cover_image_url=body.cover_image,
     )
     await db.commit()
     await db.refresh(record)

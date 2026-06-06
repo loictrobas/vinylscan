@@ -65,6 +65,7 @@ class ConfirmRequest(BaseModel):
     release_id: int
     condition: str = "VG+"
     lot_id: uuid.UUID | None = None
+    cover_image: str | None = None
 
 
 class CreditTransactionOut(BaseModel):
