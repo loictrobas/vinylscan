@@ -64,30 +64,121 @@ def get_identity(access_token: str, access_token_secret: str) -> dict:
     return r.json()
 
 
-async def search_releases(
-    artist: str, title: str, access_token: str, access_token_secret: str
+def _build_strategies(
+    artist: str,
+    title: str,
+    label: str | None,
+    catalog_number: str | None,
 ) -> list[dict]:
-    auth = _oauth1(access_token, access_token_secret)
-    # Discogs ignores separate artist/title params — use combined q= query
-    params = {"q": f"{artist} {title}".strip(), "type": "release", "per_page": 10}
+    """Build list of Discogs search param dicts for one interpretation."""
+    strategies: list[dict] = []
+    a = (artist or "").strip()
+    t = (title or "").strip()
+    catno = (catalog_number or "").strip()
+    lbl = (label or "").strip()
 
+    # 1. Catalog number alone — most precise, nails 12" singles immediately
+    if catno:
+        strategies.append({"catno": catno})
+
+    # 2. Catalog number + label — narrows when catno is generic
+    if catno and lbl:
+        strategies.append({"catno": catno, "label": lbl})
+
+    # 3. Combined free-text q=
+    combined = f"{a} {t}".strip()
+    if combined:
+        strategies.append({"q": combined})
+
+    # 4. Discogs dedicated artist= + release_title= params
+    if a and t:
+        strategies.append({"artist": a, "release_title": t})
+
+    # 5. Title alone — catches VA compilations or misidentified artist
+    if t and t.lower() not in ("unknown",):
+        strategies.append({"q": t})
+
+    # 6. Artist alone — catches misidentified title
+    if a and a.lower() not in ("unknown", "various artists", "various"):
+        strategies.append({"q": a})
+
+    return strategies
+
+
+async def search_releases(
+    artist: str,
+    title: str,
+    access_token: str,
+    access_token_secret: str,
+    label: str | None = None,
+    catalog_number: str | None = None,
+    artist_alt: str | None = None,
+    title_alt: str | None = None,
+) -> list[dict]:
+    """
+    Parallel multi-strategy search across primary + alternate interpretations.
+
+    All strategies fire concurrently. Results are deduplicated by release_id
+    and ranked by how many strategies returned each release — overlap = confidence.
+    Returns up to 10 unique releases, best-ranked first.
+    """
     import asyncio
     import requests as req
 
-    def _sync_search():
-        resp = req.get(
-            f"{DISCOGS_BASE}/database/search",
-            params=params,
-            auth=auth,
-            headers={"User-Agent": USER_AGENT},
-            timeout=20,
-        )
-        resp.raise_for_status()
-        return resp.json()
+    auth = _oauth1(access_token, access_token_secret)
+
+    def _sync_search(params: dict) -> list[dict]:
+        try:
+            resp = req.get(
+                f"{DISCOGS_BASE}/database/search",
+                params={**params, "type": "release", "per_page": 10},
+                auth=auth,
+                headers={"User-Agent": USER_AGENT},
+                timeout=20,
+            )
+            resp.raise_for_status()
+            return resp.json().get("results", [])
+        except Exception:
+            return []
+
+    # Build strategy lists for primary interpretation
+    all_strategies = _build_strategies(artist, title, label, catalog_number)
+
+    # Add alternate interpretation strategies (if Claude flagged ambiguity)
+    if artist_alt or title_alt:
+        a_alt = artist_alt or artist
+        t_alt = title_alt or title
+        alt_strategies = _build_strategies(a_alt, t_alt, label, catalog_number)
+        # Append only strategies not already in primary set
+        primary_set = {frozenset(s.items()) for s in all_strategies}
+        for s in alt_strategies:
+            if frozenset(s.items()) not in primary_set:
+                all_strategies.append(s)
 
     loop = asyncio.get_running_loop()
-    data = await loop.run_in_executor(None, _sync_search)
-    return data.get("results", [])
+
+    # Fire all strategies in parallel
+    results_per_strategy: list[list[dict]] = await asyncio.gather(
+        *[loop.run_in_executor(None, _sync_search, params) for params in all_strategies]
+    )
+
+    # Deduplicate + rank by overlap count
+    seen: dict[int, dict] = {}   # release_id → result dict
+    score: dict[int, int] = {}   # release_id → count of strategies that returned it
+
+    for strategy_results in results_per_strategy:
+        for r in strategy_results:
+            rid = r.get("id")
+            if rid is None:
+                continue
+            if rid not in seen:
+                seen[rid] = r
+                score[rid] = 0
+            score[rid] += 1
+
+    # Sort: highest overlap first, then by community_want (popularity proxy)
+    ranked = sorted(seen.values(), key=lambda r: (score[r["id"]], r.get("community", {}).get("want", 0)), reverse=True)
+    return ranked[:10]
 
 
 async def search_by_barcode(
@@ -268,7 +359,7 @@ async def get_full_collection(
 
 def parse_search_results(results: list[dict]) -> list[dict]:
     matches = []
-    for r in results[:5]:
+    for r in results[:10]:
         title_parts = r.get("title", "").split(" - ", 1)
         artist = title_parts[0] if len(title_parts) > 1 else r.get("artist", ["Unknown"])[0] if r.get("artist") else "Unknown"
         title = title_parts[1] if len(title_parts) > 1 else r.get("title", "")

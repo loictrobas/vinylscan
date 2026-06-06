@@ -5,19 +5,29 @@ import re
 import anthropic
 
 CLAUDE_PROMPT = """You are an expert vinyl record identifier. Analyze this image carefully.
-Extract the following information from the vinyl record cover or label:
 
-* artist: the artist or band name
-* title: the album or single title
-* year: release year if visible (null if not)
-* label: record label name if visible (null if not)
-* catalog_number: catalog or matrix number if visible (null if not)
-* format: one of LP, EP, Single, 7", 10", 12", or Unknown
-* confidence: integer 0-100 representing how certain you are about artist + title combined
-* reasoning: one sentence explaining your confidence level
+Extract the following fields:
+* artist — the performing artist or band name
+* title — the album or single title (NOT the label name, NOT the catalog number)
+* year — release year if visible (null if not)
+* label — record label name if visible (null if not)
+* catalog_number — catalog or matrix number if visible (e.g. "AF007", "WAG018", "SF 8287") — null if not visible
+* format — one of: LP, EP, Single, 7", 10", 12", or Unknown
+* confidence — integer 0-100: how certain you are about artist + title combined
+* reasoning — one sentence explaining your confidence level
+
+IMPORTANT — artist/title ambiguity:
+On 12" singles and EPs the label text hierarchy is often unclear. If you are unsure which text is the artist vs the title, provide an alternate interpretation:
+* artist_alt — alternate artist reading (null if not ambiguous)
+* title_alt — alternate title reading (null if not ambiguous)
+
+Common mistakes to avoid:
+- Do NOT use the record label name (e.g. "AirFunk", "Wagon Repair") as the title
+- Do NOT use the catalog number (e.g. "AF007") as the title
+- "Various" / "Various Artists" is a valid artist for compilations
 
 Return ONLY a valid JSON object, no markdown, no explanation outside the JSON.
-Example output: { "artist": "David Bowie", "title": "Ziggy Stardust", "year": 1972, "label": "RCA Victor", "catalog_number": "SF 8287", "format": "LP", "confidence": 97, "reasoning": "Artist and title are clearly legible on both the spine and label." }"""
+Example: { "artist": "Cobblestone Jazz", "title": "India In Me", "year": 2006, "label": "Wagon Repair", "catalog_number": "WAG018", "format": "12\"", "confidence": 92, "reasoning": "Artist and title clearly printed on label.", "artist_alt": null, "title_alt": null }"""
 
 
 def _extract_json(text: str) -> dict:

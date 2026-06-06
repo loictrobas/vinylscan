@@ -165,13 +165,20 @@ async def upload_scan(
     scan.confidence = claude_result.get("confidence")  # None if Claude omits it → no badge shown
     await db.commit()
 
-    # search Discogs
+    # search Discogs — pass alt interpretation if Claude flagged ambiguity
     access_token = decrypt(user.discogs_oauth_token)
     access_token_secret = decrypt(user.discogs_oauth_token_secret)
 
     try:
         raw_results = await discogs_svc.search_releases(
-            scan.artist or "", scan.title or "", access_token, access_token_secret
+            scan.artist or "",
+            scan.title or "",
+            access_token,
+            access_token_secret,
+            label=scan.label,
+            catalog_number=scan.catalog_number,
+            artist_alt=claude_result.get("artist_alt"),
+            title_alt=claude_result.get("title_alt"),
         )
     except Exception:
         raw_results = []
