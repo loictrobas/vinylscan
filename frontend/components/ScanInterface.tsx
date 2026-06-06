@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import { Camera, Upload, CheckCircle, AlertCircle, Loader2, Plus, ExternalLink, Music, Barcode, WifiOff } from "lucide-react";
+import { Camera, Upload, CheckCircle, AlertCircle, Loader2, Plus, ExternalLink, Music, Barcode, WifiOff, ClipboardList } from "lucide-react";
 import { api, type ScanUploadResponse, type DiscogsMatch } from "@/lib/api";
 import { isOnline, getOfflineQueue, addToOfflineQueue, removeFromOfflineQueue, fileToDataUrl, dataUrlToFile } from "@/lib/offline";
 import dynamic from "next/dynamic";
@@ -511,9 +511,14 @@ export function ScanInterface() {
           {doneCount > 0 && pendingCount === 0 && (
             <div className="flex items-center justify-between px-1">
               <p className="text-sm text-vinyl-muted">{doneCount} record{doneCount > 1 ? "s" : ""} processed</p>
-              <button onClick={clearDone} className="text-xs text-vinyl-muted hover:text-vinyl-text transition-colors">
-                Clear done
-              </button>
+              <div className="flex items-center gap-3">
+                <a href="/scan/session" className="text-xs text-vinyl-accent hover:underline flex items-center gap-1">
+                  <ClipboardList size={12} /> Session summary
+                </a>
+                <button onClick={clearDone} className="text-xs text-vinyl-muted hover:text-vinyl-text transition-colors">
+                  Clear
+                </button>
+              </div>
             </div>
           )}
           {queue.map((item) => (

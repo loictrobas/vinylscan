@@ -202,6 +202,21 @@ async def upload_scan(
     )
 
 
+@router.get("/pricing/{release_id}")
+async def get_pricing(
+    release_id: int,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Return lowest marketplace price for a release. Cached 24h in-memory."""
+    access_token = decrypt(user.discogs_oauth_token)
+    access_token_secret = decrypt(user.discogs_oauth_token_secret)
+    data = await discogs_svc.get_marketplace_stats(release_id, access_token, access_token_secret)
+    _set_credit_header(response, user)
+    return {"release_id": release_id, "pricing": data}
+
+
 @router.post("/{scan_id}/confirm")
 async def confirm_scan(
     scan_id: uuid.UUID,

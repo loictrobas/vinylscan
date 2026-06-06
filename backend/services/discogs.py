@@ -115,6 +115,64 @@ async def search_by_barcode(
     return data.get("results", [])
 
 
+import time as _time
+
+# In-memory pricing cache: {release_id: {"data": {...}, "expires": float}}
+_pricing_cache: dict[int, dict] = {}
+_PRICING_TTL = 24 * 60 * 60  # 24 hours
+
+
+async def get_marketplace_stats(
+    release_id: int, access_token: str, access_token_secret: str
+) -> dict | None:
+    """
+    Fetch lowest marketplace price for a release.
+    Returns {"lowest": float, "currency": str, "num_for_sale": int} or None.
+    In-memory cache with 24h TTL. Rate-limited: caller should space requests >= 2s apart.
+    """
+    now = _time.time()
+    cached = _pricing_cache.get(release_id)
+    if cached and cached["expires"] > now:
+        return cached["data"]
+
+    import asyncio
+    import requests as req
+
+    auth = _oauth1(access_token, access_token_secret)
+
+    def _sync_fetch():
+        resp = req.get(
+            f"{DISCOGS_BASE}/marketplace/stats/{release_id}",
+            auth=auth,
+            headers={"User-Agent": USER_AGENT},
+            timeout=10,
+        )
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        return resp.json()
+
+    loop = asyncio.get_running_loop()
+    try:
+        raw = await loop.run_in_executor(None, _sync_fetch)
+    except Exception:
+        return None
+
+    if raw is None:
+        data = None
+    elif raw.get("lowest_price"):
+        data = {
+            "lowest": raw["lowest_price"]["value"],
+            "currency": raw["lowest_price"]["currency"],
+            "num_for_sale": raw.get("num_for_sale", 0),
+        }
+    else:
+        data = None
+
+    _pricing_cache[release_id] = {"data": data, "expires": now + _PRICING_TTL}
+    return data
+
+
 async def add_to_collection(
     username: str, release_id: int, access_token: str, access_token_secret: str
 ) -> dict:

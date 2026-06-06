@@ -190,6 +190,11 @@ export const api = {
       body: JSON.stringify({ pack_id: packId }),
     }),
 
+  getPricing: (releaseId: number) =>
+    apiFetch<{ release_id: number; pricing: { lowest: number; currency: string; num_for_sale: number } | null }>(
+      `/scan/pricing/${releaseId}`
+    ),
+
   barcodeSearch: (barcode: string) =>
     apiFetch<{ barcode: string; matches: DiscogsMatch[] }>(`/scan/barcode?barcode=${encodeURIComponent(barcode)}`),
 

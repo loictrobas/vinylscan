@@ -7,6 +7,7 @@ import { Disc3, Camera, CheckCircle, Clock } from "lucide-react";
 import { CreditBalance } from "@/components/CreditBalance";
 import { StatsCard } from "@/components/StatsCard";
 import { api, setToken, getToken, type DashboardStats, type Scan } from "@/lib/api";
+import { groupScansBySession, sessionLabel, type Session } from "@/lib/session";
 
 const STATUS_LABELS: Record<string, string> = {
   auto_added: "Auto-added",
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const searchParams = useSearchParams();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentScans, setRecentScans] = useState<Scan[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,10 +46,11 @@ export default function DashboardPage() {
       return;
     }
 
-    Promise.all([api.dashboardStats(), api.scanHistory(1, 10)])
+    Promise.all([api.dashboardStats(), api.scanHistory(1, 100)])
       .then(([s, scans]) => {
         setStats(s);
-        setRecentScans(scans);
+        setRecentScans(scans.slice(0, 10));
+        setSessions(groupScansBySession(scans));
       })
       .catch(() => {
         router.replace("/");
@@ -123,6 +126,28 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {sessions.length > 0 && (
+        <div className="card p-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold">Past Sessions</h2>
+            <Link href="/scan/session" className="text-vinyl-muted hover:text-vinyl-text text-sm transition-colors">
+              Latest →
+            </Link>
+          </div>
+          <div className="flex flex-col gap-2">
+            {sessions.slice(0, 5).map((session) => {
+              const added = session.scans.filter((s) => s.status === "manually_added" || s.status === "auto_added").length;
+              return (
+                <div key={session.id} className="flex items-center justify-between py-2 border-b border-vinyl-border last:border-0">
+                  <p className="text-sm">{sessionLabel(session)}</p>
+                  <span className="text-xs text-green-400">{added} added</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {stats.recent_transactions.length > 0 && (
         <div className="card p-6 flex flex-col gap-4">
