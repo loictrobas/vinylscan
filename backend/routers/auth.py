@@ -321,3 +321,33 @@ async def reset_password(
     prt.used_at = now
     await db.commit()
     return {"ok": True}
+
+
+# ── One-time admin bootstrap ──────────────────────────────────────────────────
+# Works ONLY when zero admins exist in the DB.
+# After the first admin is claimed, this endpoint returns 403 forever.
+
+from sqlalchemy import func as _func
+
+@router.post("/claim-admin")
+async def claim_admin(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Grant admin to the currently-authenticated user.
+    Only works when NO admin exists yet. Locked forever after first use.
+    """
+    admin_count = (await db.execute(
+        select(_func.count(User.id)).where(User.is_admin.is_(True))
+    )).scalar() or 0
+
+    if admin_count > 0:
+        raise HTTPException(
+            status_code=403,
+            detail="An admin already exists. Contact your current admin."
+        )
+
+    user.is_admin = True
+    await db.commit()
+    return {"ok": True, "message": f"{user.discogs_username or user.email} is now admin"}

@@ -4,9 +4,52 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Disc3, RefreshCw, CheckCircle2, AlertCircle, ExternalLink,
-  Loader2, Clock, ArrowDownToLine, Image,
+  Loader2, Clock, ArrowDownToLine, Image, Shield,
 } from "lucide-react";
 import { api, getToken, type DiscogsSyncStatus, type User } from "@/lib/api";
+
+function ClaimAdminCard({ onClaimed }: { onClaimed: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function claim() {
+    setLoading(true);
+    setError(null);
+    try {
+      await api.claimAdmin();
+      setDone(true);
+      onClaimed();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed";
+      setError(msg.includes("already exists") ? "An admin already exists — contact them to grant you access." : msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (done) return null; // card disappears after success
+
+  return (
+    <div className="card p-5 border-dashed border-vs-border/60">
+      <div className="flex items-start gap-3">
+        <Shield size={18} className="text-vs-muted mt-0.5 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-vs-text mb-0.5">Claim admin access</p>
+          <p className="text-xs text-vs-muted mb-3">
+            No admin exists yet. Click once to make this account the administrator.
+            This option disappears permanently once claimed.
+          </p>
+          {error && <p className="text-xs text-vs-danger mb-2">{error}</p>}
+          <button onClick={claim} disabled={loading} className="btn-secondary text-xs flex items-center gap-2 disabled:opacity-50">
+            {loading ? <Loader2 size={13} className="animate-spin" /> : <Shield size={13} />}
+            {loading ? "Claiming…" : "Claim admin"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface BackfillStatus {
   status: string;
@@ -330,7 +373,19 @@ export default function SettingsPage() {
             Reconnect Discogs
           </a>
         </div>
+        {user?.is_admin && (
+          <div className="mt-3 pt-3 border-t border-vs-border">
+            <a href="/admin" className="btn-secondary text-xs">
+              Admin panel →
+            </a>
+          </div>
+        )}
       </div>
+
+      {/* First-time admin claim — only shown when not yet admin */}
+      {user && !user.is_admin && (
+        <ClaimAdminCard onClaimed={() => setUser((u) => u ? { ...u, is_admin: true } : u)} />
+      )}
     </div>
   );
 }

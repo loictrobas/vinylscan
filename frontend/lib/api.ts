@@ -394,6 +394,9 @@ export const api = {
     ),
 
   // ── Email/password auth ─────────────────────────────────────────────────
+  claimAdmin: () =>
+    apiFetch<{ ok: boolean; message: string }>("/auth/claim-admin", { method: "POST" }),
+
   emailLogin: (email: string, password: string) =>
     apiFetch<{ ok: boolean; user_id: string; is_admin: boolean }>(
       "/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }
