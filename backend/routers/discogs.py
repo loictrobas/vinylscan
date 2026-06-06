@@ -64,14 +64,14 @@ async def _run_sync(user_id: str, username: str, token: str, secret: str) -> Non
                     state["skipped"] += 1
                     continue
 
-                # Check if already in local collection
+                # Check if already in local collection (user may own multiple copies — use first())
                 existing = await db.execute(
-                    select(Record).where(
+                    select(Record.id).where(
                         Record.user_id == user_id,
                         Record.discogs_release_id == release_id,
-                    )
+                    ).limit(1)
                 )
-                if existing.scalar_one_or_none():
+                if existing.scalar():
                     state["skipped"] += 1
                     continue
 
