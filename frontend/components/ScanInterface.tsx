@@ -10,6 +10,9 @@ const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), { ssr: false })
 
 type ItemPhase = "queued" | "uploading" | "result" | "confirming" | "done" | "error";
 
+const CONDITIONS = ["M", "NM", "VG+", "VG", "G"] as const;
+type Condition = typeof CONDITIONS[number];
+
 interface QueueItem {
   id: string;
   file: File;
@@ -19,6 +22,7 @@ interface QueueItem {
   errorMsg?: string;
   confirmedReleaseId?: number;
   skipped?: boolean;
+  condition: Condition;
 }
 
 function ConfidenceDot({ confidence }: { confidence: number }) {
@@ -42,6 +46,14 @@ function MatchCard({
   disabled: boolean;
   isAdding: boolean;
 }) {
+  const [price, setPrice] = useState<{ lowest: number; currency: string; num_for_sale: number } | null | "loading">("loading");
+
+  useEffect(() => {
+    api.getPricing(match.release_id)
+      .then((d) => setPrice(d.pricing))
+      .catch(() => setPrice(null));
+  }, [match.release_id]);
+
   return (
     <div className="card p-4 flex gap-3 items-start">
       {/* Discogs cover image */}
@@ -71,6 +83,16 @@ function MatchCard({
           {match.country && <span>{match.country}</span>}
         </div>
         <div className="flex items-center gap-3 mt-2">
+          {price === "loading" ? (
+            <span className="text-xs text-vinyl-muted flex items-center gap-1">
+              <Loader2 size={10} className="animate-spin" /> price…
+            </span>
+          ) : price ? (
+            <span className="text-xs text-vinyl-gold font-semibold">
+              Lowest: {price.currency} {price.lowest.toFixed(2)}
+              <span className="text-vinyl-muted font-normal ml-1">({price.num_for_sale} for sale)</span>
+            </span>
+          ) : null}
           <a
             href={`https://www.discogs.com/release/${match.release_id}`}
             target="_blank"
@@ -97,14 +119,37 @@ function MatchCard({
   );
 }
 
+function ConditionPicker({ value, onChange }: { value: Condition; onChange: (c: Condition) => void }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs text-vinyl-muted mr-0.5">Condition:</span>
+      {CONDITIONS.map((c) => (
+        <button
+          key={c}
+          onClick={() => onChange(c)}
+          className={`text-xs px-2 py-1 rounded font-medium transition-colors ${
+            value === c
+              ? "bg-vinyl-accent text-white"
+              : "bg-vinyl-border text-vinyl-muted hover:text-vinyl-text"
+          }`}
+        >
+          {c}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ScanItem({
   item,
   onConfirm,
   onSkip,
+  onConditionChange,
 }: {
   item: QueueItem;
   onConfirm: (itemId: string, releaseId: number) => void;
   onSkip: (itemId: string) => void;
+  onConditionChange: (itemId: string, condition: Condition) => void;
 }) {
   const [showAllMatches, setShowAllMatches] = useState(false);
   const result = item.result;
@@ -212,7 +257,14 @@ function ScanItem({
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-1 border-t border-vinyl-border mt-1">
+          <div className="pt-2 border-t border-vinyl-border mt-1">
+            <ConditionPicker
+              value={item.condition}
+              onChange={(c) => onConditionChange(item.id, c)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
             <p className="text-xs text-vinyl-muted">1 credit used on add or skip</p>
             <button
               onClick={() => onSkip(item.id)}
@@ -270,6 +322,7 @@ export function ScanInterface() {
           file,
           preview: item.fileDataUrl,
           phase: "queued",
+          condition: "VG+",
         };
         setQueue((prev) => [...prev, newItem]);
         removeFromOfflineQueue(item.id);
@@ -325,6 +378,7 @@ export function ScanInterface() {
       file,
       preview: URL.createObjectURL(file),
       phase: "queued" as ItemPhase,
+      condition: "VG+" as Condition,
     }));
     setQueue((q) => [...q, ...newItems]);
     setProcessing(true);
@@ -340,14 +394,18 @@ export function ScanInterface() {
     updateItem(itemId, { phase: "confirming" });
     try {
       if (item.id.startsWith("barcode-")) {
-        await api.barcodeAdd(releaseId);
+        await api.barcodeAdd(releaseId, item.condition);
       } else {
-        await api.confirmScan(item.result.scan_id, releaseId);
+        await api.confirmScan(item.result.scan_id, releaseId, item.condition);
       }
       updateItem(itemId, { phase: "done", confirmedReleaseId: releaseId });
     } catch {
       updateItem(itemId, { phase: "result", errorMsg: "Failed to add. Try again." });
     }
+  }
+
+  function handleConditionChange(itemId: string, condition: Condition) {
+    updateItem(itemId, { condition });
   }
 
   async function handleSkip(itemId: string) {
@@ -399,6 +457,7 @@ export function ScanInterface() {
         preview: data.matches[0].cover_image || "",
         phase: "result",
         result: fakeResult,
+        condition: "VG+",
       };
       setQueue((q) => [...q, newItem]);
     } catch {
@@ -527,6 +586,7 @@ export function ScanInterface() {
               item={item}
               onConfirm={handleConfirm}
               onSkip={handleSkip}
+              onConditionChange={handleConditionChange}
             />
           ))}
         </div>

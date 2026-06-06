@@ -39,6 +39,9 @@ export function NavBar() {
               <span className="text-vinyl-gold font-semibold">{DEV_MODE ? "∞" : (credits ?? user.credits)}</span>
               <span className="text-vinyl-muted">credits</span>
             </Link>
+            <Link href="/catalog" className="text-sm text-vinyl-muted hover:text-vinyl-text transition-colors">
+              Catalog
+            </Link>
             <Link href="/dashboard" className="text-sm text-vinyl-muted hover:text-vinyl-text transition-colors">
               Dashboard
             </Link>

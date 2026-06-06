@@ -65,6 +65,46 @@ export interface CreditTransaction {
   created_at: string;
 }
 
+export interface CatalogRecord {
+  id: string;
+  lot_id: string | null;
+  scan_id: string | null;
+  artist: string | null;
+  title: string | null;
+  year: number | null;
+  label: string | null;
+  catalog_number: string | null;
+  format: string | null;
+  condition: string;
+  discogs_release_id: number | null;
+  discogs_url: string | null;
+  status: "in_stock" | "sold";
+  asking_price: number | null;
+  sold_price: number | null;
+  sold_at: string | null;
+  created_at: string;
+}
+
+export interface CatalogListResponse {
+  records: CatalogRecord[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export interface Lot {
+  id: string;
+  name: string;
+  purchase_price: number | null;
+  notes: string | null;
+  record_count: number;
+  in_stock_count: number;
+  sold_count: number;
+  total_asking: number | null;
+  total_sold: number | null;
+  created_at: string;
+}
+
 export interface CreditPack {
   id: string;
   name: string;
@@ -166,10 +206,10 @@ export const api = {
     return res.json();
   },
 
-  confirmScan: (scanId: string, releaseId: number) =>
-    apiFetch<{ ok: boolean; credits_remaining: number }>(`/scan/${scanId}/confirm`, {
+  confirmScan: (scanId: string, releaseId: number, condition = "VG+", lotId?: string) =>
+    apiFetch<{ ok: boolean; credits_remaining: number; record_id: string }>(`/scan/${scanId}/confirm`, {
       method: "POST",
-      body: JSON.stringify({ release_id: releaseId }),
+      body: JSON.stringify({ release_id: releaseId, condition, lot_id: lotId ?? null }),
     }),
 
   skipScan: (scanId: string) =>
@@ -198,10 +238,42 @@ export const api = {
   barcodeSearch: (barcode: string) =>
     apiFetch<{ barcode: string; matches: DiscogsMatch[] }>(`/scan/barcode?barcode=${encodeURIComponent(barcode)}`),
 
-  barcodeAdd: (releaseId: number) =>
-    apiFetch<{ ok: boolean }>("/scan/barcode/add", {
+  barcodeAdd: (releaseId: number, condition = "VG+", lotId?: string) =>
+    apiFetch<{ ok: boolean; record_id: string }>("/scan/barcode/add", {
       method: "POST",
-      body: JSON.stringify({ release_id: releaseId }),
+      body: JSON.stringify({ release_id: releaseId, condition, lot_id: lotId ?? null }),
+    }),
+
+  listCatalog: (params?: { page?: number; per_page?: number; status?: string; lot_id?: string; no_lot?: boolean; search?: string }) => {
+    const p = new URLSearchParams();
+    if (params?.page) p.set("page", String(params.page));
+    if (params?.per_page) p.set("per_page", String(params.per_page));
+    if (params?.status) p.set("status", params.status);
+    if (params?.no_lot) p.set("no_lot", "true");
+    else if (params?.lot_id) p.set("lot_id", params.lot_id);
+    if (params?.search) p.set("search", params.search);
+    return apiFetch<CatalogListResponse>(`/catalog?${p}`);
+  },
+
+  getRecord: (id: string) => apiFetch<CatalogRecord>(`/catalog/${id}`),
+
+  listLots: () => apiFetch<Lot[]>("/catalog/lots/list"),
+
+  createLot: (body: { name: string; purchase_price?: number; notes?: string }) =>
+    apiFetch<Lot>("/catalog/lots", { method: "POST", body: JSON.stringify(body) }),
+
+  updateRecord: (id: string, body: { asking_price?: number | null; condition?: string; lot_id?: string | null }) =>
+    apiFetch<CatalogRecord>(`/catalog/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+
+  sellRecord: (id: string, sold_price: number) =>
+    apiFetch<CatalogRecord>(`/catalog/${id}/sell`, { method: "POST", body: JSON.stringify({ sold_price }) }),
+
+  getPriceMarkup: () => apiFetch<{ price_markup_pct: number | null }>("/catalog/settings/price-markup"),
+
+  setPriceMarkup: (pct: number | null) =>
+    apiFetch<{ price_markup_pct: number | null }>("/catalog/settings/price-markup", {
+      method: "PUT",
+      body: JSON.stringify({ price_markup_pct: pct }),
     }),
 
   loginUrl: () => `${API_URL}/auth/discogs/login`,
