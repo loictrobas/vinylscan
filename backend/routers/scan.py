@@ -276,8 +276,8 @@ async def _fetch_and_set_price(
                     markup = (user.price_markup_pct or 0) if user else 0
                     record.asking_price = round(lowest * (1 + markup / 100), 2)
                     await db.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Price fetch failed for record %s release %s: %s", record_id, release_id, e)
 
 
 @router.post("/{scan_id}/confirm")

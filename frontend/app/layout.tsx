@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { NavBar } from "@/components/NavBar";
+import { Sidebar } from "@/components/Sidebar";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export const metadata: Metadata = {
-  title: "VinylScan — Digitize Your Record Collection",
-  description: "Scan vinyl records with AI and sync to your Discogs collection instantly.",
+  title: "VinylScan — Record store management",
+  description: "Scan, catalog, and sell vinyl records with AI.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#e63946",
+  themeColor: "#07070a",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -32,10 +32,16 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-vinyl-black text-vinyl-text">
+      <body className="min-h-screen bg-vs-bg text-vs-text">
         <ServiceWorkerRegistrar />
-        <NavBar />
-        <main>{children}</main>
+        {/* Full-height sidebar layout */}
+        <div className="flex min-h-screen">
+          <Sidebar />
+          {/* Main content offset by sidebar width */}
+          <main className="flex-1 ml-56 min-h-screen overflow-auto">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

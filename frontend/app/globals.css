@@ -3,25 +3,102 @@
 @tailwind utilities;
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #f5f5f5;
+  --background: #07070a;
+  --foreground: #e2e2ea;
 }
+
+* { box-sizing: border-box; }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Inter, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  font-weight: 400;
 }
 
+/* Thin scrollbars */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #282832; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a48; }
+
 @layer utilities {
+  /* ── Cards ─────────────────────────────── */
   .card {
-    @apply bg-vinyl-card border border-vinyl-border rounded-xl;
+    @apply bg-vs-card border border-vs-border rounded-xl;
   }
+  .card-raised {
+    @apply bg-vs-raised border border-vs-border-2 rounded-xl;
+  }
+
+  /* ── Buttons ────────────────────────────── */
   .btn-primary {
-    @apply bg-vinyl-accent hover:bg-red-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors;
+    @apply bg-vs-accent hover:bg-vs-accent-bright text-vs-bg font-medium
+           px-4 py-2 rounded-lg transition-colors text-sm;
   }
   .btn-secondary {
-    @apply bg-vinyl-border hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors;
+    @apply bg-vs-raised hover:bg-vs-border-2 text-vs-text font-medium
+           border border-vs-border-2 px-4 py-2 rounded-lg transition-colors text-sm;
+  }
+  .btn-ghost {
+    @apply text-vs-text-2 hover:text-vs-text hover:bg-vs-raised
+           px-3 py-1.5 rounded-lg transition-colors text-sm;
+  }
+  .btn-danger {
+    @apply bg-vs-danger/15 hover:bg-vs-danger/25 text-vs-danger font-medium
+           px-4 py-2 rounded-lg transition-colors text-sm;
+  }
+
+  /* ── Inputs ─────────────────────────────── */
+  .input {
+    @apply bg-vs-raised border border-vs-border-2 text-vs-text placeholder-vs-muted
+           rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-vs-accent
+           transition-colors w-full;
+  }
+
+  /* ── Status pills ───────────────────────── */
+  .pill-in-stock  { @apply inline-flex items-center gap-1.5 text-2xs font-medium px-2 py-0.5 rounded-full bg-vs-success/15 text-vs-success; }
+  .pill-sold      { @apply inline-flex items-center gap-1.5 text-2xs font-medium px-2 py-0.5 rounded-full bg-vs-teal/15 text-vs-teal; }
+  .pill-consigned { @apply inline-flex items-center gap-1.5 text-2xs font-medium px-2 py-0.5 rounded-full bg-vs-warning/15 text-vs-warning; }
+  .pill-pending   { @apply inline-flex items-center gap-1.5 text-2xs font-medium px-2 py-0.5 rounded-full bg-vs-muted/30 text-vs-text-2; }
+
+  /* ── Table ──────────────────────────────── */
+  .data-table {
+    @apply w-full text-sm;
+  }
+  .data-table thead tr {
+    @apply border-b border-vs-border;
+  }
+  .data-table thead th {
+    @apply text-left text-2xs font-medium text-vs-muted uppercase tracking-wider
+           px-4 py-3 first:pl-5 last:pr-5;
+  }
+  .data-table tbody tr {
+    @apply border-b border-vs-border/50 hover:bg-vs-raised/50 transition-colors;
+  }
+  .data-table tbody td {
+    @apply px-4 py-3 text-vs-text first:pl-5 last:pr-5;
+  }
+  .data-table tbody tr:last-child {
+    @apply border-0;
+  }
+
+  /* ── Sidebar ────────────────────────────── */
+  .sidebar-link {
+    @apply flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-vs-text-2
+           hover:text-vs-text hover:bg-vs-raised transition-colors cursor-pointer;
+  }
+  .sidebar-link.active {
+    @apply text-vs-text bg-vs-raised border border-vs-border;
+  }
+  .sidebar-section-label {
+    @apply text-2xs font-medium text-vs-muted uppercase tracking-widest
+           px-3 mb-1 mt-4;
+  }
+
+  /* ── Metric card ────────────────────────── */
+  .metric-card {
+    @apply card p-5 flex flex-col gap-3;
   }
 }

@@ -4,7 +4,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import and_, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
@@ -27,13 +27,18 @@ class RecordOut(BaseModel):
     label: str | None
     catalog_number: str | None
     format: str | None
+    genre: str | None
+    country: str | None
     condition: str
     discogs_release_id: int | None
     discogs_url: str | None
     status: str
+    cost_price: float | None
     asking_price: float | None
     sold_price: float | None
     sold_at: str | None
+    tags: str | None
+    notes: str | None
     created_at: str
 
     model_config = {"from_attributes": True}
@@ -50,13 +55,18 @@ class RecordOut(BaseModel):
             label=r.label,
             catalog_number=r.catalog_number,
             format=r.format,
+            genre=getattr(r, "genre", None),
+            country=getattr(r, "country", None),
             condition=r.condition,
             discogs_release_id=r.discogs_release_id,
             discogs_url=r.discogs_url,
             status=r.status.value if hasattr(r.status, "value") else r.status,
+            cost_price=float(r.cost_price) if getattr(r, "cost_price", None) is not None else None,
             asking_price=float(r.asking_price) if r.asking_price is not None else None,
             sold_price=float(r.sold_price) if r.sold_price is not None else None,
             sold_at=r.sold_at.isoformat() if r.sold_at else None,
+            tags=getattr(r, "tags", None),
+            notes=getattr(r, "notes", None),
             created_at=r.created_at.isoformat(),
         )
 
@@ -120,22 +130,42 @@ async def list_lots(
     )
     lots = lots_result.scalars().all()
 
+    lot_ids = [lot.id for lot in lots]
+    stats: dict = {}
+    if lot_ids:
+        agg_result = await db.execute(
+            select(
+                Record.lot_id,
+                func.count(Record.id).label("record_count"),
+                func.count(case((Record.status == RecordStatus.in_stock, 1))).label("in_stock_count"),
+                func.count(case((Record.status == RecordStatus.sold, 1))).label("sold_count"),
+                func.sum(case((
+                    and_(Record.status == RecordStatus.in_stock, Record.asking_price.isnot(None)),
+                    Record.asking_price,
+                ))).label("total_asking"),
+                func.sum(case((
+                    and_(Record.status == RecordStatus.sold, Record.sold_price.isnot(None)),
+                    Record.sold_price,
+                ))).label("total_sold"),
+            )
+            .where(Record.lot_id.in_(lot_ids))
+            .group_by(Record.lot_id)
+        )
+        stats = {row.lot_id: row for row in agg_result}
+
     out = []
     for lot in lots:
-        records_result = await db.execute(select(Record).where(Record.lot_id == lot.id))
-        records = records_result.scalars().all()
-        in_stock = [r for r in records if r.status == RecordStatus.in_stock]
-        sold = [r for r in records if r.status == RecordStatus.sold]
+        s = stats.get(lot.id)
         out.append(LotOut(
             id=lot.id,
             name=lot.name,
             purchase_price=lot.purchase_price,
             notes=lot.notes,
-            record_count=len(records),
-            in_stock_count=len(in_stock),
-            sold_count=len(sold),
-            total_asking=sum(float(r.asking_price) for r in in_stock if r.asking_price is not None) or None,
-            total_sold=sum(float(r.sold_price) for r in sold if r.sold_price is not None) or None,
+            record_count=s.record_count if s else 0,
+            in_stock_count=s.in_stock_count if s else 0,
+            sold_count=s.sold_count if s else 0,
+            total_asking=float(s.total_asking) if s and s.total_asking is not None else None,
+            total_sold=float(s.total_sold) if s and s.total_sold is not None else None,
             created_at=lot.created_at.isoformat(),
         ))
 
@@ -205,6 +235,208 @@ async def lot_summary(
     }
 
 
+# ── Catalog stats ────────────────────────────────────────────────────────────
+
+@router.get("/stats")
+async def catalog_stats(
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from datetime import date, timedelta
+    from sqlalchemy import cast, Date as SADate
+
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())
+    month_start = today.replace(day=1)
+
+    # Counts
+    total_in_stock = (await db.execute(
+        select(func.count()).select_from(Record)
+        .where(Record.user_id == user.id, Record.status == RecordStatus.in_stock)
+    )).scalar_one() or 0
+
+    total_sold = (await db.execute(
+        select(func.count()).select_from(Record)
+        .where(Record.user_id == user.id, Record.status == RecordStatus.sold)
+    )).scalar_one() or 0
+
+    # Revenue totals
+    total_revenue = (await db.execute(
+        select(func.sum(Record.sold_price)).where(
+            Record.user_id == user.id, Record.status == RecordStatus.sold
+        )
+    )).scalar_one() or 0.0
+
+    # Revenue this month
+    revenue_this_month = (await db.execute(
+        select(func.sum(Record.sold_price)).where(
+            Record.user_id == user.id,
+            Record.status == RecordStatus.sold,
+            cast(Record.sold_at, SADate) >= month_start,
+        )
+    )).scalar_one() or 0.0
+
+    # Revenue this week
+    revenue_this_week = (await db.execute(
+        select(func.sum(Record.sold_price)).where(
+            Record.user_id == user.id,
+            Record.status == RecordStatus.sold,
+            cast(Record.sold_at, SADate) >= week_start,
+        )
+    )).scalar_one() or 0.0
+
+    # Revenue today
+    revenue_today = (await db.execute(
+        select(func.sum(Record.sold_price)).where(
+            Record.user_id == user.id,
+            Record.status == RecordStatus.sold,
+            cast(Record.sold_at, SADate) == today,
+        )
+    )).scalar_one() or 0.0
+
+    # Inventory value (asking prices for in-stock)
+    inventory_value = (await db.execute(
+        select(func.sum(Record.asking_price)).where(
+            Record.user_id == user.id,
+            Record.status == RecordStatus.in_stock,
+            Record.asking_price.isnot(None),
+        )
+    )).scalar_one() or 0.0
+
+    # Total cost invested
+    total_cost = (await db.execute(
+        select(func.sum(Record.cost_price)).where(
+            Record.user_id == user.id,
+            Record.cost_price.isnot(None),
+        )
+    )).scalar_one() or 0.0
+
+    # Avg margin % (where both cost and sold_price known)
+    margin_result = await db.execute(
+        select(Record.cost_price, Record.sold_price).where(
+            Record.user_id == user.id,
+            Record.status == RecordStatus.sold,
+            Record.cost_price.isnot(None),
+            Record.sold_price.isnot(None),
+            Record.cost_price > 0,
+        )
+    )
+    margins = [
+        (float(r.sold_price) - float(r.cost_price)) / float(r.cost_price) * 100
+        for r in margin_result.all()
+    ]
+    avg_margin = sum(margins) / len(margins) if margins else None
+
+    # Recent sold records (today)
+    recent_sold = (await db.execute(
+        select(Record.artist, Record.title, Record.sold_price, Record.sold_at)
+        .where(
+            Record.user_id == user.id,
+            Record.status == RecordStatus.sold,
+            cast(Record.sold_at, SADate) == today,
+        )
+        .order_by(Record.sold_at.desc())
+        .limit(5)
+    )).all()
+
+    _set_credit_header(response, user)
+    return {
+        "total_in_stock": total_in_stock,
+        "total_sold": total_sold,
+        "total_revenue": float(total_revenue),
+        "revenue_today": float(revenue_today),
+        "revenue_this_week": float(revenue_this_week),
+        "revenue_this_month": float(revenue_this_month),
+        "inventory_value": float(inventory_value),
+        "total_cost": float(total_cost),
+        "avg_margin_pct": round(avg_margin, 1) if avg_margin is not None else None,
+        "recent_sales_today": [
+            {
+                "artist": r.artist,
+                "title": r.title,
+                "sold_price": float(r.sold_price) if r.sold_price else None,
+                "sold_at": r.sold_at.isoformat() if r.sold_at else None,
+            }
+            for r in recent_sold
+        ],
+    }
+
+
+# ── Manual record creation ────────────────────────────────────────────────────
+
+class CreateRecordRequest(BaseModel):
+    artist: str | None = None
+    title: str | None = None
+    year: int | None = None
+    label: str | None = None
+    catalog_number: str | None = None
+    format: str | None = None
+    genre: str | None = None
+    country: str | None = None
+    condition: str = "VG+"
+    lot_id: uuid.UUID | None = None
+    cost_price: float | None = None
+    asking_price: float | None = None
+    discogs_release_id: int | None = None
+    tags: str | None = None
+    notes: str | None = None
+
+
+@router.post("", response_model=RecordOut, status_code=201)
+async def create_record(
+    body: CreateRecordRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    valid = {e.value for e in RecordCondition}
+    if body.condition not in valid:
+        raise HTTPException(status_code=400, detail=f"Invalid condition. Use one of: {sorted(valid)}")
+
+    record = Record(
+        user_id=user.id,
+        lot_id=body.lot_id,
+        artist=body.artist,
+        title=body.title,
+        year=body.year,
+        label=body.label,
+        catalog_number=body.catalog_number,
+        format=body.format,
+        genre=body.genre,
+        country=body.country,
+        condition=body.condition,
+        cost_price=body.cost_price,
+        asking_price=body.asking_price,
+        discogs_release_id=body.discogs_release_id,
+        tags=body.tags,
+        notes=body.notes,
+    )
+    db.add(record)
+    await db.commit()
+    await db.refresh(record)
+    _set_credit_header(response, user)
+    return RecordOut.from_orm_safe(record)
+
+
+# ── Delete record ─────────────────────────────────────────────────────────────
+
+@router.delete("/{record_id}", status_code=204)
+async def delete_record(
+    record_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Record).where(Record.id == record_id, Record.user_id == user.id)
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    await db.delete(record)
+    await db.commit()
+
+
 # ── Catalog list ──────────────────────────────────────────────────────────────
 
 @router.get("", response_model=CatalogListResponse)
@@ -216,6 +448,9 @@ async def list_catalog(
     lot_id: uuid.UUID | None = Query(None),
     no_lot: bool = Query(False),
     search: str | None = Query(None),
+    genre: str | None = Query(None),
+    format: str | None = Query(None),
+    condition: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -229,6 +464,12 @@ async def list_catalog(
     if search:
         term = f"%{search}%"
         q = q.where(Record.artist.ilike(term) | Record.title.ilike(term))
+    if genre:
+        q = q.where(Record.genre == genre)
+    if format:
+        q = q.where(Record.format == format)
+    if condition:
+        q = q.where(Record.condition == condition)
 
     count_q = select(func.count()).select_from(q.subquery())
     total_result = await db.execute(count_q)
@@ -265,9 +506,20 @@ async def get_record(
 
 
 class UpdateRecordRequest(BaseModel):
-    asking_price: float | None = None
+    artist: str | None = None
+    title: str | None = None
+    year: int | None = None
+    label: str | None = None
+    catalog_number: str | None = None
+    format: str | None = None
+    genre: str | None = None
+    country: str | None = None
     condition: str | None = None
     lot_id: uuid.UUID | None = None
+    cost_price: float | None = None
+    asking_price: float | None = None
+    tags: str | None = None
+    notes: str | None = None
 
 
 @router.patch("/{record_id}", response_model=RecordOut)
@@ -285,8 +537,12 @@ async def update_record(
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
 
-    if body.asking_price is not None:
-        record.asking_price = body.asking_price
+    simple_fields = ["artist", "title", "year", "label", "catalog_number", "format",
+                     "genre", "country", "cost_price", "asking_price", "tags", "notes"]
+    for field in simple_fields:
+        if field in body.model_fields_set:
+            setattr(record, field, getattr(body, field))
+
     if body.condition is not None:
         valid = {e.value for e in RecordCondition}
         if body.condition not in valid:

@@ -75,14 +75,50 @@ export interface CatalogRecord {
   label: string | null;
   catalog_number: string | null;
   format: string | null;
+  genre: string | null;
+  country: string | null;
   condition: string;
   discogs_release_id: number | null;
   discogs_url: string | null;
   status: "in_stock" | "sold";
+  cost_price: number | null;
   asking_price: number | null;
   sold_price: number | null;
   sold_at: string | null;
+  tags: string | null;
+  notes: string | null;
   created_at: string;
+}
+
+export interface CatalogStats {
+  total_in_stock: number;
+  total_sold: number;
+  total_revenue: number;
+  revenue_today: number;
+  revenue_this_week: number;
+  revenue_this_month: number;
+  inventory_value: number;
+  total_cost: number;
+  avg_margin_pct: number | null;
+  recent_sales_today: { artist: string | null; title: string | null; sold_price: number | null; sold_at: string | null }[];
+}
+
+export interface CreateRecordBody {
+  artist?: string;
+  title?: string;
+  year?: number;
+  label?: string;
+  catalog_number?: string;
+  format?: string;
+  genre?: string;
+  country?: string;
+  condition?: string;
+  lot_id?: string;
+  cost_price?: number;
+  asking_price?: number;
+  discogs_release_id?: number;
+  tags?: string;
+  notes?: string;
 }
 
 export interface CatalogListResponse {
@@ -244,7 +280,7 @@ export const api = {
       body: JSON.stringify({ release_id: releaseId, condition, lot_id: lotId ?? null }),
     }),
 
-  listCatalog: (params?: { page?: number; per_page?: number; status?: string; lot_id?: string; no_lot?: boolean; search?: string }) => {
+  listCatalog: (params?: { page?: number; per_page?: number; status?: string; lot_id?: string; no_lot?: boolean; search?: string; genre?: string; format?: string; condition?: string }) => {
     const p = new URLSearchParams();
     if (params?.page) p.set("page", String(params.page));
     if (params?.per_page) p.set("per_page", String(params.per_page));
@@ -252,8 +288,19 @@ export const api = {
     if (params?.no_lot) p.set("no_lot", "true");
     else if (params?.lot_id) p.set("lot_id", params.lot_id);
     if (params?.search) p.set("search", params.search);
+    if (params?.genre) p.set("genre", params.genre);
+    if (params?.format) p.set("format", params.format);
+    if (params?.condition) p.set("condition", params.condition);
     return apiFetch<CatalogListResponse>(`/catalog?${p}`);
   },
+
+  catalogStats: () => apiFetch<CatalogStats>("/catalog/stats"),
+
+  createRecord: (body: CreateRecordBody) =>
+    apiFetch<CatalogRecord>("/catalog", { method: "POST", body: JSON.stringify(body) }),
+
+  deleteRecord: (id: string) =>
+    apiFetch<void>(`/catalog/${id}`, { method: "DELETE" }),
 
   getRecord: (id: string) => apiFetch<CatalogRecord>(`/catalog/${id}`),
 
@@ -262,7 +309,7 @@ export const api = {
   createLot: (body: { name: string; purchase_price?: number; notes?: string }) =>
     apiFetch<Lot>("/catalog/lots", { method: "POST", body: JSON.stringify(body) }),
 
-  updateRecord: (id: string, body: { asking_price?: number | null; condition?: string; lot_id?: string | null }) =>
+  updateRecord: (id: string, body: Partial<CreateRecordBody & { asking_price?: number | null; condition?: string; lot_id?: string | null }>) =>
     apiFetch<CatalogRecord>(`/catalog/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
 
   sellRecord: (id: string, sold_price: number) =>

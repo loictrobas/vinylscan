@@ -129,6 +129,11 @@ class Record(Base):
     label: Mapped[str | None] = mapped_column(String(255), nullable=True)
     catalog_number: Mapped[str | None] = mapped_column(String(255), nullable=True)
     format: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    genre: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    country: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    cost_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    tags: Mapped[str | None] = mapped_column(Text, nullable=True)  # comma-separated free tags
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     condition: Mapped[str] = mapped_column(
         Enum(RecordCondition, name="record_condition", values_callable=lambda obj: [e.value for e in obj]),
         default=RecordCondition.VG_PLUS, nullable=False

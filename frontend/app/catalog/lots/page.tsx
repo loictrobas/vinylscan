@@ -1,24 +1,141 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Disc3, TrendingUp, TrendingDown, Package, ChevronRight } from "lucide-react";
+import {
+  Layers, Plus, X, Disc3, TrendingUp, DollarSign, Package, ChevronRight,
+} from "lucide-react";
 import { api, getToken, type Lot } from "@/lib/api";
 
-function profit(lot: Lot): number | null {
-  if (lot.total_sold == null || lot.purchase_price == null) return null;
-  return lot.total_sold - lot.purchase_price;
+function fmt(n: number) { return `$${n.toFixed(2)}`; }
+
+function roiPct(lot: Lot): number | null {
+  if (!lot.purchase_price || !lot.total_sold) return null;
+  return ((lot.total_sold - lot.purchase_price) / lot.purchase_price) * 100;
 }
 
-function ProfitBadge({ value }: { value: number | null }) {
-  if (value == null) return <span className="text-xs text-vinyl-muted">—</span>;
-  const pos = value >= 0;
+interface LotModalProps {
+  onClose: () => void;
+  onSaved: (l: Lot) => void;
+}
+
+function LotModal({ onClose, onSaved }: LotModalProps) {
+  const [form, setForm] = useState({ name: "", purchase_price: "", notes: "" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  function set(k: string, v: string) { setForm((f) => ({ ...f, [k]: v })); }
+
+  async function save() {
+    if (!form.name.trim()) { setError("Name required."); return; }
+    setSaving(true); setError("");
+    try {
+      const saved = await api.createLot({
+        name: form.name.trim(),
+        purchase_price: form.purchase_price ? parseFloat(form.purchase_price) : undefined,
+        notes: form.notes || undefined,
+      });
+      onSaved(saved);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Save failed");
+    } finally { setSaving(false); }
+  }
+
   return (
-    <span className={`flex items-center gap-1 text-sm font-semibold ${pos ? "text-green-400" : "text-red-400"}`}>
-      {pos ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-      {pos ? "+" : ""}${value.toFixed(2)}
-    </span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-vs-card border border-vs-border rounded-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-vs-border">
+          <h2 className="text-base font-medium">Create lot</h2>
+          <button onClick={onClose} className="btn-ghost p-1.5"><X size={15} /></button>
+        </div>
+        <div className="p-6 flex flex-col gap-4">
+          <div>
+            <label className="text-xs text-vs-text-2 mb-1 block">Lot name</label>
+            <input className="input" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Estate sale — March 2026" />
+          </div>
+          <div>
+            <label className="text-xs text-vs-text-2 mb-1 block">Total amount paid</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-vs-muted text-xs">$</span>
+              <input className="input pl-6" type="number" min="0" step="0.01" value={form.purchase_price} onChange={(e) => set("purchase_price", e.target.value)} placeholder="0.00" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-vs-text-2 mb-1 block">Notes</label>
+            <textarea className="input resize-none" rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} />
+          </div>
+          {error && <p className="text-xs text-vs-danger">{error}</p>}
+        </div>
+        <div className="px-6 pb-4 flex justify-end gap-2">
+          <button onClick={onClose} className="btn-secondary">Cancel</button>
+          <button onClick={save} disabled={saving} className="btn-primary disabled:opacity-50">
+            {saving ? "Saving…" : "Create lot"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LotCard({ lot, onClick }: { lot: Lot; onClick: () => void }) {
+  const r = roiPct(lot);
+  const pct = lot.record_count > 0 ? Math.round((lot.sold_count / lot.record_count) * 100) : 0;
+
+  return (
+    <div onClick={onClick} className="card p-5 cursor-pointer hover:border-vs-border-2 transition-colors group">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-medium text-vs-text group-hover:text-vs-accent transition-colors truncate">{lot.name}</h3>
+          <p className="text-xs text-vs-muted mt-0.5">
+            {lot.purchase_price != null ? fmt(lot.purchase_price) : "No price"} ·{" "}
+            {new Date(lot.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          </p>
+        </div>
+        <ChevronRight size={14} className="text-vs-muted group-hover:text-vs-accent transition-colors flex-shrink-0 mt-0.5" />
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <div>
+          <p className="text-xs text-vs-muted mb-0.5">In stock</p>
+          <p className="text-base font-medium">{lot.in_stock_count}</p>
+        </div>
+        <div>
+          <p className="text-xs text-vs-muted mb-0.5">Sold</p>
+          <p className="text-base font-medium text-vs-teal">{lot.sold_count}</p>
+        </div>
+        <div>
+          <p className="text-xs text-vs-muted mb-0.5">Revenue</p>
+          <p className="text-base font-medium text-vs-gold">{lot.total_sold != null ? fmt(lot.total_sold) : "—"}</p>
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs text-vs-muted">{pct}% sold through</span>
+          <span className="text-xs text-vs-text-2">{lot.sold_count}/{lot.record_count}</span>
+        </div>
+        <div className="h-1 bg-vs-raised rounded-full overflow-hidden">
+          <div className="h-full bg-vs-teal rounded-full" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
+      {r != null && (
+        <div className={`flex items-center gap-1.5 text-xs font-medium ${r >= 0 ? "text-vs-success" : "text-vs-danger"}`}>
+          <TrendingUp size={11} />
+          {r >= 0 ? "+" : ""}{r.toFixed(1)}% ROI
+          {lot.purchase_price != null && lot.total_sold != null && (
+            <span className="text-vs-muted font-normal ml-1">
+              ({lot.total_sold >= lot.purchase_price ? "+" : ""}{fmt(lot.total_sold - lot.purchase_price)})
+            </span>
+          )}
+        </div>
+      )}
+
+      {lot.notes && (
+        <p className="text-xs text-vs-muted mt-2 border-t border-vs-border/50 pt-2 truncate">{lot.notes}</p>
+      )}
+    </div>
   );
 }
 
@@ -26,142 +143,86 @@ export default function LotsPage() {
   const router = useRouter();
   const [lots, setLots] = useState<Lot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newPrice, setNewPrice] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try { setLots(await api.listLots()); }
+    finally { setLoading(false); }
+  }, []);
 
   useEffect(() => {
     if (!getToken()) { router.replace("/"); return; }
-    api.listLots().then(setLots).catch(() => router.replace("/")).finally(() => setLoading(false));
-  }, [router]);
+    load();
+  }, [router, load]);
 
-  async function createLot() {
-    if (!newName.trim()) return;
-    setCreating(true);
-    try {
-      const lot = await api.createLot({
-        name: newName.trim(),
-        purchase_price: newPrice ? parseFloat(newPrice) : undefined,
-      });
-      setLots((prev) => [lot, ...prev]);
-      setNewName("");
-      setNewPrice("");
-      setShowCreate(false);
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Disc3 size={32} className="animate-spin text-vinyl-muted" />
-    </div>
-  );
+  const totalPaid = lots.reduce((s, l) => s + (l.purchase_price ?? 0), 0);
+  const totalRevenue = lots.reduce((s, l) => s + (l.total_sold ?? 0), 0);
+  const totalInStock = lots.reduce((s, l) => s + l.in_stock_count, 0);
+  const overallRoi = totalPaid > 0 ? ((totalRevenue - totalPaid) / totalPaid * 100) : null;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="px-6 py-6">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <div className="flex items-center gap-2 text-vinyl-muted text-sm mb-1">
-            <Link href="/catalog" className="hover:text-vinyl-text">Catalog</Link>
-            <ChevronRight size={14} />
-            <span>Lots & Sales</span>
-          </div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Package size={28} className="text-vinyl-accent" />
-            Lots & Sales
-          </h1>
+          <h1 className="text-xl font-medium">Lots</h1>
+          <p className="text-sm text-vs-text-2 mt-0.5">{lots.length} lot{lots.length !== 1 ? "s" : ""}</p>
         </div>
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="btn-primary text-sm py-2 px-4"
-        >
-          + New Lot
+        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
+          <Plus size={14} />
+          New lot
         </button>
       </div>
 
-      {/* Create lot form */}
-      {showCreate && (
-        <div className="card p-5 flex flex-col gap-3">
-          <h3 className="font-semibold">New Lot</h3>
-          <div className="flex gap-3 flex-wrap">
-            <input
-              autoFocus
-              type="text"
-              placeholder="Lot name (e.g. Estate Sale June 2026)"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && createLot()}
-              className="flex-1 bg-vinyl-border rounded-xl px-3 py-2 text-sm text-vinyl-text placeholder-vinyl-muted focus:outline-none focus:ring-1 focus:ring-vinyl-accent"
-            />
-            <div className="flex items-center gap-1">
-              <span className="text-vinyl-muted text-sm">$</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Purchase price"
-                value={newPrice}
-                onChange={(e) => setNewPrice(e.target.value)}
-                className="w-36 bg-vinyl-border rounded-xl px-3 py-2 text-sm text-vinyl-text placeholder-vinyl-muted focus:outline-none focus:ring-1 focus:ring-vinyl-accent"
-              />
+      {lots.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: "Total lots", value: String(lots.length), icon: <Layers size={14} /> },
+            { label: "Total invested", value: fmt(totalPaid), icon: <DollarSign size={14} /> },
+            { label: "Total revenue", value: fmt(totalRevenue), icon: <TrendingUp size={14} />, accent: true },
+            { label: "In stock", value: `${totalInStock}`, icon: <Package size={14} /> },
+          ].map((c) => (
+            <div key={c.label} className="metric-card">
+              <div className="flex items-start justify-between">
+                <p className="text-xs text-vs-text-2">{c.label}</p>
+                <span className={`p-1.5 rounded-lg ${c.accent ? "bg-vs-accent/15 text-vs-accent" : "bg-vs-raised text-vs-muted"}`}>{c.icon}</span>
+              </div>
+              <div>
+                <p className="text-2xl font-medium">{c.value}</p>
+                {c.label === "Total revenue" && overallRoi != null && (
+                  <p className={`text-xs mt-0.5 ${overallRoi >= 0 ? "text-vs-success" : "text-vs-danger"}`}>
+                    {overallRoi >= 0 ? "+" : ""}{overallRoi.toFixed(1)}% overall ROI
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={createLot} disabled={creating || !newName.trim()} className="btn-primary text-sm py-2 px-4 disabled:opacity-50">
-              {creating ? "Creating…" : "Create"}
-            </button>
-            <button onClick={() => setShowCreate(false)} className="btn-secondary text-sm py-2 px-4">Cancel</button>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Lots list */}
-      {lots.length === 0 ? (
-        <div className="card p-12 text-center">
-          <Package size={48} className="text-vinyl-muted mx-auto mb-4" />
-          <p className="text-vinyl-muted mb-2">No lots yet.</p>
-          <p className="text-xs text-vinyl-muted">Lots let you group records by purchase batch and track profit.</p>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Disc3 size={24} className="animate-spin text-vs-muted" />
+        </div>
+      ) : lots.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <Layers size={36} className="text-vs-muted" />
+          <p className="text-vs-text-2 text-sm">No lots yet. Create one to group records by purchase.</p>
+          <button onClick={() => setShowModal(true)} className="btn-primary">Create first lot</button>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {lots.map((lot) => {
-            const p = profit(lot);
-            return (
-              <Link
-                key={lot.id}
-                href={`/catalog?lot_id=${lot.id}`}
-                className="card p-5 flex items-center gap-4 hover:border-vinyl-accent transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold">{lot.name}</p>
-                  <div className="flex items-center gap-3 mt-1 flex-wrap text-xs text-vinyl-muted">
-                    <span>{lot.record_count} record{lot.record_count !== 1 ? "s" : ""}</span>
-                    {lot.in_stock_count > 0 && <span className="text-blue-400">{lot.in_stock_count} in stock</span>}
-                    {lot.sold_count > 0 && <span className="text-green-400">{lot.sold_count} sold</span>}
-                    {lot.purchase_price != null && <span>Paid ${lot.purchase_price.toFixed(2)}</span>}
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  {lot.total_asking != null && (
-                    <span className="text-xs text-vinyl-muted">
-                      Stock value: <span className="text-vinyl-gold">${lot.total_asking.toFixed(2)}</span>
-                    </span>
-                  )}
-                  {lot.total_sold != null && (
-                    <span className="text-xs text-vinyl-muted">
-                      Revenue: <span className="text-green-400">${lot.total_sold.toFixed(2)}</span>
-                    </span>
-                  )}
-                  <ProfitBadge value={p} />
-                </div>
-                <ChevronRight size={16} className="text-vinyl-muted flex-shrink-0" />
-              </Link>
-            );
-          })}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {lots.map((l) => (
+            <LotCard key={l.id} lot={l} onClick={() => router.push(`/catalog?lot_id=${l.id}`)} />
+          ))}
         </div>
+      )}
+
+      {showModal && (
+        <LotModal
+          onClose={() => setShowModal(false)}
+          onSaved={(l) => { setLots((prev) => [l, ...prev]); setShowModal(false); }}
+        />
       )}
     </div>
   );
