@@ -41,7 +41,51 @@ async def lifespan(app: FastAPI):
                 print(f"[startup] DB not ready (attempt {attempt+1}/5), retrying in 3s: {e}", flush=True)
                 await asyncio.sleep(3)
     os.makedirs(IMAGES_DIR, exist_ok=True)
+    await _seed_admin()
     yield
+
+
+async def _seed_admin():
+    """Ensure the hardcoded super-admin account always exists and is admin."""
+    import hashlib, binascii, secrets as _sec
+    from database import AsyncSessionLocal
+    from models import User
+    from sqlalchemy import select
+
+    ADMIN_EMAIL = os.getenv("SEED_ADMIN_EMAIL", "loictrobas1@gmail.com")
+    ADMIN_PASSWORD = os.getenv("SEED_ADMIN_PASSWORD", "loicisadmin")
+
+    def _hash(pw: str) -> str:
+        salt = os.urandom(16)
+        dk = hashlib.pbkdf2_hmac("sha256", pw.encode(), salt, 260_000)
+        return binascii.hexlify(salt).decode() + ":" + binascii.hexlify(dk).decode()
+
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(select(User).where(User.email == ADMIN_EMAIL))
+            user = result.scalar_one_or_none()
+            if user is None:
+                user = User(
+                    email=ADMIN_EMAIL,
+                    password_hash=_hash(ADMIN_PASSWORD),
+                    display_name="Admin",
+                    is_admin=True,
+                    is_active=True,
+                    credits=9999,
+                    last_free_topup_month="",
+                )
+                db.add(user)
+                print(f"[startup] created admin user: {ADMIN_EMAIL}", flush=True)
+            else:
+                # Always ensure is_admin=True and password is set
+                user.is_admin = True
+                user.is_active = True
+                if not user.password_hash:
+                    user.password_hash = _hash(ADMIN_PASSWORD)
+                print(f"[startup] admin user confirmed: {ADMIN_EMAIL}", flush=True)
+            await db.commit()
+    except Exception as e:
+        print(f"[startup] admin seed failed: {e}", flush=True)
 
 
 app = FastAPI(title="VinylScan API", version="1.0.0", lifespan=lifespan, redirect_slashes=False)
