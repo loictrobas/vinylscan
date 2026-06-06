@@ -63,6 +63,8 @@ class ScanUploadResponse(BaseModel):
 
 class ConfirmRequest(BaseModel):
     release_id: int
+    condition: str = "VG+"
+    lot_id: uuid.UUID | None = None
 
 
 class CreditTransactionOut(BaseModel):
