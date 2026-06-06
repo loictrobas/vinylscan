@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from routers import auth, billing, catalog, dashboard, scan
+from routers import auth, billing, catalog, dashboard, discogs, scan
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 IMAGES_DIR = os.getenv("IMAGES_DIR", "/tmp/vinylscan_images")
@@ -70,6 +70,7 @@ app.include_router(scan.router)
 app.include_router(catalog.router)
 app.include_router(dashboard.router)
 app.include_router(billing.router)
+app.include_router(discogs.router)
 
 
 @app.api_route("/health", methods=["GET", "HEAD"])

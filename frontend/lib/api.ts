@@ -79,6 +79,8 @@ export interface CatalogRecord {
   country: string | null;
   condition: string;
   discogs_release_id: number | null;
+  discogs_instance_id: number | null;
+  discogs_synced: boolean;
   discogs_url: string | null;
   status: "in_stock" | "sold";
   cost_price: number | null;
@@ -119,6 +121,16 @@ export interface CreateRecordBody {
   discogs_release_id?: number;
   tags?: string;
   notes?: string;
+}
+
+export interface DiscogsSyncStatus {
+  status: "idle" | "running" | "done" | "error";
+  total: number;
+  imported: number;
+  skipped: number;
+  error: string | null;
+  last_sync: string | null;
+  finished_at: string | null;
 }
 
 export interface CatalogListResponse {
@@ -324,4 +336,15 @@ export const api = {
     }),
 
   loginUrl: () => `${API_URL}/auth/discogs/login`,
+
+  discogsStartSync: () =>
+    apiFetch<DiscogsSyncStatus>("/discogs/sync", { method: "POST" }),
+
+  discogsSyncStatus: () =>
+    apiFetch<DiscogsSyncStatus>("/discogs/sync/status"),
+
+  discogsPushRecord: (recordId: string) =>
+    apiFetch<{ ok: boolean; instance_id: number | null; message: string }>(
+      `/discogs/collection/add/${recordId}`, { method: "POST" }
+    ),
 };

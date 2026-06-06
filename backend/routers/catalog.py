@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 from sqlalchemy import and_, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,6 +31,8 @@ class RecordOut(BaseModel):
     country: str | None
     condition: str
     discogs_release_id: int | None
+    discogs_instance_id: int | None
+    discogs_synced: bool
     discogs_url: str | None
     status: str
     cost_price: float | None
@@ -59,6 +61,8 @@ class RecordOut(BaseModel):
             country=getattr(r, "country", None),
             condition=r.condition,
             discogs_release_id=r.discogs_release_id,
+            discogs_instance_id=getattr(r, "discogs_instance_id", None),
+            discogs_synced=getattr(r, "discogs_synced", False) or False,
             discogs_url=r.discogs_url,
             status=r.status.value if hasattr(r.status, "value") else r.status,
             cost_price=float(r.cost_price) if getattr(r, "cost_price", None) is not None else None,
@@ -386,6 +390,7 @@ class CreateRecordRequest(BaseModel):
 @router.post("", response_model=RecordOut, status_code=201)
 async def create_record(
     body: CreateRecordRequest,
+    background_tasks: BackgroundTasks,
     response: Response,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -416,6 +421,36 @@ async def create_record(
     await db.commit()
     await db.refresh(record)
     _set_credit_header(response, user)
+
+    # Auto-push to Discogs collection in background (fire-and-forget)
+    if body.discogs_release_id and user.discogs_oauth_token:
+        record_id = record.id
+        release_id = body.discogs_release_id
+        username = user.discogs_username
+        from middleware.auth_middleware import decrypt
+        from services import discogs as discogs_svc
+
+        tok = decrypt(user.discogs_oauth_token)
+        sec = decrypt(user.discogs_oauth_token_secret)
+
+        async def _push_to_discogs():
+            try:
+                from database import AsyncSessionLocal
+                data = await discogs_svc.add_to_collection(username, release_id, tok, sec)
+                instance_id = data.get("instance_id")
+                async with AsyncSessionLocal() as sess:
+                    from sqlalchemy import select as _select
+                    res = await sess.execute(_select(Record).where(Record.id == record_id))
+                    rec = res.scalar_one_or_none()
+                    if rec:
+                        rec.discogs_instance_id = instance_id
+                        rec.discogs_synced = True
+                        await sess.commit()
+            except Exception as exc:
+                logger.warning("Auto-push to Discogs failed for record %s: %s", record_id, exc)
+
+        background_tasks.add_task(_push_to_discogs)
+
     return RecordOut.from_orm_safe(record)
 
 

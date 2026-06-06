@@ -52,6 +52,7 @@ class User(Base):
     last_free_topup_month: Mapped[str] = mapped_column(String(7), nullable=False, default="")
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     price_markup_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    last_discogs_sync: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -139,6 +140,8 @@ class Record(Base):
         default=RecordCondition.VG_PLUS, nullable=False
     )
     discogs_release_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    discogs_instance_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # collection instance_id
+    discogs_synced: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     discogs_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     status: Mapped[RecordStatus] = mapped_column(

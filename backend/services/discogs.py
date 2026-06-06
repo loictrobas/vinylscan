@@ -176,6 +176,7 @@ async def get_marketplace_stats(
 async def add_to_collection(
     username: str, release_id: int, access_token: str, access_token_secret: str
 ) -> dict:
+    """Add release to Discogs collection folder 1 (Uncategorized). Returns instance info."""
     import asyncio
     import requests as req
 
@@ -183,7 +184,7 @@ async def add_to_collection(
 
     def _sync_add():
         resp = req.post(
-            f"{DISCOGS_BASE}/users/{username}/collection/folders/0/releases/{release_id}",
+            f"{DISCOGS_BASE}/users/{username}/collection/folders/1/releases/{release_id}",
             auth=auth,
             headers={"User-Agent": USER_AGENT, "Content-Type": "application/json"},
             timeout=20,
@@ -193,6 +194,76 @@ async def add_to_collection(
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _sync_add)
+
+
+async def remove_from_collection(
+    username: str, release_id: int, instance_id: int, access_token: str, access_token_secret: str
+) -> None:
+    """Remove a specific collection instance. Silently swallows 404 (already removed)."""
+    import asyncio
+    import requests as req
+
+    auth = _oauth1(access_token, access_token_secret)
+
+    def _sync_delete():
+        resp = req.delete(
+            f"{DISCOGS_BASE}/users/{username}/collection/folders/1/releases/{release_id}/instances/{instance_id}",
+            auth=auth,
+            headers={"User-Agent": USER_AGENT},
+            timeout=20,
+        )
+        if resp.status_code == 404:
+            return
+        resp.raise_for_status()
+
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _sync_delete)
+
+
+def _fetch_collection_page_sync(
+    username: str, access_token: str, access_token_secret: str, page: int, per_page: int = 500
+) -> dict:
+    """Blocking fetch of one collection page."""
+    import requests as req
+    auth = _oauth1(access_token, access_token_secret)
+    resp = req.get(
+        f"{DISCOGS_BASE}/users/{username}/collection/folders/0/releases",
+        params={"page": page, "per_page": per_page, "sort": "added", "sort_order": "desc"},
+        auth=auth,
+        headers={"User-Agent": USER_AGENT},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def get_full_collection(
+    username: str, access_token: str, access_token_secret: str
+) -> list[dict]:
+    """
+    Fetch every item in the user's Discogs collection.
+    Returns list of raw release dicts with instance_id attached.
+    Paginates automatically (500 per page).
+    """
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+    items: list[dict] = []
+    page = 1
+
+    while True:
+        data = await loop.run_in_executor(
+            None, _fetch_collection_page_sync, username, access_token, access_token_secret, page
+        )
+        releases = data.get("releases", [])
+        items.extend(releases)
+
+        pagination = data.get("pagination", {})
+        if page >= pagination.get("pages", 1):
+            break
+        page += 1
+
+    return items
 
 
 def parse_search_results(results: list[dict]) -> list[dict]:

@@ -1,130 +1,223 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Disc3, LogOut, Check } from "lucide-react";
-import { api, clearToken, getToken, type User } from "@/lib/api";
+import {
+  Disc3, RefreshCw, CheckCircle2, AlertCircle, ExternalLink,
+  Loader2, Clock, ArrowDownToLine,
+} from "lucide-react";
+import { api, getToken, type DiscogsSyncStatus, type User } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
 
 export default function SettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [markupInput, setMarkupInput] = useState("");
-  const [markupSaved, setMarkupSaved] = useState(false);
-  const [markupSaving, setMarkupSaving] = useState(false);
+  const [sync, setSync] = useState<DiscogsSyncStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!getToken()) { router.replace("/"); return; }
-    api.me().then(setUser).catch(() => router.replace("/"));
-    api.getPriceMarkup().then((d) => {
-      setMarkupInput(d.price_markup_pct != null ? String(d.price_markup_pct) : "");
-    }).catch(() => {});
+    Promise.all([api.me(), api.discogsSyncStatus()])
+      .then(([u, s]) => { setUser(u); setSync(s); })
+      .catch(() => router.replace("/"))
+      .finally(() => setLoading(false));
   }, [router]);
 
-  async function saveMarkup() {
-    setMarkupSaving(true);
-    try {
-      const pct = markupInput === "" ? null : parseFloat(markupInput);
-      await api.setPriceMarkup(isNaN(pct as number) ? null : pct);
-      setMarkupSaved(true);
-      setTimeout(() => setMarkupSaved(false), 2000);
-    } finally {
-      setMarkupSaving(false);
+  // Poll while running
+  useEffect(() => {
+    if (sync?.status === "running") {
+      pollRef.current = setInterval(async () => {
+        const s = await api.discogsSyncStatus().catch(() => null);
+        if (s) {
+          setSync(s);
+          if (s.status !== "running" && pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }
+      }, 2000);
     }
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [sync?.status]);
+
+  async function startSync() {
+    const s = await api.discogsStartSync();
+    setSync(s);
   }
 
-  const handleLogout = async () => {
-    clearToken();
-    await fetch(`${API_URL}/auth/logout`, { method: "POST" }).catch(() => {});
-    router.replace("/");
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Disc3 size={24} className="animate-spin text-vs-muted" />
+      </div>
+    );
+  }
 
-  if (!user) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Disc3 size={32} className="animate-spin text-vinyl-muted" />
-    </div>
-  );
+  const isRunning = sync?.status === "running";
+  const pct = sync && sync.total > 0
+    ? Math.round(((sync.imported + sync.skipped) / sync.total) * 100)
+    : 0;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10 flex flex-col gap-8">
-      <h1 className="text-3xl font-bold">Settings</h1>
+    <div className="px-6 py-6 max-w-2xl">
+      <div className="mb-6">
+        <h1 className="text-xl font-medium">Settings</h1>
+        <p className="text-sm text-vs-text-2 mt-0.5">Account &amp; integrations</p>
+      </div>
 
-      <div className="card p-6 flex flex-col gap-5">
-        <h2 className="text-lg font-bold">Discogs Account</h2>
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-vinyl-border rounded-full flex items-center justify-center">
-            <Disc3 size={24} className="text-vinyl-accent" />
+      {/* Discogs connection */}
+      <div className="card p-5 mb-4">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-vs-accent/10 border border-vs-accent/20 flex items-center justify-center">
+              <Disc3 size={16} className="text-vs-accent" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Discogs</p>
+              <p className="text-xs text-vs-muted">Collection sync &amp; identity</p>
+            </div>
           </div>
-          <div>
-            <p className="font-semibold">{user.discogs_username}</p>
-            <p className="text-vinyl-muted text-sm">Connected since {new Date(user.created_at).toLocaleDateString()}</p>
-          </div>
+          <span className="pill-in-stock">
+            <span className="w-1.5 h-1.5 rounded-full bg-vs-success" />
+            Connected
+          </span>
         </div>
-        <a
-          href={`https://www.discogs.com/user/${user.discogs_username}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-vinyl-accent hover:underline text-sm"
-        >
-          View Discogs profile →
-        </a>
-      </div>
 
-      <div className="card p-6 flex flex-col gap-4">
-        <h2 className="text-lg font-bold">Account</h2>
-        <p className="text-vinyl-muted text-sm">
-          Member since {new Date(user.created_at).toLocaleDateString()}
-        </p>
-        <button onClick={handleLogout} className="btn-secondary flex items-center gap-2 w-fit">
-          <LogOut size={16} />
-          Log Out
-        </button>
-      </div>
+        <div className="bg-vs-raised rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-vs-muted">Signed in as</p>
+              <p className="text-sm font-medium text-vs-text">{user?.discogs_username}</p>
+            </div>
+            <a
+              href={`https://www.discogs.com/user/${user?.discogs_username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-vs-muted hover:text-vs-accent"
+            >
+              <ExternalLink size={14} />
+            </a>
+          </div>
+          {sync?.last_sync && (
+            <p className="text-xs text-vs-muted mt-2 flex items-center gap-1.5">
+              <Clock size={11} />
+              Last synced {fmtDate(sync.last_sync)}
+            </p>
+          )}
+        </div>
 
-      <div className="card p-6 flex flex-col gap-4">
-        <div>
-          <h2 className="text-lg font-bold">Pricing</h2>
-          <p className="text-vinyl-muted text-sm mt-1">
-            Auto-markup applied on top of Discogs lowest price when a record is added.
-            Leave blank for no markup.
+        {/* Sync section */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-sm font-medium">Collection sync</p>
+            {!isRunning && (
+              <button onClick={startSync} className="btn-primary flex items-center gap-1.5 py-1.5 text-xs">
+                {sync?.status === "done"
+                  ? <><RefreshCw size={12} />Re-sync</>
+                  : <><ArrowDownToLine size={12} />Import collection</>
+                }
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-vs-muted mb-3">
+            Import your entire Discogs collection into the app. Records already in your catalog are skipped.
+            New records added here are automatically pushed to your Discogs collection too.
           </p>
+
+          {isRunning && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Loader2 size={14} className="animate-spin text-vs-accent" />
+                <span className="text-vs-text-2">
+                  Importing{sync.total > 0 ? ` ${sync.imported + sync.skipped} / ${sync.total}` : "…"}
+                </span>
+              </div>
+              {sync.total > 0 && (
+                <div className="h-1.5 bg-vs-raised rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-vs-accent rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              )}
+              <p className="text-xs text-vs-muted">
+                {sync.imported} new · {sync.skipped} skipped
+              </p>
+            </div>
+          )}
+
+          {sync?.status === "done" && !isRunning && (
+            <div className="flex items-start gap-2 p-3 bg-vs-success/5 border border-vs-success/20 rounded-lg">
+              <CheckCircle2 size={14} className="text-vs-success flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-vs-success font-medium">Sync complete</p>
+                <p className="text-xs text-vs-text-2 mt-0.5">
+                  {sync.imported} records imported · {sync.skipped} already in catalog
+                  {sync.finished_at && ` · ${fmtDate(sync.finished_at)}`}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {sync?.status === "error" && (
+            <div className="flex items-start gap-2 p-3 bg-vs-danger/5 border border-vs-danger/20 rounded-lg">
+              <AlertCircle size={14} className="text-vs-danger flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-vs-danger font-medium">Sync failed</p>
+                <p className="text-xs text-vs-text-2 mt-0.5">{sync.error}</p>
+              </div>
+            </div>
+          )}
+
+          {(!sync || sync.status === "idle") && !isRunning && (
+            <div className="p-3 bg-vs-raised rounded-lg text-xs text-vs-muted">
+              No sync run yet. Click "Import collection" to pull your Discogs library.
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <input
-              type="number"
-              min="-100"
-              max="500"
-              step="1"
-              value={markupInput}
-              onChange={(e) => setMarkupInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && saveMarkup()}
-              placeholder="0"
-              className="w-24 bg-vinyl-border rounded-xl px-3 py-2 text-sm text-vinyl-text placeholder-vinyl-muted focus:outline-none focus:ring-1 focus:ring-vinyl-accent"
-            />
-            <span className="text-vinyl-muted text-sm">%</span>
-          </div>
-          <button
-            onClick={saveMarkup}
-            disabled={markupSaving}
-            className="btn-primary text-sm py-2 px-4 flex items-center gap-1.5 disabled:opacity-50"
-          >
-            {markupSaved ? <><Check size={14} /> Saved</> : markupSaving ? "Saving…" : "Save"}
-          </button>
+
+        {/* How it works */}
+        <div className="border-t border-vs-border pt-4">
+          <p className="text-xs font-medium text-vs-text-2 mb-2">How it works</p>
+          <ul className="space-y-1.5 text-xs text-vs-muted">
+            <li className="flex items-start gap-2">
+              <span className="text-vs-accent mt-0.5">→</span>
+              <span>Import pulls every release from your Discogs collection. Existing records are untouched.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-vs-accent mt-0.5">→</span>
+              <span>Condition defaults to VG+. Edit individually after import.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-vs-accent mt-0.5">→</span>
+              <span>Adding a record here (with a Discogs release ID) automatically adds it to your Discogs collection.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-vs-accent mt-0.5">→</span>
+              <span>Synced records show a Discogs link in the catalog.</span>
+            </li>
+          </ul>
         </div>
-        <p className="text-xs text-vinyl-muted">
-          Example: 20% markup on a $5 lowest-price record → asking price $6.00
-        </p>
       </div>
 
-      <div className="card p-6 flex flex-col gap-3">
-        <h2 className="text-lg font-bold">Quick Links</h2>
-        <div className="flex flex-col gap-2">
-          <Link href="/dashboard" className="text-vinyl-muted hover:text-vinyl-text text-sm transition-colors">→ Dashboard</Link>
-          <Link href="/history" className="text-vinyl-muted hover:text-vinyl-text text-sm transition-colors">→ Scan History</Link>
-          <Link href="/credits" className="text-vinyl-muted hover:text-vinyl-text text-sm transition-colors">→ Credits & Billing</Link>
+      {/* Account section */}
+      <div className="card p-5">
+        <p className="text-sm font-medium mb-3">Account</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-vs-text">{user?.discogs_username}</p>
+            <p className="text-xs text-vs-muted">{user?.credits} scan credits remaining</p>
+          </div>
+          <a href={api.loginUrl()} className="btn-secondary text-xs">
+            Reconnect Discogs
+          </a>
         </div>
       </div>
     </div>
