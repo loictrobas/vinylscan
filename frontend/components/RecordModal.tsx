@@ -109,6 +109,7 @@ export function RecordModal({ record, lots, onClose, onSaved }: RecordModalProps
   }
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-vs-card border border-vs-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -291,5 +292,6 @@ export function RecordModal({ record, lots, onClose, onSaved }: RecordModalProps
         />
       </div>
     )}
+    </>
   );
 }
