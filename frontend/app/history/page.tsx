@@ -9,7 +9,7 @@ const STATUS_LABELS: Record<string, string> = {
   auto_added: "Auto-added",
   manually_added: "Confirmed",
   skipped: "Skipped",
-  pending: "Pending",
+  pending: "Not finished",
 };
 
 const STATUS_COLORS: Record<string, string> = {
