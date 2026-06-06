@@ -2,8 +2,37 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export interface User {
   id: string;
-  discogs_username: string;
+  discogs_username: string | null;
+  email: string | null;
+  display_name: string | null;
+  is_admin: boolean;
+  is_active: boolean;
   credits: number;
+  created_at: string;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  discogs_username: string | null;
+  credits: number;
+  is_admin: boolean;
+  is_active: boolean;
+  created_at: string;
+  record_count: number;
+  scan_count: number;
+  last_discogs_sync: string | null;
+}
+
+export interface AdminInvite {
+  id: string;
+  email: string;
+  note: string | null;
+  token: string;
+  invite_url: string;
+  used_at: string | null;
+  expires_at: string | null;
   created_at: string;
 }
 
@@ -363,4 +392,53 @@ export const api = {
     apiFetch<Record<string, { lowest: number; currency: string; num_for_sale: number } | null>>(
       `/discogs/prices?release_ids=${releaseIds.join(",")}`
     ),
+
+  // ── Email/password auth ─────────────────────────────────────────────────
+  emailLogin: (email: string, password: string) =>
+    apiFetch<{ ok: boolean; user_id: string; is_admin: boolean }>(
+      "/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }
+    ),
+
+  registerViaInvite: (token: string, password: string, displayName?: string) =>
+    apiFetch<{ ok: boolean; user_id: string }>(
+      "/auth/register", { method: "POST", body: JSON.stringify({ token, password, display_name: displayName ?? null }) }
+    ),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiFetch<{ ok: boolean }>(
+      "/auth/change-password", { method: "POST", body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }) }
+    ),
+
+  resetPassword: (token: string, newPassword: string) =>
+    apiFetch<{ ok: boolean }>(
+      "/auth/reset-password", { method: "POST", body: JSON.stringify({ token, new_password: newPassword }) }
+    ),
+
+  // ── Admin ───────────────────────────────────────────────────────────────
+  adminListUsers: () =>
+    apiFetch<AdminUser[]>("/admin/users"),
+
+  adminGetUser: (userId: string) =>
+    apiFetch<AdminUser>(`/admin/users/${userId}`),
+
+  adminPatchUser: (userId: string, patch: { display_name?: string; credits?: number; is_active?: boolean; is_admin?: boolean }) =>
+    apiFetch<AdminUser>(`/admin/users/${userId}`, { method: "PATCH", body: JSON.stringify(patch) }),
+
+  adminGenerateResetLink: (userId: string) =>
+    apiFetch<{ reset_url: string; expires_in: string }>(`/admin/users/${userId}/reset-link`, { method: "POST" }),
+
+  adminClearDiscogs: (userId: string) =>
+    apiFetch<{ ok: boolean }>(`/admin/users/${userId}/clear-discogs`, { method: "POST" }),
+
+  adminListInvites: () =>
+    apiFetch<AdminInvite[]>("/admin/invites"),
+
+  adminCreateInvite: (email: string, note?: string, expiresDays = 7) =>
+    apiFetch<AdminInvite>("/admin/invites", {
+      method: "POST",
+      body: JSON.stringify({ email, note: note ?? null, expires_days: expiresDays }),
+    }),
+
+  adminRevokeInvite: (inviteId: string) =>
+    apiFetch<void>(`/admin/invites/${inviteId}`, { method: "DELETE" }),
 };

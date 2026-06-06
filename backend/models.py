@@ -45,9 +45,16 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    discogs_username: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    discogs_oauth_token: Mapped[str] = mapped_column(Text, nullable=False)
-    discogs_oauth_token_secret: Mapped[str] = mapped_column(Text, nullable=False)
+    # Email/password auth (optional — users may be Discogs-only)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
+    password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Discogs OAuth (optional for email-only users)
+    discogs_username: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    discogs_oauth_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    discogs_oauth_token_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
     credits: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
     last_free_topup_month: Mapped[str] = mapped_column(String(7), nullable=False, default="")
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -60,6 +67,8 @@ class User(Base):
     credit_transactions: Mapped[list["CreditTransaction"]] = relationship("CreditTransaction", back_populates="user")
     lots: Mapped[list["Lot"]] = relationship("Lot", back_populates="user")
     records: Mapped[list["Record"]] = relationship("Record", back_populates="user")
+    invites_created: Mapped[list["Invite"]] = relationship("Invite", back_populates="creator", foreign_keys="Invite.created_by")
+    password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship("PasswordResetToken", back_populates="user")
 
 
 class Scan(Base):
@@ -162,3 +171,32 @@ class Record(Base):
         Index("ix_records_lot_id", "lot_id"),
         Index("ix_records_discogs_release_id", "discogs_release_id"),
     )
+
+
+class Invite(Base):
+    __tablename__ = "invites"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    token: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    used_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    creator: Mapped["User"] = relationship("User", back_populates="invites_created", foreign_keys=[created_by])
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    token: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    user: Mapped["User"] = relationship("User", back_populates="password_reset_tokens")

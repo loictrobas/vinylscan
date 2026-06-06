@@ -43,6 +43,8 @@ async def get_current_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account disabled — contact support")
     return user
 
 
@@ -159,3 +161,163 @@ async def logout_get():
     response = RedirectResponse(url=FRONTEND_URL)
     response.delete_cookie("access_token")
     return response
+
+
+# ── Email / password auth ─────────────────────────────────────────────────────
+
+import secrets
+from datetime import timedelta
+from pydantic import BaseModel as _BM
+
+from models import Invite, PasswordResetToken
+
+FRONTEND_URL_FOR_RESET = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+
+def _hash_password(password: str) -> str:
+    import hashlib, binascii
+    salt = os.urandom(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 260_000)
+    return binascii.hexlify(salt).decode() + ":" + binascii.hexlify(dk).decode()
+
+
+def _verify_password(password: str, stored: str) -> bool:
+    import hashlib, binascii
+    try:
+        salt_hex, dk_hex = stored.split(":")
+        salt = binascii.unhexlify(salt_hex)
+        dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 260_000)
+        return binascii.hexlify(dk).decode() == dk_hex
+    except Exception:
+        return False
+
+
+class EmailLoginRequest(_BM):
+    email: str
+    password: str
+
+
+class RegisterRequest(_BM):
+    token: str
+    password: str
+    display_name: str | None = None
+
+
+class ChangePasswordRequest(_BM):
+    current_password: str
+    new_password: str
+
+
+class ResetPasswordRequest(_BM):
+    token: str
+    new_password: str
+
+
+@router.post("/login")
+async def email_login(
+    body: EmailLoginRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.email == body.email.lower().strip()))
+    user = result.scalar_one_or_none()
+    if not user or not user.password_hash or not _verify_password(body.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account disabled — contact support")
+    token = create_access_token(str(user.id))
+    response.set_cookie(
+        "access_token", token,
+        httponly=True, secure=True, samesite="lax",
+        max_age=60 * 60 * 24 * 30,
+    )
+    return {"ok": True, "user_id": str(user.id), "is_admin": user.is_admin}
+
+
+@router.post("/register")
+async def register_via_invite(
+    body: RegisterRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
+    now = datetime.now(timezone.utc)
+    result = await db.execute(select(Invite).where(Invite.token == body.token))
+    invite = result.scalar_one_or_none()
+    if not invite:
+        raise HTTPException(status_code=404, detail="Invite not found or already used")
+    if invite.used_at is not None:
+        raise HTTPException(status_code=400, detail="Invite already used")
+    if invite.expires_at and invite.expires_at < now:
+        raise HTTPException(status_code=400, detail="Invite expired")
+
+    # Email must not already exist
+    existing = await db.execute(select(User).where(User.email == invite.email.lower()))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="An account with this email already exists")
+
+    if len(body.password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
+
+    user = User(
+        email=invite.email.lower(),
+        password_hash=_hash_password(body.password),
+        display_name=body.display_name or invite.email.split("@")[0],
+        is_active=True,
+        is_admin=False,
+        credits=5,
+        last_free_topup_month="",
+    )
+    db.add(user)
+    await db.flush()
+
+    invite.used_at = now
+    invite.used_by = user.id
+    await db.commit()
+    await db.refresh(user)
+
+    token = create_access_token(str(user.id))
+    response.set_cookie(
+        "access_token", token,
+        httponly=True, secure=True, samesite="lax",
+        max_age=60 * 60 * 24 * 30,
+    )
+    return {"ok": True, "user_id": str(user.id)}
+
+
+@router.post("/change-password")
+async def change_password(
+    body: ChangePasswordRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not user.password_hash or not _verify_password(body.current_password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Current password incorrect")
+    if len(body.new_password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
+    user.password_hash = _hash_password(body.new_password)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.post("/reset-password")
+async def reset_password(
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    now = datetime.now(timezone.utc)
+    result = await db.execute(
+        select(PasswordResetToken).where(PasswordResetToken.token == body.token)
+    )
+    prt = result.scalar_one_or_none()
+    if not prt or prt.used_at or prt.expires_at < now:
+        raise HTTPException(status_code=400, detail="Reset link invalid or expired")
+    if len(body.new_password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
+    result2 = await db.execute(select(User).where(User.id == prt.user_id))
+    user = result2.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.password_hash = _hash_password(body.new_password)
+    prt.used_at = now
+    await db.commit()
+    return {"ok": True}
