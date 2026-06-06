@@ -82,6 +82,7 @@ export interface CatalogRecord {
   discogs_instance_id: number | null;
   discogs_synced: boolean;
   discogs_url: string | null;
+  cover_image_url: string | null;
   status: "in_stock" | "sold";
   cost_price: number | null;
   asking_price: number | null;
@@ -346,5 +347,20 @@ export const api = {
   discogsPushRecord: (recordId: string) =>
     apiFetch<{ ok: boolean; instance_id: number | null; message: string }>(
       `/discogs/collection/add/${recordId}`, { method: "POST" }
+    ),
+
+  discogsBackfillCovers: () =>
+    apiFetch<{ status: string; total: number; checked: number; updated: number; error: string | null }>(
+      "/discogs/backfill-covers", { method: "POST" }
+    ),
+
+  discogsBackfillStatus: () =>
+    apiFetch<{ status: string; total: number; checked: number; updated: number; error: string | null }>(
+      "/discogs/backfill-covers/status"
+    ),
+
+  fetchDiscogsPrices: (releaseIds: number[]) =>
+    apiFetch<Record<string, { lowest: number; currency: string; num_for_sale: number } | null>>(
+      `/discogs/prices?release_ids=${releaseIds.join(",")}`
     ),
 };
