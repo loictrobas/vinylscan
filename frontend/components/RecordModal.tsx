@@ -17,6 +17,7 @@ interface RecordModalProps {
 
 export function RecordModal({ record, lots, onClose, onSaved }: RecordModalProps) {
   const isNew = !record;
+  const [lightbox, setLightbox] = useState(false);
 
   const [askingPrice, setAskingPrice] = useState(
     record?.asking_price != null ? String(record.asking_price) : ""
@@ -121,7 +122,18 @@ export function RecordModal({ record, lots, onClose, onSaved }: RecordModalProps
         {/* Price hero */}
         <div className="px-6 pt-5 pb-4 border-b border-vs-border/60 bg-vs-raised/30">
           <div className="flex items-center gap-4">
-            <CoverThumb url={record?.cover_image_url} large />
+            {record?.cover_image_url ? (
+              <button
+                type="button"
+                onClick={() => setLightbox(true)}
+                className="flex-shrink-0 rounded-xl overflow-hidden border border-vs-border hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-vs-accent"
+                title="Click to enlarge"
+              >
+                <CoverThumb url={record.cover_image_url} large />
+              </button>
+            ) : (
+              <CoverThumb url={null} large />
+            )}
             <div className="flex-1 min-w-0">
               {record && (
                 <p className="text-sm font-medium text-vs-text mb-0.5 truncate">
@@ -256,5 +268,28 @@ export function RecordModal({ record, lots, onClose, onSaved }: RecordModalProps
         </div>
       </div>
     </div>
+
+    {/* Lightbox */}
+    {lightbox && record?.cover_image_url && (
+      <div
+        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 backdrop-blur-sm"
+        onClick={() => setLightbox(false)}
+      >
+        <button
+          type="button"
+          onClick={() => setLightbox(false)}
+          className="absolute top-4 right-4 text-white/70 hover:text-white"
+          aria-label="Close image"
+        >
+          <X size={28} />
+        </button>
+        <img
+          src={record.cover_image_url}
+          alt={record.title ?? "Cover"}
+          className="max-w-[90vw] max-h-[90vh] rounded-2xl shadow-2xl object-contain"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )}
   );
 }
