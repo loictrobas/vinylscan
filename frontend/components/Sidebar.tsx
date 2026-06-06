@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Disc3,
   Camera,
-  Archive,
   Package,
   ShoppingCart,
   History,
@@ -48,8 +47,7 @@ const NAV: NavSection[] = [
   {
     label: "Inventory",
     items: [
-      { href: "/inventory",        label: "Stock",    icon: <Archive size={16} /> },
-      { href: "/catalog/lots",     label: "Lots",     icon: <Layers size={16} /> },
+      { href: "/catalog/lots",        label: "Lots",      icon: <Layers size={16} /> },
       { href: "/inventory/movements", label: "Movements", icon: <History size={16} /> },
     ],
   },
