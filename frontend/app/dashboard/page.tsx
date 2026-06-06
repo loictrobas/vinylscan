@@ -102,7 +102,11 @@ export default function DashboardPage() {
               <div key={scan.id} className="flex items-center gap-3 py-2 border-b border-vinyl-border last:border-0">
                 <Disc3 size={18} className="text-vinyl-muted flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{scan.artist} — {scan.title || "Unknown"}</p>
+                  <p className="font-medium truncate">
+                    {scan.artist && scan.title
+                      ? `${scan.artist} — ${scan.title}`
+                      : scan.artist || scan.title || "Identification failed"}
+                  </p>
                   <p className="text-vinyl-muted text-xs">{new Date(scan.created_at).toLocaleDateString()}</p>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[scan.status]}`}>

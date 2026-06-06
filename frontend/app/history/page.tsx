@@ -55,7 +55,11 @@ export default function HistoryPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-semibold truncate">
-                      {scan.artist || "Unknown Artist"} — {scan.title || "Unknown Title"}
+                      {scan.artist && scan.title
+                        ? `${scan.artist} — ${scan.title}`
+                        : scan.artist || scan.title
+                        ? scan.artist || scan.title
+                        : <span className="text-vinyl-muted italic">Identification failed</span>}
                     </p>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       {scan.year && <span className="text-vinyl-muted text-xs">{scan.year}</span>}
