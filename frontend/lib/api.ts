@@ -92,6 +92,11 @@ export function clearToken() {
 let _creditBalance: number | null = null;
 const _creditListeners: Array<(n: number) => void> = [];
 
+// Cache /auth/me so multiple components don't each fire a request on mount.
+// Cleared on logout so next login fetches fresh data.
+let _meCache: Promise<User> | null = null;
+export function clearMeCache() { _meCache = null; }
+
 export function subscribeCreditBalance(fn: (n: number) => void) {
   _creditListeners.push(fn);
   return () => {
@@ -138,8 +143,12 @@ async function apiFetch<T>(
 }
 
 export const api = {
-  me: () => apiFetch<User>("/auth/me"),
-  logout: () => { clearToken(); return apiFetch<void>("/auth/logout", { method: "POST" }); },
+  me: () => {
+    if (!getToken()) return Promise.reject(new Error("Not authenticated"));
+    if (!_meCache) _meCache = apiFetch<User>("/auth/me");
+    return _meCache;
+  },
+  logout: () => { clearToken(); clearMeCache(); return apiFetch<void>("/auth/logout", { method: "POST" }); },
 
   uploadScan: async (file: File): Promise<ScanUploadResponse> => {
     const form = new FormData();
