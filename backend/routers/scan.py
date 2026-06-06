@@ -8,14 +8,14 @@ from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
 import aioboto3
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, Response, UploadFile
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 from middleware.auth_middleware import decrypt
-from models import CreditReason, CreditTransaction, Scan, ScanStatus, User
+from models import CreditReason, CreditTransaction, Record, RecordCondition, Scan, ScanStatus, User
 from routers.auth import apply_monthly_topup, get_current_user
 from schemas import ConfirmRequest, DiscogsMatch, ScanOut, ScanUploadResponse
 from services import claude_vision, discogs as discogs_svc
@@ -161,6 +161,7 @@ async def upload_scan(
     scan.year = claude_result.get("year")
     scan.label = claude_result.get("label")
     scan.catalog_number = claude_result.get("catalog_number")
+    scan.format = claude_result.get("format")
     scan.confidence = claude_result.get("confidence")  # None if Claude omits it → no badge shown
     await db.commit()
 
@@ -217,11 +218,74 @@ async def get_pricing(
     return {"release_id": release_id, "pricing": data}
 
 
+async def _create_catalog_record(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    release_id: int,
+    condition: str,
+    lot_id: uuid.UUID | None,
+    scan: "Scan | None" = None,
+    artist: str | None = None,
+    title: str | None = None,
+    year: int | None = None,
+    label: str | None = None,
+    catalog_number: str | None = None,
+    format: str | None = None,
+) -> Record:
+    # Normalise condition to a valid enum value; fall back to VG+
+    valid_conditions = {e.value for e in RecordCondition}
+    if condition not in valid_conditions:
+        condition = RecordCondition.VG_PLUS.value
+
+    record = Record(
+        user_id=user_id,
+        lot_id=lot_id,
+        scan_id=scan.id if scan else None,
+        artist=artist or (scan.artist if scan else None),
+        title=title or (scan.title if scan else None),
+        year=year or (scan.year if scan else None),
+        label=label or (scan.label if scan else None),
+        catalog_number=catalog_number or (scan.catalog_number if scan else None),
+        format=format or (scan.format if scan else None),
+        condition=condition,
+        discogs_release_id=release_id,
+    )
+    db.add(record)
+    return record
+
+
+async def _fetch_and_set_price(
+    record_id: uuid.UUID,
+    release_id: int,
+    access_token: str,
+    access_token_secret: str,
+) -> None:
+    from database import AsyncSessionLocal
+    from models import User as _User
+    async with AsyncSessionLocal() as db:
+        try:
+            pricing = await discogs_svc.get_marketplace_stats(release_id, access_token, access_token_secret)
+            lowest = pricing.get("lowest") if pricing else None
+            if lowest is not None:
+                result = await db.execute(select(Record).where(Record.id == record_id))
+                record = result.scalar_one_or_none()
+                if record and record.asking_price is None:
+                    # Apply user's markup if set
+                    user_result = await db.execute(select(_User).where(_User.id == record.user_id))
+                    user = user_result.scalar_one_or_none()
+                    markup = (user.price_markup_pct or 0) if user else 0
+                    record.asking_price = round(lowest * (1 + markup / 100), 2)
+                    await db.commit()
+        except Exception:
+            pass
+
+
 @router.post("/{scan_id}/confirm")
 async def confirm_scan(
     scan_id: uuid.UUID,
     body: ConfirmRequest,
     response: Response,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -246,11 +310,31 @@ async def confirm_scan(
 
     scan.discogs_release_id = body.release_id
     scan.status = ScanStatus.manually_added
+
+    record = await _create_catalog_record(
+        db=db,
+        user_id=user.id,
+        release_id=body.release_id,
+        condition=body.condition,
+        lot_id=body.lot_id,
+        scan=scan,
+    )
+    await db.flush()
+
     await _deduct_credit(user, scan, CreditReason.scan_used, db)
     await db.commit()
     await db.refresh(user)
+
+    background_tasks.add_task(
+        _fetch_and_set_price,
+        record.id,
+        body.release_id,
+        access_token,
+        access_token_secret,
+    )
+
     _set_credit_header(response, user)
-    return {"ok": True, "credits_remaining": user.credits}
+    return {"ok": True, "credits_remaining": user.credits, "record_id": str(record.id)}
 
 
 @router.post("/{scan_id}/skip")
@@ -301,6 +385,7 @@ async def barcode_lookup(
 async def barcode_add(
     body: ConfirmRequest,
     response: Response,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -315,8 +400,26 @@ async def barcode_add(
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Discogs error: {e}")
 
+    record = await _create_catalog_record(
+        db=db,
+        user_id=user.id,
+        release_id=body.release_id,
+        condition=body.condition,
+        lot_id=body.lot_id,
+    )
+    await db.commit()
+    await db.refresh(record)
+
+    background_tasks.add_task(
+        _fetch_and_set_price,
+        record.id,
+        body.release_id,
+        access_token,
+        access_token_secret,
+    )
+
     _set_credit_header(response, user)
-    return {"ok": True}
+    return {"ok": True, "record_id": str(record.id)}
 
 
 @router.get("/history", response_model=list[ScanOut])
