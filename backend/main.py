@@ -9,12 +9,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from database import init_db
-from routers import auth, billing, dashboard, scan
+from routers import auth, billing, catalog, dashboard, scan
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 IMAGES_DIR = os.getenv("IMAGES_DIR", "/tmp/vinylscan_images")
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
+
+
+def _run_migrations():
+    """Run alembic upgrade head synchronously at startup."""
+    from alembic.config import Config
+    from alembic import command
+    import pathlib
+
+    alembic_cfg = Config(str(pathlib.Path(__file__).parent / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(pathlib.Path(__file__).parent / "alembic"))
+    command.upgrade(alembic_cfg, "head")
 
 
 @asynccontextmanager
@@ -22,11 +32,11 @@ async def lifespan(app: FastAPI):
     import asyncio
     for attempt in range(5):
         try:
-            await init_db()
+            await asyncio.get_event_loop().run_in_executor(None, _run_migrations)
             break
         except Exception as e:
             if attempt == 4:
-                print(f"[startup] DB init failed after 5 attempts: {e}", flush=True)
+                print(f"[startup] DB migration failed after 5 attempts: {e}", flush=True)
             else:
                 print(f"[startup] DB not ready (attempt {attempt+1}/5), retrying in 3s: {e}", flush=True)
                 await asyncio.sleep(3)
@@ -57,6 +67,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(scan.router)
+app.include_router(catalog.router)
 app.include_router(dashboard.router)
 app.include_router(billing.router)
 

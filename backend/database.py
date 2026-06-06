@@ -23,6 +23,6 @@ async def get_db():
 
 
 async def init_db():
-    from models import User, Scan, CreditTransaction  # noqa: F401
+    from models import User, Scan, CreditTransaction, Lot, Record  # noqa: F401
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
