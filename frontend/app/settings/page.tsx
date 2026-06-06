@@ -4,9 +4,17 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Disc3, RefreshCw, CheckCircle2, AlertCircle, ExternalLink,
-  Loader2, Clock, ArrowDownToLine,
+  Loader2, Clock, ArrowDownToLine, Image,
 } from "lucide-react";
 import { api, getToken, type DiscogsSyncStatus, type User } from "@/lib/api";
+
+interface BackfillStatus {
+  status: string;
+  total: number;
+  checked: number;
+  updated: number;
+  error: string | null;
+}
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
@@ -20,12 +28,14 @@ export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [sync, setSync] = useState<DiscogsSyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [backfill, setBackfill] = useState<BackfillStatus | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const backfillPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!getToken()) { router.replace("/"); return; }
-    Promise.all([api.me(), api.discogsSyncStatus()])
-      .then(([u, s]) => { setUser(u); setSync(s); })
+    Promise.all([api.me(), api.discogsSyncStatus(), api.discogsBackfillStatus()])
+      .then(([u, s, b]) => { setUser(u); setSync(s); setBackfill(b); })
       .catch(() => router.replace("/"))
       .finally(() => setLoading(false));
   }, [router]);
@@ -47,9 +57,31 @@ export default function SettingsPage() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [sync?.status]);
 
+  // Poll backfill while running
+  useEffect(() => {
+    if (backfill?.status === "running") {
+      backfillPollRef.current = setInterval(async () => {
+        const b = await api.discogsBackfillStatus().catch(() => null);
+        if (b) {
+          setBackfill(b);
+          if (b.status !== "running" && backfillPollRef.current) {
+            clearInterval(backfillPollRef.current);
+            backfillPollRef.current = null;
+          }
+        }
+      }, 2000);
+    }
+    return () => { if (backfillPollRef.current) clearInterval(backfillPollRef.current); };
+  }, [backfill?.status]);
+
   async function startSync() {
     const s = await api.discogsStartSync();
     setSync(s);
+  }
+
+  async function startBackfillCovers() {
+    const b = await api.discogsBackfillCovers();
+    setBackfill(b);
   }
 
   if (loading) {
@@ -205,6 +237,85 @@ export default function SettingsPage() {
             </li>
           </ul>
         </div>
+      </div>
+
+      {/* Fix missing covers */}
+      <div className="card p-5 mb-4">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-9 h-9 rounded-xl bg-vs-accent/10 border border-vs-accent/20 flex items-center justify-center flex-shrink-0">
+            <Image size={16} className="text-vs-accent" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Fix missing cover images</p>
+            <p className="text-xs text-vs-muted mt-0.5">
+              Re-fetch album artwork from Discogs for all records without a cover image.
+            </p>
+          </div>
+        </div>
+
+        {(!backfill || backfill.status === "idle") && (
+          <button onClick={startBackfillCovers} className="btn-primary flex items-center gap-1.5 py-1.5 text-xs">
+            <Image size={12} />
+            Fix missing covers
+          </button>
+        )}
+
+        {backfill?.status === "running" && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Loader2 size={14} className="animate-spin text-vs-accent" />
+              <span className="text-vs-text-2">
+                {backfill.total > 0
+                  ? `Fetching collection… ${backfill.checked} / ${backfill.total} checked`
+                  : "Fetching your Discogs collection…"}
+              </span>
+            </div>
+            {backfill.total > 0 && (
+              <div className="h-1.5 bg-vs-raised rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-vs-accent rounded-full transition-all duration-500"
+                  style={{ width: `${Math.round((backfill.checked / backfill.total) * 100)}%` }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {backfill?.status === "done" && (
+          <div className="flex items-start gap-2 p-3 bg-vs-success/5 border border-vs-success/20 rounded-lg">
+            <CheckCircle2 size={14} className="text-vs-success flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-vs-success font-medium">Done</p>
+              <p className="text-xs text-vs-text-2 mt-0.5">
+                {backfill.updated > 0
+                  ? `Updated ${backfill.updated} cover image${backfill.updated !== 1 ? "s" : ""}`
+                  : "All covers already up to date"}
+              </p>
+              <button
+                onClick={startBackfillCovers}
+                className="mt-2 text-xs text-vs-muted hover:text-vs-accent underline underline-offset-2"
+              >
+                Run again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {backfill?.status === "error" && (
+          <div className="flex items-start gap-2 p-3 bg-vs-danger/5 border border-vs-danger/20 rounded-lg">
+            <AlertCircle size={14} className="text-vs-danger flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-vs-danger font-medium">Failed</p>
+              <p className="text-xs text-vs-text-2 mt-0.5">{backfill.error}</p>
+              <button
+                onClick={startBackfillCovers}
+                className="mt-2 text-xs text-vs-muted hover:text-vs-accent underline underline-offset-2"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Account section */}

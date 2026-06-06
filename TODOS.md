@@ -2,6 +2,55 @@
 
 ## Deferred with conditions
 
+### Backfill state persistence (Redis/DB)
+**What:** Move `_backfill_state` and `_sync_state` dicts from in-memory to a Redis key or
+a `background_tasks` DB table so state survives server restarts and works across workers.
+**Why:** Current in-memory state is lost if Render free-tier instance restarts mid-backfill.
+Single-worker is fine now; multi-worker would lose progress.
+**When:** Before scaling beyond 1 Render worker, or when backfill resume is required.
+**Effort:** S (human: ~1h / CC: ~10min)
+**Priority:** P3 — acceptable for current single-worker Render free tier
+
+### Backfill cursor/resume for large collections
+**What:** Store last-processed page/index so backfill can resume after interruption.
+**Why:** Collections >2000 records (Discogs page limit) may time out mid-flight.
+**When:** First user reports partial backfill or collection >2000 records.
+**Effort:** S (human: ~1h / CC: ~10min)
+**Priority:** P3 — typical collections under 2000 records
+
+### localStorage cart schema version
+**What:** Add `version` field to `vinylscan_cart` localStorage object so future schema
+changes can migrate or clear stale carts gracefully.
+**Why:** Schema changes to the cart object (adding fields, renaming keys) will silently
+break old carts already stored in the browser.
+**When:** Before next cart schema change.
+**Effort:** XS (human: ~15min / CC: ~2min)
+**Priority:** P2 — cheap insurance
+
+### Test coverage: bulk-delete partial failure + backfill empty-string path
+**What:** Add pytest tests for (a) `handleBulkDelete` allSettled behavior when some
+deletes fail, and (b) backfill correctly updating records with `cover_image_url = ""`.
+**Why:** Both edge cases were bugs fixed in this session with no regression coverage.
+**When:** Next test sprint.
+**Effort:** S (human: ~1h / CC: ~10min)
+**Priority:** P2
+
+### MarketCell column header disambiguation
+**What:** Rename catalog/inventory column header from "Market" to "Mkt Low" or add
+a tooltip clarifying this is the lowest current Discogs listing, not the user's asking price.
+**Why:** Dealers may confuse market price with their own asking_price — currently visually
+similar weight columns.
+**When:** UX polish sprint.
+**Effort:** XS (human: ~10min / CC: ~2min)
+**Priority:** P3
+
+### Rename "Add to cart" → "Add to Invoice" in POS flow
+**What:** Once the POS/sales flow has a settled name, update bulk-action button label.
+**Why:** "Cart" is consumer language; "Invoice" or "Sale" fits a B2B dealer tool better.
+**When:** After POS flow naming is finalized.
+**Effort:** XS (human: ~5min / CC: ~1min)
+**Priority:** P3
+
 ### Collective intelligence lookup layer
 **What:** When a user confirms a scan match, store the (cover_image_hash, discogs_release_id)
 pair. Before calling Discogs search, check our own confirmed-match table first. Return
@@ -84,3 +133,9 @@ may be unnecessary. Build only if null prices are reported as pain by store user
 
 ### T14: Pytest scaffold
 **Completed:** 2026-06-06 — conftest.py SQLite fixture, 3 critical path tests (confirm→Record, isolation, sell).
+
+### T15: Cover image backfill + catalog UX rewrite
+**Completed:** 2026-06-06 — `cover_image_url` column + Alembic migration, backfill endpoint with empty-string fix,
+batch prices endpoint, shared components (CoverThumb/CondBadge/RowCheckbox/RecordModal), catalog + inventory full
+rewrite with cover thumbnails, accessibility fixes (aria-label, 44×44 touch target), bulk-delete allSettled fix,
+timer unmount cleanup, Settings "Fix missing covers" card.

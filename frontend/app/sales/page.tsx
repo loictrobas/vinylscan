@@ -91,7 +91,16 @@ export default function POSPage() {
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!getToken()) { router.replace("/"); }
+    if (!getToken()) { router.replace("/"); return; }
+    // Pre-populate cart from catalog multi-select "Add to cart"
+    const stored = localStorage.getItem("vinylscan_pos_cart");
+    if (stored) {
+      try {
+        const items = JSON.parse(stored) as CatalogRecord[];
+        setCart(items.map((r) => ({ record: r, price: r.asking_price ?? 0 })));
+      } catch { /* ignore */ }
+      localStorage.removeItem("vinylscan_pos_cart");
+    }
   }, [router]);
 
   async function doSearch(q: string) {
