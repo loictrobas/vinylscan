@@ -143,6 +143,7 @@ class Record(Base):
     discogs_instance_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # collection instance_id
     discogs_synced: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     discogs_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cover_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     status: Mapped[RecordStatus] = mapped_column(
         Enum(RecordStatus, name="record_status"), default=RecordStatus.in_stock, nullable=False

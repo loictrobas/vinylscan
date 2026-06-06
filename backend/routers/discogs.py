@@ -10,8 +10,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Literal
 from uuid import UUID
-
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query as QueryParam
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,6 +26,7 @@ router = APIRouter(prefix="/discogs", tags=["discogs"])
 
 # ── In-memory sync state per user (UUID str → state dict) ────────────────────
 _sync_state: dict[str, dict] = {}
+_backfill_state: dict[str, dict] = {}
 
 
 def _get_tokens(user: User) -> tuple[str, str]:
@@ -65,13 +65,13 @@ async def _run_sync(user_id: str, username: str, token: str, secret: str) -> Non
                     continue
 
                 # Check if already in local collection (user may own multiple copies — use first())
-                existing = await db.execute(
+                existing_q = await db.execute(
                     select(Record.id).where(
                         Record.user_id == user_id,
                         Record.discogs_release_id == release_id,
                     ).limit(1)
                 )
-                if existing.scalar():
+                if existing_q.scalar():
                     state["skipped"] += 1
                     continue
 
@@ -86,7 +86,7 @@ async def _run_sync(user_id: str, username: str, token: str, secret: str) -> Non
                 label = labels[0].get("name") if labels else None
                 genres = basic.get("genres", [])
                 genre = genres[0] if genres else None
-                thumb = basic.get("thumb") or basic.get("cover_image")
+                thumb = basic.get("cover_image") or basic.get("thumb")  # cover_image > thumb (higher res, more reliable)
 
                 record = Record(
                     user_id=user_id,
@@ -102,6 +102,7 @@ async def _run_sync(user_id: str, username: str, token: str, secret: str) -> Non
                     discogs_url=f"https://www.discogs.com/release/{release_id}",
                     condition=RecordCondition.VG_PLUS.value,
                     status=RecordStatus.in_stock,
+                    cover_image_url=thumb or None,
                 )
                 db.add(record)
                 state["imported"] += 1
@@ -199,10 +200,137 @@ async def sync_status(
     )
 
 
+# ── Cover image backfill ─────────────────────────────────────────────────────
+
+async def _run_backfill_covers(user_id: str, username: str, token: str, secret: str) -> None:
+    """
+    Fast cover backfill:
+    1. Fetch entire Discogs collection → build release_id → cover_url map
+    2. Query all local records with null cover_image_url in one DB call
+    3. Update in one transaction
+    """
+    from database import AsyncSessionLocal as async_session_maker
+    from sqlalchemy import and_, or_
+
+    state = _backfill_state[user_id]
+    state["status"] = "running"
+    state["error"] = None
+
+    try:
+        items = await discogs_svc.get_full_collection(username, token, secret)
+        state["total"] = len(items)
+
+        # Build release_id → best available image URL
+        thumb_map: dict[int, str] = {}
+        for item in items:
+            basic = item.get("basic_information", {})
+            release_id: int | None = basic.get("id") or item.get("id")
+            url = basic.get("cover_image") or basic.get("thumb")
+            if release_id and url and url.startswith("http"):
+                thumb_map[release_id] = url
+
+        async with async_session_maker() as db:
+            result = await db.execute(
+                select(Record).where(
+                    and_(
+                        Record.user_id == user_id,
+                        Record.discogs_release_id.is_not(None),
+                        or_(
+                            Record.cover_image_url.is_(None),
+                            Record.cover_image_url == "",
+                        ),
+                    )
+                )
+            )
+            records_missing = result.scalars().all()
+            state["checked"] = len(records_missing)
+
+            updated = 0
+            for record in records_missing:
+                url = thumb_map.get(record.discogs_release_id)  # type: ignore[arg-type]
+                if url:
+                    record.cover_image_url = url
+                    updated += 1
+
+            await db.commit()
+            state["updated"] = updated
+
+        state["status"] = "done"
+
+    except Exception as exc:
+        logger.exception("Cover backfill failed for user %s", user_id)
+        state["status"] = "error"
+        state["error"] = str(exc)
+
+
+@router.post("/backfill-covers")
+async def start_backfill_covers(
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user),
+):
+    """Backfill cover_image_url for all records missing it. Fast: one collection fetch → bulk update."""
+    user_id = str(user.id)
+    if _backfill_state.get(user_id, {}).get("status") == "running":
+        return _backfill_state[user_id]
+    if not user.discogs_oauth_token:
+        raise HTTPException(status_code=400, detail="Discogs not connected")
+    token, secret = _get_tokens(user)
+    _backfill_state[user_id] = {
+        "status": "running", "total": 0, "checked": 0, "updated": 0, "error": None,
+    }
+    background_tasks.add_task(_run_backfill_covers, user_id, user.discogs_username, token, secret)
+    return _backfill_state[user_id]
+
+
+@router.get("/backfill-covers/status")
+async def backfill_covers_status(user: User = Depends(get_current_user)):
+    return _backfill_state.get(str(user.id), {
+        "status": "idle", "total": 0, "checked": 0, "updated": 0, "error": None,
+    })
+
+
 class PushResult(BaseModel):
     ok: bool
     instance_id: int | None
     message: str
+
+
+@router.get("/prices")
+async def batch_prices(
+    release_ids: str = QueryParam(..., description="Comma-separated release IDs"),
+    user: User = Depends(get_current_user),
+):
+    """
+    Batch-fetch Discogs marketplace stats for up to 50 release IDs.
+    Returns { "12345": { "lowest": 5.99, "currency": "USD", "num_for_sale": 12 }, ... }
+    """
+    ids_raw = [s.strip() for s in release_ids.split(",") if s.strip()][:50]
+    ids = []
+    for s in ids_raw:
+        try:
+            ids.append(int(s))
+        except ValueError:
+            pass
+    if not ids:
+        return {}
+
+    token, secret = _get_tokens(user)
+    sem = asyncio.Semaphore(5)
+
+    async def _fetch_one(rid: int):
+        async with sem:
+            result = await discogs_svc.get_marketplace_stats(rid, token, secret)
+            await asyncio.sleep(0.3)
+            return rid, result
+
+    results = await asyncio.gather(*[_fetch_one(rid) for rid in ids], return_exceptions=True)
+    out: dict[str, dict | None] = {}
+    for item in results:
+        if isinstance(item, Exception):
+            continue
+        rid, data = item
+        out[str(rid)] = data
+    return out
 
 
 @router.post("/collection/add/{record_id}", response_model=PushResult)

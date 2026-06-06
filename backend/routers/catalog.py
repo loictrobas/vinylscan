@@ -34,6 +34,7 @@ class RecordOut(BaseModel):
     discogs_instance_id: int | None
     discogs_synced: bool
     discogs_url: str | None
+    cover_image_url: str | None
     status: str
     cost_price: float | None
     asking_price: float | None
@@ -64,6 +65,7 @@ class RecordOut(BaseModel):
             discogs_instance_id=getattr(r, "discogs_instance_id", None),
             discogs_synced=getattr(r, "discogs_synced", False) or False,
             discogs_url=r.discogs_url,
+            cover_image_url=getattr(r, "cover_image_url", None),
             status=r.status.value if hasattr(r.status, "value") else r.status,
             cost_price=float(r.cost_price) if getattr(r, "cost_price", None) is not None else None,
             asking_price=float(r.asking_price) if r.asking_price is not None else None,
