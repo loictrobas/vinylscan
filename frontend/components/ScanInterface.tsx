@@ -40,12 +40,15 @@ function MatchCard({
   onAdd,
   disabled,
   isAdding,
+  ownedReleaseIds,
 }: {
   match: DiscogsMatch;
   onAdd: () => void;
   disabled: boolean;
   isAdding: boolean;
+  ownedReleaseIds: Set<number>;
 }) {
+  const alreadyOwned = ownedReleaseIds.has(match.release_id);
   const [price, setPrice] = useState<{ lowest: number; currency: string; num_for_sale: number } | null | "loading">("loading");
 
   useEffect(() => {
@@ -74,7 +77,14 @@ function MatchCard({
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm leading-tight">{match.artist}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-semibold text-sm leading-tight">{match.artist}</p>
+          {alreadyOwned && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-vs-accent/20 text-vs-accent font-medium">
+              Already owned
+            </span>
+          )}
+        </div>
         <p className="text-vinyl-muted text-sm truncate">{match.title}</p>
         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs text-vinyl-muted">
           {match.year && <span>{match.year}</span>}
@@ -113,7 +123,7 @@ function MatchCard({
         className="flex-shrink-0 btn-primary text-sm py-1.5 px-4 flex items-center gap-1.5 disabled:opacity-50"
       >
         {isAdding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-        Add
+        {alreadyOwned ? "Add copy" : "Add"}
       </button>
     </div>
   );
@@ -145,11 +155,13 @@ function ScanItem({
   onConfirm,
   onSkip,
   onConditionChange,
+  ownedReleaseIds,
 }: {
   item: QueueItem;
   onConfirm: (itemId: string, releaseId: number) => void;
   onSkip: (itemId: string) => void;
   onConditionChange: (itemId: string, condition: Condition) => void;
+  ownedReleaseIds: Set<number>;
 }) {
   const [showAllMatches, setShowAllMatches] = useState(false);
   const result = item.result;
@@ -169,7 +181,7 @@ function ScanItem({
         <img src={item.preview} alt="" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
         <div className="flex items-center gap-2">
           <Loader2 size={16} className="text-vinyl-accent animate-spin" />
-          <p className="text-sm">Identifying with Claude AI...</p>
+          <p className="text-sm text-vs-muted">Identifying…</p>
         </div>
       </div>
     );
@@ -240,6 +252,7 @@ function ScanItem({
                   onAdd={() => onConfirm(item.id, m.release_id)}
                   disabled={isConfirming}
                   isAdding={isConfirming}
+                  ownedReleaseIds={ownedReleaseIds}
                 />
               ))}
               {result.matches.length > 2 && (
@@ -291,8 +304,12 @@ export function ScanInterface() {
   const [online, setOnline] = useState(true);
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const [ownedReleaseIds, setOwnedReleaseIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
+    // Fetch owned release IDs for "already owned" badge
+    api.ownedReleaseIds().then((ids) => setOwnedReleaseIds(new Set(ids))).catch(() => {});
+
     setOnline(isOnline());
     setOfflineQueueCount(getOfflineQueue().length);
 
@@ -400,6 +417,7 @@ export function ScanInterface() {
         await api.confirmScan(item.result.scan_id, releaseId, item.condition, undefined, coverImage);
       }
       updateItem(itemId, { phase: "done", confirmedReleaseId: releaseId });
+      setOwnedReleaseIds((prev) => new Set([...prev, releaseId]));
     } catch {
       updateItem(itemId, { phase: "result", errorMsg: "Failed to add. Try again." });
     }
@@ -588,6 +606,7 @@ export function ScanInterface() {
               onConfirm={handleConfirm}
               onSkip={handleSkip}
               onConditionChange={handleConditionChange}
+              ownedReleaseIds={ownedReleaseIds}
             />
           ))}
         </div>

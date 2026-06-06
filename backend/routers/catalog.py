@@ -99,6 +99,22 @@ class CatalogListResponse(BaseModel):
 
 # ── Static routes first (must precede /{record_id}) ──────────────────────────
 
+@router.get("/owned-release-ids")
+async def owned_release_ids(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return list of discogs_release_ids already in user's catalog (any status)."""
+    from sqlalchemy import select
+    from models import Record
+    result = await db.execute(
+        select(Record.discogs_release_id)
+        .where(Record.user_id == user.id, Record.discogs_release_id.isnot(None))
+    )
+    ids = [row[0] for row in result.fetchall()]
+    return {"release_ids": ids}
+
+
 @router.get("/settings/price-markup")
 async def get_price_markup(user: User = Depends(get_current_user)):
     return {"price_markup_pct": user.price_markup_pct}

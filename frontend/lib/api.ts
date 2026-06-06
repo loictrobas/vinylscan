@@ -337,6 +337,8 @@ export const api = {
   },
 
   catalogStats: () => apiFetch<CatalogStats>("/catalog/stats"),
+  ownedReleaseIds: () =>
+    apiFetch<{ release_ids: number[] }>("/catalog/owned-release-ids").then((r) => r.release_ids),
 
   createRecord: (body: CreateRecordBody) =>
     apiFetch<CatalogRecord>("/catalog", { method: "POST", body: JSON.stringify(body) }),
