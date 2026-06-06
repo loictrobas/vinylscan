@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
+import { AppShell } from "@/components/AppShell";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export const metadata: Metadata = {
@@ -34,14 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-screen bg-vs-bg text-vs-text">
         <ServiceWorkerRegistrar />
-        {/* Full-height sidebar layout */}
-        <div className="flex min-h-screen">
-          <Sidebar />
-          {/* Main content offset by sidebar width */}
-          <main className="flex-1 ml-56 min-h-screen overflow-auto">
-            {children}
-          </main>
-        </div>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

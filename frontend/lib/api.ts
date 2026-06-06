@@ -398,12 +398,12 @@ export const api = {
     apiFetch<{ ok: boolean; message: string }>("/auth/claim-admin", { method: "POST" }),
 
   emailLogin: (email: string, password: string) =>
-    apiFetch<{ ok: boolean; user_id: string; is_admin: boolean }>(
+    apiFetch<{ ok: boolean; token: string; user_id: string; is_admin: boolean }>(
       "/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }
     ),
 
   registerViaInvite: (token: string, password: string, displayName?: string) =>
-    apiFetch<{ ok: boolean; user_id: string }>(
+    apiFetch<{ ok: boolean; token: string; user_id: string }>(
       "/auth/register", { method: "POST", body: JSON.stringify({ token, password, display_name: displayName ?? null }) }
     ),
 

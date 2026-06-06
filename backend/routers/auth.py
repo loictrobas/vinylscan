@@ -231,7 +231,7 @@ async def email_login(
         httponly=True, secure=True, samesite="lax",
         max_age=60 * 60 * 24 * 30,
     )
-    return {"ok": True, "user_id": str(user.id), "is_admin": user.is_admin}
+    return {"ok": True, "token": token, "user_id": str(user.id), "is_admin": user.is_admin}
 
 
 @router.post("/register")
@@ -281,7 +281,7 @@ async def register_via_invite(
         httponly=True, secure=True, samesite="lax",
         max_age=60 * 60 * 24 * 30,
     )
-    return {"ok": True, "user_id": str(user.id)}
+    return {"ok": True, "token": token, "user_id": str(user.id)}
 
 
 @router.post("/change-password")

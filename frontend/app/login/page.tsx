@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Disc3, Loader2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, setToken } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,11 +17,8 @@ export default function LoginPage() {
     setError(null);
     try {
       const res = await api.emailLogin(email, password);
-      if (res.is_admin) {
-        router.push("/admin");
-      } else {
-        router.push("/dashboard");
-      }
+      setToken(res.token);
+      router.push(res.is_admin ? "/admin" : "/dashboard");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Login failed";
       setError(msg.includes("401") || msg.includes("Invalid") ? "Invalid email or password" : msg);

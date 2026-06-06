@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Disc3 } from "lucide-react";
 import { api, getToken, type CreditPack, type DashboardStats } from "@/lib/api";
@@ -9,7 +9,7 @@ import { CreditPacks } from "@/components/CreditPacks";
 
 const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === "true";
 
-export default function CreditsPage() {
+function CreditsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const success = searchParams.get("success");
@@ -80,5 +80,13 @@ export default function CreditsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CreditsPage() {
+  return (
+    <Suspense>
+      <CreditsPageInner />
+    </Suspense>
   );
 }

@@ -66,7 +66,7 @@ function ResetForm() {
   );
 }
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageInner() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-vs-bg p-4">
       <div className="w-full max-w-sm">
@@ -79,5 +79,13 @@ export default function ResetPasswordPage() {
         </Suspense>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordPageInner />
+    </Suspense>
   );
 }

@@ -8,7 +8,7 @@ import { api, subscribeCreditBalance } from "@/lib/api";
 const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === "true";
 
 export function NavBar() {
-  const [user, setUser] = useState<{ discogs_username: string; credits: number } | null>(null);
+  const [user, setUser] = useState<{ discogs_username: string | null; credits: number } | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
 
   useEffect(() => {

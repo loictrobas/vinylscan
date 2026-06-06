@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Disc3, Loader2, CheckCircle2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, setToken } from "@/lib/api";
 
 function RegisterForm() {
   const router = useRouter();
@@ -27,7 +27,8 @@ function RegisterForm() {
     setLoading(true);
     setError(null);
     try {
-      await api.registerViaInvite(token, password, displayName || undefined);
+      const res = await api.registerViaInvite(token, password, displayName || undefined);
+      setToken(res.token);
       setDone(true);
       setTimeout(() => router.push("/dashboard"), 1500);
     } catch (err: unknown) {
@@ -94,7 +95,7 @@ function RegisterForm() {
   );
 }
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-vs-bg p-4">
       <div className="w-full max-w-sm">
@@ -112,5 +113,13 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterPageInner />
+    </Suspense>
   );
 }

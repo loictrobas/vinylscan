@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Disc3, Search, X, Plus, ExternalLink, ChevronDown,
@@ -87,7 +87,7 @@ function SellButton({ record, onSold }: { record: CatalogRecord; onSold: (r: Cat
 
 const PER_PAGE = 40;
 
-export default function CatalogPage() {
+function CatalogPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [records, setRecords] = useState<CatalogRecord[]>([]);
@@ -433,5 +433,13 @@ export default function CatalogPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CatalogPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin text-vs-muted">⟳</div></div>}>
+      <CatalogPageInner />
+    </Suspense>
   );
 }
