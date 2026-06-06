@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
-    Boolean, DateTime, Enum, Float, ForeignKey, Index, Integer, JSON, Numeric, String, Text
+    BigInteger, Boolean, DateTime, Enum, Float, ForeignKey, Index, Integer, JSON, Numeric, String, Text
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -149,7 +149,7 @@ class Record(Base):
         default=RecordCondition.VG_PLUS, nullable=False
     )
     discogs_release_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    discogs_instance_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # collection instance_id
+    discogs_instance_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)  # collection instance_id
     discogs_synced: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     discogs_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)

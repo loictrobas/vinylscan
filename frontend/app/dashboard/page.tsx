@@ -54,7 +54,7 @@ function DashboardPageInner() {
 
     api.catalogStats()
       .then(setStats)
-      .catch(() => router.replace("/"))
+      .catch(() => {/* stats optional — show dashboard anyway */})
       .finally(() => setLoading(false));
   }, [searchParams, router]);
 
@@ -66,11 +66,16 @@ function DashboardPageInner() {
     );
   }
 
-  if (!stats) return null;
+  const s = stats ?? {
+    total_in_stock: 0, total_sold: 0, total_revenue: 0,
+    revenue_today: 0, revenue_this_week: 0, revenue_this_month: 0,
+    inventory_value: 0, total_cost: 0, avg_margin_pct: null,
+    recent_sales_today: [],
+  };
 
-  const hasRevenue = stats.total_revenue > 0;
-  const roi = stats.total_cost > 0
-    ? ((stats.total_revenue - stats.total_cost) / stats.total_cost * 100)
+  const hasRevenue = s.total_revenue > 0;
+  const roi = s.total_cost > 0
+    ? ((s.total_revenue - s.total_cost) / s.total_cost * 100)
     : null;
 
   return (
@@ -102,24 +107,24 @@ function DashboardPageInner() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <MetricCard
           label="Today"
-          value={`$${fmt(stats.revenue_today)}`}
+          value={`$${fmt(s.revenue_today)}`}
           icon={<DollarSign size={14} />}
           accent
         />
         <MetricCard
           label="This week"
-          value={`$${fmt(stats.revenue_this_week)}`}
+          value={`$${fmt(s.revenue_this_week)}`}
           icon={<TrendingUp size={14} />}
         />
         <MetricCard
           label="This month"
-          value={`$${fmt(stats.revenue_this_month)}`}
+          value={`$${fmt(s.revenue_this_month)}`}
           icon={<BarChart3 size={14} />}
         />
         <MetricCard
           label="All time"
-          value={`$${fmt(stats.total_revenue)}`}
-          sub={`${stats.total_sold} records sold`}
+          value={`$${fmt(s.total_revenue)}`}
+          sub={`${s.total_sold} records sold`}
           icon={<TrendingUp size={14} />}
         />
       </div>
@@ -131,26 +136,26 @@ function DashboardPageInner() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <MetricCard
           label="In stock"
-          value={String(stats.total_in_stock)}
+          value={String(s.total_in_stock)}
           sub="records"
           icon={<Disc3 size={14} />}
           accent
         />
         <MetricCard
           label="Stock value"
-          value={`$${fmt(stats.inventory_value)}`}
+          value={`$${fmt(s.inventory_value)}`}
           sub="asking prices"
           icon={<Package size={14} />}
         />
         <MetricCard
           label="Total invested"
-          value={`$${fmt(stats.total_cost)}`}
+          value={`$${fmt(s.total_cost)}`}
           sub="cost prices"
           icon={<DollarSign size={14} />}
         />
         <MetricCard
           label="Avg margin"
-          value={stats.avg_margin_pct != null ? `${stats.avg_margin_pct.toFixed(1)}%` : "—"}
+          value={s.avg_margin_pct != null ? `${s.avg_margin_pct.toFixed(1)}%` : "—"}
           sub={roi != null ? `${roi.toFixed(1)}% overall ROI` : "no data yet"}
           icon={<BarChart3 size={14} />}
         />
@@ -166,9 +171,9 @@ function DashboardPageInner() {
               View all <ArrowRight size={11} />
             </Link>
           </div>
-          {stats.recent_sales_today.length > 0 ? (
+          {s.recent_sales_today.length > 0 ? (
             <div className="flex flex-col gap-0">
-              {stats.recent_sales_today.map((s, i) => (
+              {s.recent_sales_today.map((s, i) => (
                 <div key={i} className="flex items-center justify-between py-2.5 border-b border-vs-border/50 last:border-0">
                   <div className="min-w-0">
                     <p className="text-sm text-vs-text truncate">
@@ -201,7 +206,7 @@ function DashboardPageInner() {
             {[
               { href: "/scan",     icon: <Camera size={15} />,     label: "Scan a record",         sub: "Vision + Discogs" },
               { href: "/sales",    icon: <ShoppingCart size={15} />, label: "Point of sale",        sub: "Search & sell" },
-              { href: "/catalog",  icon: <Disc3 size={15} />,       label: "Browse catalog",        sub: `${stats.total_in_stock} in stock` },
+              { href: "/catalog",  icon: <Disc3 size={15} />,       label: "Browse catalog",        sub: `${s.total_in_stock} in stock` },
               { href: "/catalog/lots", icon: <Layers size={15} />,  label: "Manage lots",           sub: "Track purchases" },
             ].map((item) => (
               <Link
