@@ -141,13 +141,20 @@ export default function POSPage() {
     if (cart.length === 0 || selling) return;
     setSelling(true);
     try {
-      await Promise.all(cart.map((c) => api.sellRecord(c.record.id, c.price)));
-      const r: ReceiptModal = { items: [...cart], total, payment };
-      setCart([]);
-      setDiscount("");
-      setReceipt(r);
-    } catch (e) {
-      console.error(e);
+      const results = await Promise.allSettled(cart.map((c) => api.sellRecord(c.record.id, c.price)));
+      const succeeded = cart.filter((_, i) => results[i].status === "fulfilled");
+      const failed = cart.filter((_, i) => results[i].status === "rejected");
+      if (succeeded.length > 0) {
+        const soldSubtotal = succeeded.reduce((s, c) => s + c.price, 0);
+        const r: ReceiptModal = {
+          items: succeeded,
+          total: Math.max(0, soldSubtotal - (parseFloat(discount) || 0)),
+          payment,
+        };
+        setReceipt(r);
+        if (succeeded.length > 0) setDiscount("");
+      }
+      setCart(failed);
     } finally { setSelling(false); }
   }
 
