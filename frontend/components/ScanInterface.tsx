@@ -501,17 +501,22 @@ export function ScanInterface() {
       return;
     }
 
-    const newItems: QueueItem[] = Array.from(files).map((file) => ({
-      id: `${Date.now()}-${Math.random()}`,
-      file,
-      preview: URL.createObjectURL(file),
-      phase: "queued" as ItemPhase,
-      condition: "VG+" as Condition,
-    }));
+    const MAX_SIZE = 10 * 1024 * 1024;
+    const newItems: QueueItem[] = Array.from(files).map((file) => {
+      const tooBig = file.size > MAX_SIZE;
+      return {
+        id: `${Date.now()}-${Math.random()}`,
+        file,
+        preview: URL.createObjectURL(file),
+        phase: (tooBig ? "error" : "queued") as ItemPhase,
+        errorMsg: tooBig ? `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 10 MB.` : undefined,
+        condition: "VG+" as Condition,
+      };
+    });
     setQueue((q) => [...q, ...newItems]);
     setProcessing(true);
     for (const item of newItems) {
-      await processItem(item);
+      if (item.phase !== "error") await processItem(item);
     }
     setProcessing(false);
   }
