@@ -252,22 +252,30 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 
 async function apiFetch<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  timeoutMs = 30000
 ): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-      ...(options.headers || {}),
-    },
-  });
-  _updateCreditBalance(res.headers.get("X-Credit-Balance"));
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw Object.assign(new Error(err.detail || res.statusText), { status: res.status, data: err });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      signal: options.signal ?? controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+        ...(options.headers || {}),
+      },
+    });
+    _updateCreditBalance(res.headers.get("X-Credit-Balance"));
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw Object.assign(new Error(err.detail || res.statusText), { status: res.status, data: err });
+    }
+    return res.json();
+  } finally {
+    clearTimeout(timer);
   }
-  return res.json();
 }
 
 export const api = {
@@ -281,17 +289,24 @@ export const api = {
   uploadScan: async (file: File): Promise<ScanUploadResponse> => {
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch(`${API_URL}/scan/upload`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: form,
-    });
-    _updateCreditBalance(res.headers.get("X-Credit-Balance"));
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw Object.assign(new Error(err.detail || res.statusText), { status: res.status, data: err });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+    try {
+      const res = await fetch(`${API_URL}/scan/upload`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: form,
+        signal: controller.signal,
+      });
+      _updateCreditBalance(res.headers.get("X-Credit-Balance"));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw Object.assign(new Error(err.detail || res.statusText), { status: res.status, data: err });
+      }
+      return res.json();
+    } finally {
+      clearTimeout(timer);
     }
-    return res.json();
   },
 
   confirmScan: (scanId: string, releaseId: number, condition = "VG+", lotId?: string, coverImage?: string | null) =>
