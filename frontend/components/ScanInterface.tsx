@@ -461,22 +461,20 @@ export function ScanInterface() {
     if (q.length === 0) return;
     setSyncing(true);
     for (const item of q) {
-      try {
-        const file = dataUrlToFile(item.fileDataUrl, item.fileName);
-        const newItem: QueueItem = {
-          id: item.id,
-          file,
-          preview: item.fileDataUrl,
-          phase: "queued",
-          condition: "VG+",
-        };
-        setQueue((prev) => [...prev, newItem]);
+      const file = dataUrlToFile(item.fileDataUrl, item.fileName);
+      const newItem: QueueItem = {
+        id: item.id,
+        file,
+        preview: item.fileDataUrl,
+        phase: "queued",
+        condition: "VG+",
+      };
+      setQueue((prev) => [...prev, newItem]);
+      const networkOk = await processItem(newItem);
+      if (networkOk) {
         removeFromOfflineQueue(item.id);
-        setOfflineQueueCount(getOfflineQueue().length);
-        await processItem(newItem);
-      } catch {
-        // leave in queue if still failing
       }
+      setOfflineQueueCount(getOfflineQueue().length);
     }
     setSyncing(false);
   }
