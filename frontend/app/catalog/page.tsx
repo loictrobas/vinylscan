@@ -271,7 +271,43 @@ function CatalogPageInner() {
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-20"><Disc3 size={24} className="animate-spin text-vs-muted" /></div>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="w-10 pr-0"><div className="w-4 h-4 rounded bg-vs-border animate-pulse" /></th>
+                <th className="w-[38%]">Record</th>
+                <th>Format</th>
+                <th>Cond.</th>
+                <th>Market</th>
+                <th>Your price</th>
+                <th>Lot</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i}>
+                  <td className="pr-0"><div className="w-4 h-4 rounded bg-vs-border animate-pulse" /></td>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-vs-border animate-pulse flex-shrink-0" />
+                      <div className="flex flex-col gap-1.5">
+                        <div className="h-2.5 w-20 bg-vs-border/60 animate-pulse rounded" />
+                        <div className="h-3 w-36 bg-vs-border animate-pulse rounded" />
+                        <div className="h-2 w-24 bg-vs-border/40 animate-pulse rounded" />
+                      </div>
+                    </div>
+                  </td>
+                  <td><div className="h-3 w-10 bg-vs-border/60 animate-pulse rounded" /></td>
+                  <td><div className="h-5 w-10 bg-vs-border/60 animate-pulse rounded-full" /></td>
+                  <td><div className="h-3 w-14 bg-vs-border/60 animate-pulse rounded" /></td>
+                  <td><div className="h-4 w-12 bg-vs-border animate-pulse rounded" /></td>
+                  <td><div className="h-3 w-10 bg-vs-border/60 animate-pulse rounded" /></td>
+                  <td></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : records.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center px-4">
             <Disc3 size={36} className="text-vs-muted" />
