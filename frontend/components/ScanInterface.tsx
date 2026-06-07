@@ -181,6 +181,7 @@ function ScanItem({
   onSkip,
   onConditionChange,
   onResearch,
+  onRetry,
   ownedReleaseIds,
   ownedFuzzyKeys,
 }: {
@@ -189,6 +190,7 @@ function ScanItem({
   onSkip: (itemId: string) => void;
   onConditionChange: (itemId: string, condition: Condition) => void;
   onResearch: (itemId: string, fields: { artist?: string; title?: string; label?: string; catalog_number?: string }) => void;
+  onRetry: (itemId: string) => void;
   ownedReleaseIds: Set<number>;
   ownedFuzzyKeys: Set<string>;
 }) {
@@ -230,10 +232,18 @@ function ScanItem({
     return (
       <div className="card p-4 flex items-center gap-3">
         <img src={item.preview} alt="" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
-        <div className="flex items-center gap-2">
-          <AlertCircle size={16} className="text-vinyl-accent" />
-          <p className="text-sm text-vinyl-muted">{item.errorMsg}</p>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <AlertCircle size={16} className="text-vinyl-accent flex-shrink-0" />
+          <p className="text-sm text-vinyl-muted flex-1">{item.errorMsg}</p>
         </div>
+        {item.retryable && (
+          <button
+            onClick={() => onRetry(item.id)}
+            className="text-xs text-vinyl-accent hover:underline flex-shrink-0"
+          >
+            Retry
+          </button>
+        )}
       </div>
     );
   }
@@ -567,6 +577,12 @@ export function ScanInterface() {
     updateItem(itemId, { condition });
   }
 
+  async function handleRetry(itemId: string) {
+    const item = queue.find((i) => i.id === itemId);
+    if (!item) return;
+    await processItem(item);
+  }
+
   async function handleSkip(itemId: string) {
     const item = queue.find((i) => i.id === itemId);
     if (!item?.result) return;
@@ -776,6 +792,7 @@ export function ScanInterface() {
               onSkip={handleSkip}
               onConditionChange={handleConditionChange}
               onResearch={handleResearch}
+              onRetry={handleRetry}
               ownedReleaseIds={ownedReleaseIds}
               ownedFuzzyKeys={ownedFuzzyKeys}
             />
