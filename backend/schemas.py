@@ -59,6 +59,24 @@ class ScanUploadResponse(BaseModel):
     discogs_release_id: int | None
     matches: list[DiscogsMatch]
     error: str | None = None
+    artist_alt: str | None = None
+    title_alt: str | None = None
+
+
+class ResearchRequest(BaseModel):
+    """User-edited identification fields to re-run the Discogs search with."""
+    artist: str | None = None
+    title: str | None = None
+    label: str | None = None
+    catalog_number: str | None = None
+
+
+class ResearchResponse(BaseModel):
+    artist: str | None
+    title: str | None
+    label: str | None
+    catalog_number: str | None
+    matches: list[DiscogsMatch]
 
 
 class ConfirmRequest(BaseModel):

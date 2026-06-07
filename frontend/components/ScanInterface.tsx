@@ -23,6 +23,15 @@ interface QueueItem {
   confirmedReleaseId?: number;
   skipped?: boolean;
   condition: Condition;
+  researching?: boolean;
+}
+
+/** Normalize "artist — title" into a loose match key: lowercase, strip punctuation/whitespace.
+ *  Used to flag "you may already own a different pressing of this album" —
+ *  Discogs gives every pressing/reissue its own release_id, but users think in albums. */
+function fuzzyKey(artist: string, title: string): string {
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  return `${norm(artist)}::${norm(title)}`;
 }
 
 function ConfidenceDot({ confidence }: { confidence: number }) {
@@ -41,14 +50,19 @@ function MatchCard({
   disabled,
   isAdding,
   ownedReleaseIds,
+  ownedFuzzyKeys,
 }: {
   match: DiscogsMatch;
   onAdd: () => void;
   disabled: boolean;
   isAdding: boolean;
   ownedReleaseIds: Set<number>;
+  ownedFuzzyKeys: Set<string>;
 }) {
-  const alreadyOwned = ownedReleaseIds.has(match.release_id);
+  const exactOwned = ownedReleaseIds.has(match.release_id);
+  // Fuzzy: same artist+title but different release_id → likely a different pressing/reissue
+  const fuzzyOwned = !exactOwned && ownedFuzzyKeys.has(fuzzyKey(match.artist, match.title));
+  const alreadyOwned = exactOwned || fuzzyOwned;
   const [price, setPrice] = useState<{ lowest: number; currency: string; num_for_sale: number } | null | "loading">("loading");
 
   useEffect(() => {
@@ -79,9 +93,14 @@ function MatchCard({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-semibold text-sm leading-tight">{match.artist}</p>
-          {alreadyOwned && (
+          {exactOwned && (
             <span className="text-xs px-1.5 py-0.5 rounded bg-vs-accent/20 text-vs-accent font-medium">
               Already owned
+            </span>
+          )}
+          {fuzzyOwned && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-vs-accent/10 text-vs-muted font-medium">
+              You may own a different pressing
             </span>
           )}
         </div>
@@ -155,15 +174,24 @@ function ScanItem({
   onConfirm,
   onSkip,
   onConditionChange,
+  onResearch,
   ownedReleaseIds,
+  ownedFuzzyKeys,
 }: {
   item: QueueItem;
   onConfirm: (itemId: string, releaseId: number) => void;
   onSkip: (itemId: string) => void;
   onConditionChange: (itemId: string, condition: Condition) => void;
+  onResearch: (itemId: string, fields: { artist?: string; title?: string; label?: string; catalog_number?: string }) => void;
   ownedReleaseIds: Set<number>;
+  ownedFuzzyKeys: Set<string>;
 }) {
   const [showAllMatches, setShowAllMatches] = useState(false);
+  const [editingSearch, setEditingSearch] = useState(false);
+  const [editArtist, setEditArtist] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editLabel, setEditLabel] = useState("");
+  const [editCatNo, setEditCatNo] = useState("");
   const result = item.result;
 
   if (item.phase === "queued") {
@@ -236,7 +264,79 @@ function ScanItem({
               {result.label && <span className="text-xs text-vinyl-muted">{result.label}</span>}
             </div>
           </div>
+          <button
+            onClick={() => {
+              if (!editingSearch) {
+                setEditArtist(result.artist ?? "");
+                setEditTitle(result.title ?? "");
+                setEditLabel(result.label ?? "");
+                setEditCatNo(result.catalog_number ?? "");
+              }
+              setEditingSearch(!editingSearch);
+            }}
+            className="text-xs text-vinyl-accent hover:underline flex-shrink-0"
+          >
+            {editingSearch ? "Cancel" : "Edit search"}
+          </button>
         </div>
+
+        {editingSearch && (
+          <div className="p-4 border-b border-vinyl-border bg-vinyl-bg/40 flex flex-col gap-2">
+            <p className="text-xs text-vinyl-muted">
+              This is what we searched Discogs for. If it looks wrong (e.g. label name read as title), fix it and search again — no extra credit used.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1 text-xs text-vinyl-muted">
+                Artist
+                <input
+                  value={editArtist}
+                  onChange={(e) => setEditArtist(e.target.value)}
+                  className="px-2 py-1 rounded border border-vinyl-border bg-transparent text-sm text-vinyl-text"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-vinyl-muted">
+                Title
+                <input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="px-2 py-1 rounded border border-vinyl-border bg-transparent text-sm text-vinyl-text"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-vinyl-muted">
+                Label
+                <input
+                  value={editLabel}
+                  onChange={(e) => setEditLabel(e.target.value)}
+                  className="px-2 py-1 rounded border border-vinyl-border bg-transparent text-sm text-vinyl-text"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-vinyl-muted">
+                Catalog #
+                <input
+                  value={editCatNo}
+                  onChange={(e) => setEditCatNo(e.target.value)}
+                  className="px-2 py-1 rounded border border-vinyl-border bg-transparent text-sm text-vinyl-text"
+                />
+              </label>
+            </div>
+            <button
+              onClick={() => {
+                onResearch(item.id, {
+                  artist: editArtist,
+                  title: editTitle,
+                  label: editLabel,
+                  catalog_number: editCatNo,
+                });
+                setEditingSearch(false);
+              }}
+              disabled={item.researching}
+              className="self-start text-xs px-3 py-1.5 rounded bg-vinyl-accent text-white font-medium disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {item.researching && <Loader2 size={12} className="animate-spin" />}
+              Search again
+            </button>
+          </div>
+        )}
 
         {/* Discogs matches */}
         <div className="p-4 flex flex-col gap-3">
@@ -253,6 +353,7 @@ function ScanItem({
                   disabled={isConfirming}
                   isAdding={isConfirming}
                   ownedReleaseIds={ownedReleaseIds}
+                  ownedFuzzyKeys={ownedFuzzyKeys}
                 />
               ))}
               {result.matches.length > 2 && (
@@ -305,10 +406,16 @@ export function ScanInterface() {
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [ownedReleaseIds, setOwnedReleaseIds] = useState<Set<number>>(new Set());
+  const [ownedFuzzyKeys, setOwnedFuzzyKeys] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    // Fetch owned release IDs for "already owned" badge
-    api.ownedReleaseIds().then((ids) => setOwnedReleaseIds(new Set(ids))).catch(() => {});
+    // Fetch owned release IDs + artist/title pairs for "already owned" badges
+    api.ownedReleaseIds()
+      .then(({ release_ids, owned }) => {
+        setOwnedReleaseIds(new Set(release_ids));
+        setOwnedFuzzyKeys(new Set(owned.map((o) => fuzzyKey(o.artist, o.title))));
+      })
+      .catch(() => {});
 
     setOnline(isOnline());
     setOfflineQueueCount(getOfflineQueue().length);
@@ -440,6 +547,28 @@ export function ScanInterface() {
       updateItem(itemId, { phase: "done", skipped: true });
     } catch {
       updateItem(itemId, { phase: "result", errorMsg: "Skip failed. Try again." });
+    }
+  }
+
+  async function handleResearch(itemId: string, fields: { artist?: string; title?: string; label?: string; catalog_number?: string }) {
+    const item = queue.find((i) => i.id === itemId);
+    if (!item?.result || !item.result.scan_id) return;
+    updateItem(itemId, { researching: true });
+    try {
+      const res = await api.researchScan(item.result.scan_id, fields);
+      updateItem(itemId, {
+        researching: false,
+        result: {
+          ...item.result,
+          artist: res.artist,
+          title: res.title,
+          label: res.label,
+          catalog_number: res.catalog_number,
+          matches: res.matches,
+        },
+      });
+    } catch {
+      updateItem(itemId, { researching: false });
     }
   }
 
@@ -606,7 +735,9 @@ export function ScanInterface() {
               onConfirm={handleConfirm}
               onSkip={handleSkip}
               onConditionChange={handleConditionChange}
+              onResearch={handleResearch}
               ownedReleaseIds={ownedReleaseIds}
+              ownedFuzzyKeys={ownedFuzzyKeys}
             />
           ))}
         </div>

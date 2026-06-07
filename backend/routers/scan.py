@@ -17,7 +17,7 @@ from database import get_db
 from middleware.auth_middleware import decrypt
 from models import CreditReason, CreditTransaction, Record, RecordCondition, Scan, ScanStatus, User
 from routers.auth import apply_monthly_topup, get_current_user
-from schemas import ConfirmRequest, DiscogsMatch, ScanOut, ScanUploadResponse
+from schemas import ConfirmRequest, DiscogsMatch, ResearchRequest, ResearchResponse, ScanOut, ScanUploadResponse
 from services import claude_vision, discogs as discogs_svc
 
 router = APIRouter(prefix="/scan", tags=["scan"])
@@ -206,6 +206,61 @@ async def upload_scan(
         confidence=confidence,
         auto_added=auto_added,
         discogs_release_id=scan.discogs_release_id,
+        matches=matches,
+        artist_alt=claude_result.get("artist_alt"),
+        title_alt=claude_result.get("title_alt"),
+    )
+
+
+@router.post("/{scan_id}/research", response_model=ResearchResponse)
+async def research_scan(
+    scan_id: uuid.UUID,
+    body: ResearchRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """
+    Re-run the Discogs search with user-edited artist/title/label/catalog_number.
+    Lets the user correct AI misidentification (e.g. label read as title) and
+    retrigger the search without spending another credit or re-uploading.
+    """
+    result = await db.execute(
+        select(Scan).where(Scan.id == scan_id, Scan.user_id == user.id)
+    )
+    scan = result.scalar_one_or_none()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+
+    artist = body.artist if body.artist is not None else scan.artist
+    title = body.title if body.title is not None else scan.title
+    label = body.label if body.label is not None else scan.label
+    catalog_number = body.catalog_number if body.catalog_number is not None else scan.catalog_number
+
+    access_token = decrypt(user.discogs_oauth_token)
+    access_token_secret = decrypt(user.discogs_oauth_token_secret)
+
+    try:
+        raw_results = await discogs_svc.search_releases(
+            artist or "",
+            title or "",
+            access_token,
+            access_token_secret,
+            label=label,
+            catalog_number=catalog_number,
+        )
+    except Exception:
+        raw_results = []
+
+    matches_data = discogs_svc.parse_search_results(raw_results)
+    matches = [DiscogsMatch(**m) for m in matches_data]
+
+    _set_credit_header(response, user)
+    return ResearchResponse(
+        artist=artist,
+        title=title,
+        label=label,
+        catalog_number=catalog_number,
         matches=matches,
     )
 

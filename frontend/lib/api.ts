@@ -61,6 +61,16 @@ export interface ScanUploadResponse {
   discogs_release_id: number | null;
   matches: DiscogsMatch[];
   error?: string;
+  artist_alt?: string | null;
+  title_alt?: string | null;
+}
+
+export interface ResearchResponse {
+  artist: string | null;
+  title: string | null;
+  label: string | null;
+  catalog_number: string | null;
+  matches: DiscogsMatch[];
 }
 
 export interface Scan {
@@ -290,6 +300,12 @@ export const api = {
       body: JSON.stringify({ release_id: releaseId, condition, lot_id: lotId ?? null, cover_image: coverImage ?? null }),
     }),
 
+  researchScan: (scanId: string, fields: { artist?: string; title?: string; label?: string; catalog_number?: string }) =>
+    apiFetch<ResearchResponse>(`/scan/${scanId}/research`, {
+      method: "POST",
+      body: JSON.stringify(fields),
+    }),
+
   skipScan: (scanId: string) =>
     apiFetch<{ ok: boolean; credits_remaining: number }>(`/scan/${scanId}/skip`, {
       method: "POST",
@@ -338,7 +354,7 @@ export const api = {
 
   catalogStats: () => apiFetch<CatalogStats>("/catalog/stats"),
   ownedReleaseIds: () =>
-    apiFetch<{ release_ids: number[] }>("/catalog/owned-release-ids").then((r) => r.release_ids),
+    apiFetch<{ release_ids: number[]; owned: { artist: string; title: string }[] }>("/catalog/owned-release-ids"),
 
   createRecord: (body: CreateRecordBody) =>
     apiFetch<CatalogRecord>("/catalog", { method: "POST", body: JSON.stringify(body) }),

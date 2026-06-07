@@ -104,15 +104,23 @@ async def owned_release_ids(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Return list of discogs_release_ids already in user's catalog (any status)."""
+    """
+    Return user's owned releases for "already owned" detection in scan results.
+    - release_ids: exact discogs_release_id matches (precise — same pressing)
+    - owned: [{artist, title}] for fuzzy matching — catches "you own a different
+      pressing/reissue of this album" since Discogs gives each pressing its own
+      release_id but the user thinks of it as "the same record"
+    """
     from sqlalchemy import select
     from models import Record
     result = await db.execute(
-        select(Record.discogs_release_id)
+        select(Record.discogs_release_id, Record.artist, Record.title)
         .where(Record.user_id == user.id, Record.discogs_release_id.isnot(None))
     )
-    ids = [row[0] for row in result.fetchall()]
-    return {"release_ids": ids}
+    rows = result.fetchall()
+    ids = [row[0] for row in rows]
+    owned = [{"artist": row[1], "title": row[2]} for row in rows if row[1] and row[2]]
+    return {"release_ids": ids, "owned": owned}
 
 
 @router.get("/settings/price-markup")
