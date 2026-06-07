@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { Camera, Upload, CheckCircle, AlertCircle, Loader2, Plus, ExternalLink, Music, Barcode, WifiOff, ClipboardList } from "lucide-react";
-import { api, isLikelyColdStart, type ScanUploadResponse, type DiscogsMatch } from "@/lib/api";
+import { api, isLikelyColdStart, type ScanUploadResponse, type DiscogsMatch, type User } from "@/lib/api";
 import { isOnline, getOfflineQueue, addToOfflineQueue, removeFromOfflineQueue, fileToDataUrl, dataUrlToFile } from "@/lib/offline";
 import dynamic from "next/dynamic";
 
@@ -22,6 +22,7 @@ interface QueueItem {
   errorMsg?: string;
   retryable?: boolean;
   confirmedReleaseId?: number;
+  listedForSale?: boolean;
   skipped?: boolean;
   condition: Condition;
   researching?: boolean;
@@ -184,15 +185,17 @@ function ScanItem({
   onRetry,
   ownedReleaseIds,
   ownedFuzzyKeys,
+  discogsConnected,
 }: {
   item: QueueItem;
-  onConfirm: (itemId: string, releaseId: number) => void;
+  onConfirm: (itemId: string, releaseId: number, listForSale: boolean) => void;
   onSkip: (itemId: string) => void;
   onConditionChange: (itemId: string, condition: Condition) => void;
   onResearch: (itemId: string, fields: { artist?: string; title?: string; label?: string; catalog_number?: string }) => void;
   onRetry: (itemId: string) => void;
   ownedReleaseIds: Set<number>;
   ownedFuzzyKeys: Set<string>;
+  discogsConnected: boolean;
 }) {
   const [showAllMatches, setShowAllMatches] = useState(false);
   const [editingSearch, setEditingSearch] = useState(false);
@@ -200,6 +203,7 @@ function ScanItem({
   const [editTitle, setEditTitle] = useState("");
   const [editLabel, setEditLabel] = useState("");
   const [editCatNo, setEditCatNo] = useState("");
+  const [listForSale, setListForSale] = useState(false);
   const result = item.result;
 
   if (item.phase === "queued") {
@@ -250,6 +254,11 @@ function ScanItem({
 
   if (item.phase === "done") {
     const r = item.result;
+    const doneLabel = item.skipped
+      ? "Skipped"
+      : item.listedForSale
+        ? "Added to catalog · Listed on Discogs"
+        : "Added to catalog";
     return (
       <div className="card p-4 flex items-center gap-3">
         <img src={item.preview} alt="" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
@@ -257,7 +266,7 @@ function ScanItem({
           <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
           <div>
             <p className="text-sm font-medium">{r?.artist} — {r?.title}</p>
-            <p className="text-xs text-vinyl-muted">{item.skipped ? "Skipped" : "Added to Discogs"}</p>
+            <p className="text-xs text-vinyl-muted">{doneLabel}</p>
           </div>
         </div>
         {item.confirmedReleaseId && (
@@ -370,7 +379,7 @@ function ScanItem({
                 <MatchCard
                   key={m.release_id}
                   match={m}
-                  onAdd={() => onConfirm(item.id, m.release_id)}
+                  onAdd={() => onConfirm(item.id, m.release_id, listForSale)}
                   disabled={isConfirming}
                   isAdding={isConfirming}
                   ownedReleaseIds={ownedReleaseIds}
@@ -398,6 +407,18 @@ function ScanItem({
               onChange={(c) => onConditionChange(item.id, c)}
             />
           </div>
+
+          {discogsConnected && item.result?.scan_id && (
+            <label className="flex items-center gap-2 cursor-pointer select-none pt-1">
+              <input
+                type="checkbox"
+                checked={listForSale}
+                onChange={(e) => setListForSale(e.target.checked)}
+                className="w-3.5 h-3.5 accent-vinyl-accent"
+              />
+              <span className="text-xs text-vinyl-muted">Also list on Discogs Marketplace</span>
+            </label>
+          )}
 
           <div className="flex items-center justify-between pt-1">
             <p className="text-xs text-vinyl-muted">1 credit used on add or skip</p>
@@ -429,8 +450,11 @@ export function ScanInterface() {
   const [syncing, setSyncing] = useState(false);
   const [ownedReleaseIds, setOwnedReleaseIds] = useState<Set<number>>(new Set());
   const [ownedFuzzyKeys, setOwnedFuzzyKeys] = useState<Set<string>>(new Set());
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    api.me().then(setUser).catch(() => {});
+
     // Fetch owned release IDs + artist/title pairs for "already owned" badges
     api.ownedReleaseIds()
       .then(({ release_ids, owned }) => {
@@ -553,7 +577,7 @@ export function ScanInterface() {
     setProcessing(false);
   }
 
-  async function handleConfirm(itemId: string, releaseId: number) {
+  async function handleConfirm(itemId: string, releaseId: number, listForSale = false) {
     const item = queue.find((i) => i.id === itemId);
     if (!item?.result) return;
     updateItem(itemId, { phase: "confirming" });
@@ -561,10 +585,14 @@ export function ScanInterface() {
     try {
       if (item.id.startsWith("barcode-")) {
         await api.barcodeAdd(releaseId, item.condition);
+        updateItem(itemId, { phase: "done", confirmedReleaseId: releaseId });
       } else {
-        await api.confirmScan(item.result.scan_id, releaseId, item.condition, undefined, coverImage);
+        const data = await api.confirmScan(item.result.scan_id, releaseId, item.condition, undefined, coverImage);
+        if (listForSale && data.record_id) {
+          try { await api.discogsListRecord(data.record_id); } catch { /* non-fatal */ }
+        }
+        updateItem(itemId, { phase: "done", confirmedReleaseId: releaseId, listedForSale: listForSale });
       }
-      updateItem(itemId, { phase: "done", confirmedReleaseId: releaseId });
       setOwnedReleaseIds((prev) => new Set([...prev, releaseId]));
     } catch {
       updateItem(itemId, { phase: "result", errorMsg: "Failed to add. Try again." });
@@ -665,6 +693,7 @@ export function ScanInterface() {
 
   const doneCount = queue.filter((i) => i.phase === "done").length;
   const pendingCount = queue.filter((i) => !["done", "error"].includes(i.phase)).length;
+  const discogsConnected = !!user?.discogs_username;
 
   return (
     <div className="max-w-xl mx-auto flex flex-col gap-4">
@@ -793,6 +822,7 @@ export function ScanInterface() {
               onRetry={handleRetry}
               ownedReleaseIds={ownedReleaseIds}
               ownedFuzzyKeys={ownedFuzzyKeys}
+              discogsConnected={discogsConnected}
             />
           ))}
         </div>

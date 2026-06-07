@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Disc3, Search, X, Plus, ExternalLink, ChevronDown,
-  Trash2, DollarSign, Check, ShoppingCart, Tag,
+  Trash2, DollarSign, Check, ShoppingCart, Tag, Loader2,
 } from "lucide-react";
-import { api, getToken, type CatalogRecord, type Lot } from "@/lib/api";
+import { api, getToken, type CatalogRecord, type Lot, type User } from "@/lib/api";
 import { CoverThumb } from "@/components/CoverThumb";
 import { CondBadge } from "@/components/CondBadge";
 import { RowCheckbox } from "@/components/RowCheckbox";
@@ -106,6 +106,8 @@ function CatalogPageInner() {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [bulkListing, setBulkListing] = useState(false);
 
   const [prices, setPrices] = useState<Record<string, PriceData | null | undefined>>({});
   const pricesFetchedRef = useRef<Set<string>>(new Set());
@@ -128,6 +130,7 @@ function CatalogPageInner() {
   useEffect(() => {
     if (!getToken()) { router.replace("/"); return; }
     api.listLots().then(setLots).catch(() => {});
+    api.me().then(setUser).catch(() => {});
   }, [router]);
 
   useEffect(() => {
@@ -216,6 +219,25 @@ function CatalogPageInner() {
     if (selected.length === 0) return;
     localStorage.setItem("vinylscan_pos_cart", JSON.stringify(selected));
     router.push("/sales");
+  }
+
+  const discogsConnected = !!user?.discogs_username;
+
+  async function handleBulkList() {
+    if (bulkListing) return;
+    const eligible = records.filter(
+      (r) => selectedIds.has(r.id) && r.discogs_release_id && r.asking_price && r.status === "in_stock" && !r.discogs_listing_id
+    );
+    if (eligible.length === 0) return;
+    setBulkListing(true);
+    const results = await Promise.allSettled(eligible.map((r) => api.discogsListRecord(r.id)));
+    results.forEach((res, i) => {
+      if (res.status === "fulfilled") {
+        handleSaved({ ...eligible[i], discogs_listing_id: res.value.listing_id ?? null });
+      }
+    });
+    setBulkListing(false);
+    setSelectedIds(new Set());
   }
 
   const lotMap = Object.fromEntries(lots.map((l) => [l.id, l.name]));
@@ -375,6 +397,11 @@ function CatalogPageInner() {
                     <td>
                       <div className="flex items-center gap-2 justify-end">
                         <SellButton record={r} onSold={(updated) => handleSaved(updated)} />
+                        {discogsConnected && r.discogs_listing_id && (
+                          <span className="text-2xs px-1.5 py-0.5 rounded-full bg-vs-accent/15 text-vs-accent border border-vs-accent/20 font-medium whitespace-nowrap">
+                            Listed
+                          </span>
+                        )}
                         {r.discogs_release_id && (
                           <a
                             href={`https://www.discogs.com/release/${r.discogs_release_id}`}
@@ -431,6 +458,16 @@ function CatalogPageInner() {
               <Tag size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-vs-muted pointer-events-none" />
             </div>
           )}
+          {discogsConnected && (
+            <button
+              onClick={handleBulkList}
+              disabled={bulkListing || !records.some((r) => selectedIds.has(r.id) && r.discogs_release_id && r.asking_price && r.status === "in_stock" && !r.discogs_listing_id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-vs-accent/40 text-vs-accent text-sm font-medium hover:bg-vs-accent/10 transition-colors disabled:opacity-40"
+            >
+              {bulkListing ? <Loader2 size={13} className="animate-spin" /> : <ExternalLink size={13} />}
+              List for sale
+            </button>
+          )}
           <button onClick={handleAddToCart} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-vs-accent text-vs-bg text-sm font-medium hover:bg-vs-accent/90 transition-colors">
             <ShoppingCart size={13} />Add to cart
           </button>
@@ -438,7 +475,7 @@ function CatalogPageInner() {
       )}
 
       {showModal && (
-        <RecordModal record={editRecord} lots={lots} onClose={() => setShowModal(false)} onSaved={handleSaved} />
+        <RecordModal record={editRecord} lots={lots} onClose={() => setShowModal(false)} onSaved={handleSaved} discogsConnected={discogsConnected} />
       )}
 
       {deleteId && (

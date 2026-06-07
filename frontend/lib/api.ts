@@ -119,6 +119,7 @@ export interface CatalogRecord {
   condition: string;
   discogs_release_id: number | null;
   discogs_instance_id: number | null;
+  discogs_listing_id: number | null;
   discogs_synced: boolean;
   discogs_url: string | null;
   cover_image_url: string | null;
@@ -441,6 +442,16 @@ export const api = {
   fetchDiscogsPrices: (releaseIds: number[]) =>
     apiFetch<Record<string, { lowest: number; currency: string; num_for_sale: number } | null>>(
       `/discogs/prices?release_ids=${releaseIds.join(",")}`
+    ),
+
+  discogsListRecord: (id: string) =>
+    apiFetch<{ ok: boolean; listing_id: number | null; message: string }>(
+      `/discogs/marketplace/${id}`, { method: "POST" }
+    ),
+
+  discogsDelistRecord: (id: string) =>
+    apiFetch<{ ok: boolean; listing_id: null; message: string }>(
+      `/discogs/marketplace/${id}`, { method: "DELETE" }
     ),
 
   // ── Email/password auth ─────────────────────────────────────────────────

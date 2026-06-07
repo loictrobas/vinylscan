@@ -13,11 +13,14 @@ interface RecordModalProps {
   lots: Lot[];
   onClose: () => void;
   onSaved: (r: CatalogRecord) => void;
+  discogsConnected?: boolean;
 }
 
-export function RecordModal({ record, lots, onClose, onSaved }: RecordModalProps) {
+export function RecordModal({ record, lots, onClose, onSaved, discogsConnected = false }: RecordModalProps) {
   const isNew = !record;
   const [lightbox, setLightbox] = useState(false);
+  const [listing, setListing] = useState(false);
+  const [listingId, setListingId] = useState<number | null>(record?.discogs_listing_id ?? null);
 
   const [askingPrice, setAskingPrice] = useState(
     record?.asking_price != null ? String(record.asking_price) : ""
@@ -266,6 +269,50 @@ export function RecordModal({ record, lots, onClose, onSaved }: RecordModalProps
             <textarea className="input resize-none" rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} />
           </div>
         </div>
+
+        {/* Discogs marketplace listing — only for Discogs-connected users with an existing record */}
+        {!isNew && discogsConnected && record?.discogs_release_id && (
+          <div className="px-6 pb-4 border-t border-vs-border pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-vs-text-2">Discogs Marketplace</p>
+                {listingId ? (
+                  <p className="text-xs text-vs-success mt-0.5">Listed for sale</p>
+                ) : (
+                  <p className="text-xs text-vs-muted mt-0.5">
+                    {record.asking_price ? "Not listed" : "Set a price to list"}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={async () => {
+                  if (listing) return;
+                  setListing(true);
+                  try {
+                    if (listingId) {
+                      await api.discogsDelistRecord(record.id);
+                      setListingId(null);
+                      onSaved({ ...record, discogs_listing_id: null });
+                    } else {
+                      const res = await api.discogsListRecord(record.id);
+                      setListingId(res.listing_id);
+                      onSaved({ ...record, discogs_listing_id: res.listing_id });
+                    }
+                  } catch { /* errors surface via global error handling */ }
+                  finally { setListing(false); }
+                }}
+                disabled={listing || (!listingId && !record.asking_price)}
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40 ${
+                  listingId
+                    ? "border-vs-danger/40 text-vs-danger hover:bg-vs-danger/10"
+                    : "border-vs-accent/40 text-vs-accent hover:bg-vs-accent/10"
+                }`}
+              >
+                {listing ? "…" : listingId ? "Remove listing" : "List for sale"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && <p className="px-6 pb-2 text-xs text-vs-danger">{error}</p>}
 
