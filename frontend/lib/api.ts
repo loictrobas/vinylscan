@@ -130,7 +130,36 @@ export interface CatalogRecord {
   sold_at: string | null;
   tags: string | null;
   notes: string | null;
+  store_listed: boolean;
   created_at: string;
+}
+
+export interface StoreSettings {
+  store_slug: string | null;
+  store_name: string | null;
+  store_description: string | null;
+  store_contact: string | null;
+  store_public: boolean;
+}
+
+export interface PublicRecord {
+  id: string;
+  artist: string | null;
+  title: string | null;
+  year: number | null;
+  label: string | null;
+  format: string | null;
+  genre: string | null;
+  condition: string;
+  asking_price: number | null;
+  cover_image_url: string | null;
+}
+
+export interface PublicStore {
+  store_name: string | null;
+  store_description: string | null;
+  store_contact: string | null;
+  records: PublicRecord[];
 }
 
 export interface CatalogStats {
@@ -422,7 +451,7 @@ export const api = {
   createLot: (body: { name: string; purchase_price?: number; notes?: string }) =>
     apiFetch<Lot>("/catalog/lots", { method: "POST", body: JSON.stringify(body) }),
 
-  updateRecord: (id: string, body: Partial<CreateRecordBody & { asking_price?: number | null; condition?: string; lot_id?: string | null }>) =>
+  updateRecord: (id: string, body: Partial<CreateRecordBody & { asking_price?: number | null; condition?: string; lot_id?: string | null; store_listed?: boolean }>) =>
     apiFetch<CatalogRecord>(`/catalog/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
 
   sellRecord: (id: string, sold_price: number) =>
@@ -473,6 +502,14 @@ export const api = {
     apiFetch<{ ok: boolean; listing_id: null; message: string }>(
       `/discogs/marketplace/${id}`, { method: "DELETE" }
     ),
+
+  // ── Store ────────────────────────────────────────────────────────────────
+  getStoreSettings: () => apiFetch<StoreSettings>("/store/settings"),
+
+  updateStoreSettings: (body: Partial<StoreSettings>) =>
+    apiFetch<StoreSettings>("/store/settings", { method: "PATCH", body: JSON.stringify(body) }),
+
+  getPublicStore: (slug: string) => apiFetch<PublicStore>(`/store/${slug}`),
 
   // ── Email/password auth ─────────────────────────────────────────────────
   claimAdmin: () =>

@@ -3,12 +3,14 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 
 const AUTH_ROUTES = ["/login", "/register", "/reset-password"];
+const PUBLIC_ROUTES = ["/store"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = AUTH_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "?"));
+  const isPublicPage = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
 
-  if (isAuthPage) {
+  if (isAuthPage || isPublicPage) {
     return <>{children}</>;
   }
 

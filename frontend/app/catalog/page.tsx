@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Disc3, Search, X, Plus, ExternalLink, ChevronDown,
-  Trash2, DollarSign, Check, ShoppingCart, Tag, Loader2,
+  Trash2, DollarSign, Check, ShoppingCart, Tag, Loader2, Store,
 } from "lucide-react";
 import { api, getToken, type CatalogRecord, type Lot, type User } from "@/lib/api";
 import { CoverThumb } from "@/components/CoverThumb";
@@ -223,6 +223,19 @@ function CatalogPageInner() {
 
   const discogsConnected = !!user?.discogs_username;
 
+  async function handleToggleStoreListed(r: CatalogRecord) {
+    const updated = await api.updateRecord(r.id, { store_listed: !r.store_listed });
+    handleSaved(updated);
+  }
+
+  async function handleBulkStoreListed(list: boolean) {
+    const ids = records.filter((r) => selectedIds.has(r.id) && r.store_listed !== list).map((r) => r.id);
+    if (ids.length === 0) return;
+    const results = await Promise.allSettled(ids.map((id) => api.updateRecord(id, { store_listed: list })));
+    results.forEach((res) => { if (res.status === "fulfilled") handleSaved(res.value); });
+    setSelectedIds(new Set());
+  }
+
   async function handleBulkList() {
     if (bulkListing) return;
     const eligible = records.filter(
@@ -397,6 +410,13 @@ function CatalogPageInner() {
                     <td>
                       <div className="flex items-center gap-2 justify-end">
                         <SellButton record={r} onSold={(updated) => handleSaved(updated)} />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleToggleStoreListed(r); }}
+                          title={r.store_listed ? "Remove from store" : "Show in store"}
+                          className={`p-1 rounded transition-colors ${r.store_listed ? "text-vs-accent hover:text-vs-accent/70" : "text-vs-muted hover:text-vs-text"}`}
+                        >
+                          <Store size={13} />
+                        </button>
                         {discogsConnected && r.discogs_listing_id && (
                           <span className="text-2xs px-1.5 py-0.5 rounded-full bg-vs-accent/15 text-vs-accent border border-vs-accent/20 font-medium whitespace-nowrap">
                             Listed
@@ -458,6 +478,20 @@ function CatalogPageInner() {
               <Tag size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-vs-muted pointer-events-none" />
             </div>
           )}
+          <button
+            onClick={() => handleBulkStoreListed(true)}
+            disabled={!records.some((r) => selectedIds.has(r.id) && !r.store_listed)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-vs-accent/40 text-vs-accent text-sm font-medium hover:bg-vs-accent/10 transition-colors disabled:opacity-40"
+          >
+            <Store size={13} />Add to store
+          </button>
+          <button
+            onClick={() => handleBulkStoreListed(false)}
+            disabled={!records.some((r) => selectedIds.has(r.id) && r.store_listed)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-vs-border text-vs-muted text-sm font-medium hover:text-vs-text hover:border-vs-border-2 transition-colors disabled:opacity-40"
+          >
+            <Store size={13} />Remove from store
+          </button>
           {discogsConnected && (
             <button
               onClick={handleBulkList}

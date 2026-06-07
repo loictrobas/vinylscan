@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   Layers,
+  Store,
 } from "lucide-react";
 import { api, clearToken, clearMeCache, getToken, type User } from "@/lib/api";
 
@@ -49,6 +50,12 @@ const NAV: NavSection[] = [
     items: [
       { href: "/catalog/lots",        label: "Lots",      icon: <Layers size={16} /> },
       { href: "/inventory/movements", label: "Movements", icon: <History size={16} /> },
+    ],
+  },
+  {
+    label: "Store",
+    items: [
+      { href: "/settings/store", label: "My store", icon: <Store size={16} /> },
     ],
   },
   {

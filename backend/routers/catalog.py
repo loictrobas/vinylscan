@@ -48,6 +48,7 @@ class RecordOut(BaseModel):
     sold_at: str | None
     tags: str | None
     notes: str | None
+    store_listed: bool
     created_at: str
 
     model_config = {"from_attributes": True}
@@ -80,6 +81,7 @@ class RecordOut(BaseModel):
             sold_at=r.sold_at.isoformat() if r.sold_at else None,
             tags=getattr(r, "tags", None),
             notes=getattr(r, "notes", None),
+            store_listed=getattr(r, "store_listed", False) or False,
             created_at=r.created_at.isoformat(),
         )
 
@@ -599,6 +601,7 @@ class UpdateRecordRequest(BaseModel):
     asking_price: float | None = None
     tags: str | None = None
     notes: str | None = None
+    store_listed: bool | None = None
 
 
 @router.patch("/{record_id}", response_model=RecordOut)
@@ -617,7 +620,7 @@ async def update_record(
         raise HTTPException(status_code=404, detail="Record not found")
 
     simple_fields = ["artist", "title", "year", "label", "catalog_number", "format",
-                     "genre", "country", "cost_price", "asking_price", "tags", "notes"]
+                     "genre", "country", "cost_price", "asking_price", "tags", "notes", "store_listed"]
     for field in simple_fields:
         if field in body.model_fields_set:
             setattr(record, field, getattr(body, field))

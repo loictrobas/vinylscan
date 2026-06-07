@@ -21,6 +21,8 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
   const [lightbox, setLightbox] = useState(false);
   const [listing, setListing] = useState(false);
   const [listingId, setListingId] = useState<number | null>(record?.discogs_listing_id ?? null);
+  const [storeListed, setStoreListed] = useState(record?.store_listed ?? false);
+  const [storeToggling, setStoreToggling] = useState(false);
 
   const [askingPrice, setAskingPrice] = useState(
     record?.asking_price != null ? String(record.asking_price) : ""
@@ -269,6 +271,40 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
             <textarea className="input resize-none" rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} />
           </div>
         </div>
+
+        {/* Store listing toggle */}
+        {!isNew && (
+          <div className="px-6 pb-4 border-t border-vs-border pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-vs-text-2">Store listing</p>
+                <p className={`text-xs mt-0.5 ${storeListed ? "text-vs-success" : "text-vs-muted"}`}>
+                  {storeListed ? "Visible in your store" : "Hidden from store"}
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  if (storeToggling || !record) return;
+                  setStoreToggling(true);
+                  try {
+                    const updated = await api.updateRecord(record.id, { store_listed: !storeListed });
+                    setStoreListed(!storeListed);
+                    onSaved(updated);
+                  } catch { /* non-fatal */ }
+                  finally { setStoreToggling(false); }
+                }}
+                disabled={storeToggling}
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40 ${
+                  storeListed
+                    ? "border-vs-danger/40 text-vs-danger hover:bg-vs-danger/10"
+                    : "border-vs-accent/40 text-vs-accent hover:bg-vs-accent/10"
+                }`}
+              >
+                {storeToggling ? "…" : storeListed ? "Hide from store" : "Show in store"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Discogs marketplace listing — only for Discogs-connected users with an existing record */}
         {!isNew && discogsConnected && record?.discogs_release_id && (

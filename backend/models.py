@@ -60,6 +60,12 @@ class User(Base):
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     price_markup_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
     last_discogs_sync: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Public store
+    store_slug: Mapped[str | None] = mapped_column(String(80), unique=True, nullable=True)
+    store_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    store_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    store_contact: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    store_public: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -154,6 +160,7 @@ class Record(Base):
     discogs_synced: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     discogs_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    store_listed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     status: Mapped[RecordStatus] = mapped_column(
         Enum(RecordStatus, name="record_status"), default=RecordStatus.in_stock, nullable=False
