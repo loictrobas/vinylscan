@@ -408,6 +408,7 @@ export function ScanInterface() {
   const [processing, setProcessing] = useState(false);
   const [showBarcode, setShowBarcode] = useState(false);
   const [barcodeSearching, setBarcodeSearching] = useState(false);
+  const [barcodeError, setBarcodeError] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -603,10 +604,11 @@ export function ScanInterface() {
   const handleBarcodeDetected = useCallback(async (barcode: string) => {
     setShowBarcode(false);
     setBarcodeSearching(true);
+    setBarcodeError(null);
     try {
       const data = await api.barcodeSearch(barcode);
       if (data.matches.length === 0) {
-        alert(`No Discogs results for barcode ${barcode}`);
+        setBarcodeError(`No Discogs results for barcode ${barcode}.`);
         return;
       }
       // Create a synthetic result item so user can confirm via normal flow
@@ -633,7 +635,7 @@ export function ScanInterface() {
       };
       setQueue((q) => [...q, newItem]);
     } catch {
-      alert("Barcode lookup failed. Try again.");
+      setBarcodeError("Barcode lookup failed. Try again.");
     } finally {
       setBarcodeSearching(false);
     }
@@ -714,7 +716,7 @@ export function ScanInterface() {
           </button>
         </div>
         <button
-          onClick={() => setShowBarcode(true)}
+          onClick={() => { setShowBarcode(true); setBarcodeError(null); }}
           className="btn-secondary w-full flex items-center justify-center gap-2"
           disabled={processing || barcodeSearching}
         >
@@ -724,6 +726,12 @@ export function ScanInterface() {
             <><Barcode size={16} /> Scan Barcode (free, instant)</>
           )}
         </button>
+        {barcodeError && (
+          <div className="flex items-center gap-2 px-1">
+            <AlertCircle size={14} className="text-vinyl-accent flex-shrink-0" />
+            <p className="text-xs text-vinyl-muted">{barcodeError}</p>
+          </div>
+        )}
         <input
           ref={fileRef}
           type="file"
