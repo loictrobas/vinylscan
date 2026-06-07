@@ -242,6 +242,21 @@ function _updateCreditBalance(value: string | null) {
   }
 }
 
+const LAST_API_OK_KEY = "vinylscan_last_api_ok";
+
+export function recordApiSuccess() {
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(LAST_API_OK_KEY, Date.now().toString());
+  }
+}
+
+export function isLikelyColdStart(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  const last = localStorage.getItem(LAST_API_OK_KEY);
+  if (!last) return true;
+  return Date.now() - parseInt(last, 10) > 15 * 60 * 1000;
+}
+
 function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
   const token = getToken();
   return {
@@ -272,6 +287,7 @@ async function apiFetch<T>(
       const err = await res.json().catch(() => ({}));
       throw Object.assign(new Error(err.detail || res.statusText), { status: res.status, data: err });
     }
+    recordApiSuccess();
     return res.json();
   } finally {
     clearTimeout(timer);
@@ -303,6 +319,7 @@ export const api = {
         const err = await res.json().catch(() => ({}));
         throw Object.assign(new Error(err.detail || res.statusText), { status: res.status, data: err });
       }
+      recordApiSuccess();
       return res.json();
     } finally {
       clearTimeout(timer);

@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { Camera, Upload, CheckCircle, AlertCircle, Loader2, Plus, ExternalLink, Music, Barcode, WifiOff, ClipboardList } from "lucide-react";
-import { api, type ScanUploadResponse, type DiscogsMatch } from "@/lib/api";
+import { api, isLikelyColdStart, type ScanUploadResponse, type DiscogsMatch } from "@/lib/api";
 import { isOnline, getOfflineQueue, addToOfflineQueue, removeFromOfflineQueue, fileToDataUrl, dataUrlToFile } from "@/lib/offline";
 import dynamic from "next/dynamic";
 
@@ -213,9 +213,14 @@ function ScanItem({
     return (
       <div className="card p-4 flex items-center gap-3">
         <img src={item.preview} alt="" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
-        <div className="flex items-center gap-2">
-          <Loader2 size={16} className="text-vinyl-accent animate-spin" />
-          <p className="text-sm text-vs-muted">Identifying…</p>
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <Loader2 size={16} className="text-vinyl-accent animate-spin" />
+            <p className="text-sm text-vs-muted">Identifying…</p>
+          </div>
+          {item.slowUpload && (
+            <p className="text-xs text-vinyl-muted pl-6">Server warming up — may take ~30s</p>
+          )}
         </div>
       </div>
     );
@@ -470,8 +475,9 @@ export function ScanInterface() {
     setQueue((q) => q.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }
 
-  async function processItem(item: QueueItem) {
-    updateItem(item.id, { phase: "uploading" });
+  async function processItem(item: QueueItem): Promise<boolean> {
+    const slowHint = isLikelyColdStart();
+    updateItem(item.id, { phase: "uploading", slowUpload: slowHint });
     try {
       const res = await api.uploadScan(item.file);
       if (res.error === "identification_failed") {
@@ -479,6 +485,7 @@ export function ScanInterface() {
       } else {
         updateItem(item.id, { phase: "result", result: res });
       }
+      return true;
     } catch (err: unknown) {
       const e = err as { status?: number; data?: { error?: string }; name?: string };
       let msg: string;
@@ -498,6 +505,7 @@ export function ScanInterface() {
         msg = "Upload failed. Check your connection and try again.";
       }
       updateItem(item.id, { phase: "error", errorMsg: msg, retryable: e?.name === "AbortError" || !e?.status || e.status >= 500 || e.status === 429 });
+      return false;
     }
   }
 
