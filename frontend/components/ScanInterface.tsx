@@ -20,10 +20,12 @@ interface QueueItem {
   phase: ItemPhase;
   result?: ScanUploadResponse;
   errorMsg?: string;
+  retryable?: boolean;
   confirmedReleaseId?: number;
   skipped?: boolean;
   condition: Condition;
   researching?: boolean;
+  slowUpload?: boolean;
 }
 
 /** Normalize "artist — title" into a loose match key: lowercase, strip punctuation/whitespace.
@@ -477,11 +479,24 @@ export function ScanInterface() {
         updateItem(item.id, { phase: "result", result: res });
       }
     } catch (err: unknown) {
-      const e = err as { status?: number; data?: { error?: string } };
-      const msg = e?.status === 403 || e?.data?.error === "no_credits"
-        ? "No credits remaining."
-        : "Upload failed. Try again.";
-      updateItem(item.id, { phase: "error", errorMsg: msg });
+      const e = err as { status?: number; data?: { error?: string }; name?: string };
+      let msg: string;
+      if (e?.name === "AbortError") {
+        msg = "Request timed out. Check your connection and try again.";
+      } else if (e?.status === 403 || e?.data?.error === "no_credits") {
+        msg = "No credits remaining.";
+      } else if (e?.status === 413) {
+        msg = "File too large. Max 10 MB.";
+      } else if (e?.status === 429) {
+        msg = "Too many requests — wait a moment and try again.";
+      } else if (e?.status === 502 || e?.status === 503) {
+        msg = "Server is starting up — try again in a few seconds.";
+      } else if (e?.status && e.status >= 500) {
+        msg = "Server error. Try again shortly.";
+      } else {
+        msg = "Upload failed. Check your connection and try again.";
+      }
+      updateItem(item.id, { phase: "error", errorMsg: msg, retryable: e?.name === "AbortError" || !e?.status || e.status >= 500 || e.status === 429 });
     }
   }
 
