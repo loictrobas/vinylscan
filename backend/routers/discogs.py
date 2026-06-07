@@ -295,6 +295,83 @@ class PushResult(BaseModel):
     message: str
 
 
+class ListingResult(BaseModel):
+    ok: bool
+    listing_id: int | None
+    message: str
+
+
+@router.post("/marketplace/{record_id}", response_model=ListingResult)
+async def create_marketplace_listing(
+    record_id: UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a Discogs marketplace listing for a record."""
+    if not user.discogs_oauth_token or not user.discogs_username:
+        raise HTTPException(status_code=403, detail="Discogs account not connected")
+
+    result = await db.execute(
+        select(Record).where(Record.id == record_id, Record.user_id == user.id)
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    if not record.discogs_release_id:
+        raise HTTPException(status_code=422, detail="Record has no Discogs release ID")
+    if not record.asking_price or float(record.asking_price) <= 0:
+        raise HTTPException(status_code=422, detail="Set an asking price before listing")
+    if record.status != RecordStatus.in_stock:
+        raise HTTPException(status_code=422, detail="Only in-stock records can be listed")
+
+    token, secret = _get_tokens(user)
+    try:
+        data = await discogs_svc.create_listing(
+            record.discogs_release_id,
+            float(record.asking_price),
+            record.condition if isinstance(record.condition, str) else record.condition.value,
+            token,
+            secret,
+        )
+        record.discogs_listing_id = data.get("listing_id") or data.get("id")
+        await db.commit()
+        return ListingResult(ok=True, listing_id=record.discogs_listing_id, message="Listed on Discogs marketplace")
+    except Exception as exc:
+        logger.warning("Failed to create listing for record %s: %s", record_id, exc)
+        raise HTTPException(status_code=502, detail=f"Discogs error: {exc}")
+
+
+@router.delete("/marketplace/{record_id}", response_model=ListingResult)
+async def delete_marketplace_listing(
+    record_id: UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Remove a Discogs marketplace listing."""
+    if not user.discogs_oauth_token:
+        raise HTTPException(status_code=403, detail="Discogs account not connected")
+
+    result = await db.execute(
+        select(Record).where(Record.id == record_id, Record.user_id == user.id)
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    if not record.discogs_listing_id:
+        raise HTTPException(status_code=422, detail="Record has no active listing")
+
+    token, secret = _get_tokens(user)
+    listing_id = record.discogs_listing_id
+    try:
+        await discogs_svc.delete_listing(listing_id, token, secret)
+        record.discogs_listing_id = None
+        await db.commit()
+        return ListingResult(ok=True, listing_id=None, message="Listing removed")
+    except Exception as exc:
+        logger.warning("Failed to delete listing %s: %s", listing_id, exc)
+        raise HTTPException(status_code=502, detail=f"Discogs error: {exc}")
+
+
 @router.get("/prices")
 async def batch_prices(
     release_ids: str = QueryParam(..., description="Comma-separated release IDs"),

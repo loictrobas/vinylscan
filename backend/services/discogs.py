@@ -311,6 +311,88 @@ async def remove_from_collection(
     await loop.run_in_executor(None, _sync_delete)
 
 
+async def create_listing(
+    release_id: int, price: float, condition: str, access_token: str, access_token_secret: str
+) -> dict:
+    """Create a Discogs marketplace listing. Returns dict with listing_id."""
+    import asyncio
+    import requests as req
+
+    auth = _oauth1(access_token, access_token_secret)
+
+    def _sync():
+        resp = req.post(
+            f"{DISCOGS_BASE}/marketplace/listings",
+            auth=auth,
+            headers={"User-Agent": USER_AGENT, "Content-Type": "application/json"},
+            json={
+                "release_id": release_id,
+                "condition": condition,
+                "sleeve_condition": condition,
+                "price": round(float(price), 2),
+                "status": "For Sale",
+            },
+            timeout=20,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _sync)
+
+
+async def update_listing(
+    listing_id: int, price: float, condition: str, access_token: str, access_token_secret: str
+) -> None:
+    """Update price/condition on an existing marketplace listing."""
+    import asyncio
+    import requests as req
+
+    auth = _oauth1(access_token, access_token_secret)
+
+    def _sync():
+        resp = req.post(
+            f"{DISCOGS_BASE}/marketplace/listings/{listing_id}",
+            auth=auth,
+            headers={"User-Agent": USER_AGENT, "Content-Type": "application/json"},
+            json={
+                "condition": condition,
+                "sleeve_condition": condition,
+                "price": round(float(price), 2),
+                "status": "For Sale",
+            },
+            timeout=20,
+        )
+        resp.raise_for_status()
+
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _sync)
+
+
+async def delete_listing(
+    listing_id: int, access_token: str, access_token_secret: str
+) -> None:
+    """Remove a marketplace listing. Silently swallows 404 (already gone)."""
+    import asyncio
+    import requests as req
+
+    auth = _oauth1(access_token, access_token_secret)
+
+    def _sync():
+        resp = req.delete(
+            f"{DISCOGS_BASE}/marketplace/listings/{listing_id}",
+            auth=auth,
+            headers={"User-Agent": USER_AGENT},
+            timeout=20,
+        )
+        if resp.status_code == 404:
+            return
+        resp.raise_for_status()
+
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _sync)
+
+
 def _fetch_collection_page_sync(
     username: str, access_token: str, access_token_secret: str, page: int, per_page: int = 500
 ) -> dict:

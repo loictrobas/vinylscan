@@ -150,6 +150,7 @@ class Record(Base):
     )
     discogs_release_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     discogs_instance_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)  # collection instance_id
+    discogs_listing_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)   # marketplace listing_id
     discogs_synced: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     discogs_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -170,6 +171,7 @@ class Record(Base):
         Index("ix_records_user_status", "user_id", "status"),
         Index("ix_records_lot_id", "lot_id"),
         Index("ix_records_discogs_release_id", "discogs_release_id"),
+        Index("ix_records_discogs_listing_id", "discogs_listing_id"),
     )
 
 

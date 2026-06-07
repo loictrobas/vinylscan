@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Literal
@@ -8,9 +9,13 @@ from sqlalchemy import and_, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
+from middleware.auth_middleware import decrypt
 from models import Lot, Record, RecordCondition, RecordStatus, User
 from routers.auth import get_current_user
 from routers.scan import _set_credit_header
+from services import discogs as discogs_svc
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 
@@ -32,6 +37,7 @@ class RecordOut(BaseModel):
     condition: str
     discogs_release_id: int | None
     discogs_instance_id: int | None
+    discogs_listing_id: int | None
     discogs_synced: bool
     discogs_url: str | None
     cover_image_url: str | None
@@ -63,6 +69,7 @@ class RecordOut(BaseModel):
             condition=r.condition,
             discogs_release_id=r.discogs_release_id,
             discogs_instance_id=getattr(r, "discogs_instance_id", None),
+            discogs_listing_id=getattr(r, "discogs_listing_id", None),
             discogs_synced=getattr(r, "discogs_synced", False) or False,
             discogs_url=r.discogs_url,
             cover_image_url=getattr(r, "cover_image_url", None),
@@ -614,6 +621,24 @@ async def update_record(
 
     await db.commit()
     await db.refresh(record)
+
+    # Sync price to Discogs marketplace if the record is listed and asking_price changed
+    if (
+        "asking_price" in body.model_fields_set
+        and getattr(record, "discogs_listing_id", None)
+        and record.asking_price
+        and user.discogs_oauth_token
+    ):
+        try:
+            token = decrypt(user.discogs_oauth_token)
+            secret = decrypt(user.discogs_oauth_token_secret)
+            condition = record.condition if isinstance(record.condition, str) else record.condition.value
+            await discogs_svc.update_listing(
+                record.discogs_listing_id, float(record.asking_price), condition, token, secret
+            )
+        except Exception as exc:
+            logger.warning("Failed to sync price to Discogs listing %s: %s", record.discogs_listing_id, exc)
+
     _set_credit_header(response, user)
     return RecordOut.from_orm_safe(record)
 
@@ -639,10 +664,22 @@ async def sell_record(
     if record.status == RecordStatus.sold:
         raise HTTPException(status_code=400, detail="Record already marked as sold")
 
+    listing_id = getattr(record, "discogs_listing_id", None)
     record.status = RecordStatus.sold
     record.sold_price = body.sold_price
     record.sold_at = datetime.now(timezone.utc)
+    record.discogs_listing_id = None
     await db.commit()
     await db.refresh(record)
+
+    # Remove Discogs marketplace listing when sold
+    if listing_id and user.discogs_oauth_token:
+        try:
+            token = decrypt(user.discogs_oauth_token)
+            secret = decrypt(user.discogs_oauth_token_secret)
+            await discogs_svc.delete_listing(listing_id, token, secret)
+        except Exception as exc:
+            logger.warning("Failed to remove Discogs listing %s on sale: %s", listing_id, exc)
+
     _set_credit_header(response, user)
     return RecordOut.from_orm_safe(record)
