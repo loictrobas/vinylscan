@@ -23,6 +23,7 @@ export function RecordModal({ record, lots, onClose, onSaved }: RecordModalProps
     record?.asking_price != null ? String(record.asking_price) : ""
   );
   const [autoSaved, setAutoSaved] = useState(false);
+  const [autoSaveError, setAutoSaveError] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [form, setFormState] = useState({
@@ -69,8 +70,12 @@ export function RecordModal({ record, lots, onClose, onSaved }: RecordModalProps
           const updated = await api.updateRecord(record.id, { asking_price: n ?? undefined });
           onSaved(updated);
           setAutoSaved(true);
+          setAutoSaveError(false);
           setTimeout(() => setAutoSaved(false), 2000);
-        } catch { /* silent */ }
+        } catch {
+          setAutoSaveError(true);
+          setTimeout(() => setAutoSaveError(false), 4000);
+        }
       }, 600);
     }
   }
@@ -147,6 +152,9 @@ export function RecordModal({ record, lots, onClose, onSaved }: RecordModalProps
                 Asking price
                 <span className={`text-2xs transition-opacity duration-300 ${autoSaved ? "opacity-100 text-vs-success" : "opacity-0"}`}>
                   ✓ Saved
+                </span>
+                <span className={`text-2xs transition-opacity duration-300 ${autoSaveError ? "opacity-100 text-vs-danger" : "opacity-0"}`}>
+                  Save failed — try again
                 </span>
               </label>
               <div className="flex items-center gap-2 mt-0.5">
