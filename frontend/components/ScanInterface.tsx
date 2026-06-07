@@ -30,7 +30,11 @@ interface QueueItem {
  *  Used to flag "you may already own a different pressing of this album" —
  *  Discogs gives every pressing/reissue its own release_id, but users think in albums. */
 function fuzzyKey(artist: string, title: string): string {
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  // Strip Discogs disambiguation suffixes like "Martin Solveig (2)" — synced
+  // collection artist names carry these, but search-result artist names parsed
+  // from "Artist - Title" strings don't, so they'd otherwise never match.
+  const stripDisambig = (s: string) => s.replace(/\s*\(\d+\)\s*$/, "");
+  const norm = (s: string) => stripDisambig(s).toLowerCase().replace(/[^a-z0-9]+/g, "");
   return `${norm(artist)}::${norm(title)}`;
 }
 
