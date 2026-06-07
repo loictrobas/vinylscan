@@ -194,6 +194,24 @@ export interface Lot {
   created_at: string;
 }
 
+export interface LotSummary {
+  id: string;
+  name: string;
+  purchase_price: number | null;
+  notes: string | null;
+  record_count: number;
+  in_stock_count: number;
+  sold_count: number;
+  total_asking: number | null;
+  total_sold_revenue: number | null;
+  total_cost: number | null;
+  profit: number | null;
+  unpriced_count: number;
+  condition_breakdown: Record<string, number>;
+  created_at: string;
+  records: CatalogRecord[];
+}
+
 export interface CreditPack {
   id: string;
   name: string;
@@ -398,6 +416,8 @@ export const api = {
   getRecord: (id: string) => apiFetch<CatalogRecord>(`/catalog/${id}`),
 
   listLots: () => apiFetch<Lot[]>("/catalog/lots/list"),
+
+  lotSummary: (id: string) => apiFetch<LotSummary>(`/catalog/lots/${id}/summary`),
 
   createLot: (body: { name: string; purchase_price?: number; notes?: string }) =>
     apiFetch<Lot>("/catalog/lots", { method: "POST", body: JSON.stringify(body) }),

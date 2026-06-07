@@ -253,7 +253,15 @@ async def lot_summary(
     sold = [r for r in records if r.status == RecordStatus.sold]
     total_asking = sum(float(r.asking_price) for r in in_stock if r.asking_price is not None)
     total_sold_revenue = sum(float(r.sold_price) for r in sold if r.sold_price is not None)
+    total_cost = sum(float(r.cost_price) for r in records if r.cost_price is not None)
     profit = total_sold_revenue - (lot.purchase_price or 0) if sold else None
+    unpriced_count = sum(1 for r in in_stock if r.asking_price is None)
+
+    condition_order = ["M", "NM", "VG+", "VG", "G"]
+    condition_breakdown: dict[str, int] = {}
+    for r in in_stock:
+        c = r.condition if isinstance(r.condition, str) else r.condition.value
+        condition_breakdown[c] = condition_breakdown.get(c, 0) + 1
 
     _set_credit_header(response, user)
     return {
@@ -266,7 +274,10 @@ async def lot_summary(
         "sold_count": len(sold),
         "total_asking": total_asking or None,
         "total_sold_revenue": total_sold_revenue or None,
+        "total_cost": total_cost or None,
         "profit": profit,
+        "unpriced_count": unpriced_count,
+        "condition_breakdown": {c: condition_breakdown[c] for c in condition_order if c in condition_breakdown},
         "created_at": lot.created_at.isoformat(),
         "records": [RecordOut.from_orm_safe(r) for r in records],
     }

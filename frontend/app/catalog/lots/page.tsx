@@ -213,7 +213,7 @@ export default function LotsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {lots.map((l) => (
-            <LotCard key={l.id} lot={l} onClick={() => router.push(`/catalog?lot_id=${l.id}`)} />
+            <LotCard key={l.id} lot={l} onClick={() => router.push(`/catalog/lots/${l.id}`)} />
           ))}
         </div>
       )}

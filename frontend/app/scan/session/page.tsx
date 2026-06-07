@@ -3,13 +3,25 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Download, Plus, CheckCircle, AlertCircle, Loader2, ExternalLink, ArrowLeft } from "lucide-react";
+import { Download, Plus, CheckCircle, AlertCircle, Loader2, ExternalLink, ArrowLeft, Clock, TrendingUp } from "lucide-react";
 import { api, getToken, type Scan } from "@/lib/api";
 import { groupScansBySession, sessionLowestValue, type PricingMap } from "@/lib/session";
+
+function formatDuration(ms: number): string {
+  const mins = Math.round(ms / 60000);
+  if (mins < 1) return "< 1 min";
+  if (mins === 1) return "1 min";
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
 
 export default function SessionPage() {
   const router = useRouter();
   const [scans, setScans] = useState<Scan[]>([]);
+  const [sessionStart, setSessionStart] = useState<Date | null>(null);
+  const [sessionEnd, setSessionEnd] = useState<Date | null>(null);
   const [pricing, setPricing] = useState<PricingMap>({});
   const [loading, setLoading] = useState(true);
   const [addingAll, setAddingAll] = useState(false);
@@ -23,15 +35,14 @@ export default function SessionPage() {
 
   async function loadSession() {
     try {
-      // Fetch last 100 scans — more than enough for one session
       const all = await api.scanHistory(1, 100);
-      // Take the most recent session
       const sessions = groupScansBySession(all);
       if (sessions.length === 0) { router.replace("/scan"); return; }
       const latest = sessions[0];
       setScans(latest.scans);
+      setSessionStart(latest.startedAt);
+      setSessionEnd(latest.endedAt);
       setLoading(false);
-      // Fetch pricing lazily for confirmed scans
       fetchPricing(latest.scans);
     } catch {
       router.replace("/scan");
@@ -42,16 +53,14 @@ export default function SessionPage() {
     const confirmed = sessionScans.filter(
       (s) => (s.status === "manually_added" || s.status === "auto_added") && s.discogs_release_id
     );
-    const pricingResult: PricingMap = {};
     for (const scan of confirmed) {
       if (!scan.discogs_release_id) continue;
-      await new Promise((r) => setTimeout(r, 500)); // 0.5s rate-limit guard
+      await new Promise((r) => setTimeout(r, 500));
       try {
         const res = await api.getPricing(scan.discogs_release_id);
-        pricingResult[scan.discogs_release_id] = res.pricing;
         setPricing((prev) => ({ ...prev, [scan.discogs_release_id!]: res.pricing }));
       } catch {
-        pricingResult[scan.discogs_release_id] = null;
+        setPricing((prev) => ({ ...prev, [scan.discogs_release_id!]: null }));
       }
     }
   }
@@ -85,9 +94,7 @@ export default function SessionPage() {
   }
 
   async function addAll() {
-    const toAdd = scans.filter(
-      (s) => s.status === "pending" && s.discogs_release_id
-    );
+    const toAdd = scans.filter((s) => s.status === "pending" && s.discogs_release_id);
     if (toAdd.length === 0) return;
     setAddingAll(true);
     abortRef.current = false;
@@ -106,7 +113,6 @@ export default function SessionPage() {
       if (i < toAdd.length - 1) await new Promise((r) => setTimeout(r, 500));
     }
     setAddingAll(false);
-    // Refresh scans after bulk add
     loadSession();
   }
 
@@ -120,9 +126,16 @@ export default function SessionPage() {
 
   const added = scans.filter((s) => s.status === "manually_added" || s.status === "auto_added");
   const skipped = scans.filter((s) => s.status === "skipped");
-  const unknown = scans.filter((s) => !s.artist && !s.title);
+  const failed = scans.filter((s) => s.status !== "pending" && s.status !== "manually_added" && s.status !== "auto_added" && s.status !== "skipped");
   const pendingWithRelease = scans.filter((s) => s.status === "pending" && s.discogs_release_id);
   const valueResult = sessionLowestValue(scans, pricing);
+
+  // Records with market data available but that might need a price set
+  const pricedCount = Object.values(pricing).filter((p) => p !== null).length;
+
+  const duration = sessionStart && sessionEnd
+    ? sessionEnd.getTime() - sessionStart.getTime()
+    : null;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-6">
@@ -131,7 +144,18 @@ export default function SessionPage() {
         <Link href="/scan" className="text-vinyl-muted hover:text-vinyl-text transition-colors">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="text-2xl font-bold">Session Summary</h1>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold">Session Summary</h1>
+          {sessionStart && (
+            <p className="text-xs text-vinyl-muted mt-0.5 flex items-center gap-1.5">
+              <Clock size={11} />
+              {sessionStart.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              {" · "}
+              {sessionStart.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+              {duration !== null && duration > 60000 && ` · ${formatDuration(duration)}`}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -146,31 +170,52 @@ export default function SessionPage() {
             <p className="text-xs text-vinyl-muted">Added</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-vinyl-muted">{skipped.length + unknown.length}</p>
+            <p className="text-2xl font-bold text-vinyl-muted">{skipped.length + failed.length}</p>
             <p className="text-xs text-vinyl-muted">Skipped</p>
           </div>
         </div>
 
         {valueResult ? (
           <div className="text-center border-t border-vinyl-border pt-3">
-            <p className="text-sm text-vinyl-muted">
-              Estimated value (lowest listed)
+            <p className="text-sm text-vinyl-muted flex items-center justify-center gap-1.5">
+              <TrendingUp size={13} />
+              Market value (lowest listed)
               {valueResult.coveredCount < valueResult.totalCount && (
-                <span className="ml-1 text-xs opacity-60">
+                <span className="text-xs opacity-60">
                   ({valueResult.coveredCount}/{valueResult.totalCount} priced)
                 </span>
               )}
             </p>
-            <p className="text-xl font-bold text-vinyl-gold">
+            <p className="text-xl font-bold text-vinyl-gold mt-0.5">
               {valueResult.currency} {valueResult.total.toFixed(2)}
             </p>
           </div>
         ) : added.length > 0 ? (
           <p className="text-center text-xs text-vinyl-muted border-t border-vinyl-border pt-3">
-            Pricing unavailable
+            Loading market prices…
           </p>
         ) : null}
       </div>
+
+      {/* Set prices CTA — shown when records were added */}
+      {added.length > 0 && (
+        <div className="card p-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-vs-text">Set asking prices</p>
+            <p className="text-xs text-vs-muted mt-0.5">
+              {pricedCount > 0
+                ? `Market data loaded for ${pricedCount} of ${added.length} — use it to price your haul`
+                : "Head to the catalog to assign prices before listing"}
+            </p>
+          </div>
+          <Link
+            href="/catalog?status=in_stock"
+            className="btn-primary text-xs py-1.5 px-3 whitespace-nowrap flex-shrink-0"
+          >
+            Go to catalog →
+          </Link>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3">
@@ -238,7 +283,9 @@ export default function SessionPage() {
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">
-                  {scan.artist && scan.title ? `${scan.artist} — ${scan.title}` : scan.artist || scan.title || <span className="italic text-vinyl-muted">Identification failed</span>}
+                  {scan.artist && scan.title
+                    ? `${scan.artist} — ${scan.title}`
+                    : scan.artist || scan.title || <span className="italic text-vinyl-muted">Identification failed</span>}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5">
                   {scan.year && <span className="text-xs text-vinyl-muted">{scan.year}</span>}
