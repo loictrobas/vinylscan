@@ -9,7 +9,11 @@ from models import CreditReason, ScanStatus
 
 class UserOut(BaseModel):
     id: uuid.UUID
-    discogs_username: str
+    discogs_username: str | None
+    email: str | None = None
+    display_name: str | None = None
+    is_admin: bool = False
+    is_active: bool = True
     credits: int
     created_at: datetime
 

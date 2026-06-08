@@ -1,7 +1,7 @@
 "use client";
 
 const COND_COLORS: Record<string, string> = {
-  M: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+  M: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
   NM: "bg-vs-success/15 text-vs-success border-vs-success/30",
   "VG+": "bg-vs-accent/15 text-vs-accent border-vs-accent/30",
   VG: "bg-vs-warning/15 text-vs-warning border-vs-warning/30",

@@ -476,6 +476,7 @@ async def create_record(
         notes=body.notes,
     )
     db.add(record)
+    await db.flush()  # assign record.id before FK reference in _log
     title_str = f"{body.artist or ''} – {body.title or ''}".strip(" –") or "Record"
     await _log(db, record.id, "added", f"Added to catalog: {title_str}")
     await db.commit()
