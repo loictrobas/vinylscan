@@ -16,10 +16,21 @@ export function getOfflineQueue(): OfflineQueueItem[] {
   }
 }
 
-export function addToOfflineQueue(item: OfflineQueueItem) {
+const QUEUE_MAX = 10;
+
+export function addToOfflineQueue(item: OfflineQueueItem): { ok: boolean; reason?: string } {
   const q = getOfflineQueue();
-  q.push(item);
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+  if (q.length >= QUEUE_MAX) {
+    return { ok: false, reason: `Queue full (${QUEUE_MAX} scans max). Sync or delete existing items first.` };
+  }
+  try {
+    q.push(item);
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+    return { ok: true };
+  } catch {
+    // localStorage quota exceeded
+    return { ok: false, reason: "Storage full. Free up space or sync queued scans." };
+  }
 }
 
 export function removeFromOfflineQueue(id: string) {

@@ -4,8 +4,9 @@ import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Disc3, Search, X, Plus, ExternalLink, ChevronDown,
-  Trash2, DollarSign, Check, ShoppingCart, Tag, Loader2, Store,
+  Trash2, DollarSign, Check, ShoppingCart, Tag, Loader2, Store, Wand2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { api, getToken, type CatalogRecord, type Lot, type User } from "@/lib/api";
 import { CoverThumb } from "@/components/CoverThumb";
 import { CondBadge } from "@/components/CondBadge";
@@ -83,6 +84,79 @@ function SellButton({ record, onSold }: { record: CatalogRecord; onSold: (r: Cat
   );
 }
 
+// ── Inline price editor ───────────────────────────────────────────────────────
+
+function InlinePrice({ record, onSaved }: { record: CatalogRecord; onSaved: (r: CatalogRecord) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(record.asking_price != null ? String(record.asking_price) : "");
+  const [saving, setSaving] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!editing) return;
+    function onDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setEditing(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [editing]);
+
+  async function save() {
+    const n = val === "" ? null : parseFloat(val);
+    if (val !== "" && (n === null || isNaN(n) || n < 0)) return;
+    setSaving(true);
+    try {
+      const updated = await api.updateRecord(record.id, { asking_price: n ?? undefined });
+      onSaved(updated);
+      setEditing(false);
+    } finally { setSaving(false); }
+  }
+
+  function open(e: React.MouseEvent) {
+    e.stopPropagation();
+    setVal(record.asking_price != null ? String(record.asking_price) : "");
+    setEditing(true);
+  }
+
+  return (
+    <div ref={containerRef} className="relative inline-block" onClick={(e) => e.stopPropagation()}>
+      {/* Price label — always rendered, maintains column width */}
+      <button
+        onClick={open}
+        className="rounded px-1 py-0.5 hover:bg-vs-raised transition-colors"
+        title="Click to edit price"
+      >
+        {record.asking_price != null
+          ? <span className="text-sm font-medium text-vs-gold">{fmt(record.asking_price)}</span>
+          : <span className="text-vs-muted text-xs">—</span>
+        }
+      </button>
+
+      {/* Floating editor — absolutely positioned, does not affect layout */}
+      {editing && (
+        <div className="absolute z-30 left-1/2 -translate-x-1/2 top-full mt-1 flex items-center gap-1.5 bg-vs-card border border-vs-accent/40 rounded-lg shadow-xl px-2.5 py-2 whitespace-nowrap">
+          <span className="text-xs text-vs-muted">$</span>
+          <input
+            autoFocus type="number" min="0" step="0.01" value={val}
+            onChange={(e) => setVal(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+            className="w-20 bg-vs-raised border border-vs-border-2 rounded px-2 py-1 text-sm text-vs-text focus:outline-none focus:border-vs-accent"
+            placeholder="0.00"
+          />
+          <button onClick={save} disabled={saving} className="p-1 rounded text-vs-success hover:bg-vs-success/10 disabled:opacity-50">
+            {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+          </button>
+          <button onClick={() => setEditing(false)} className="p-1 rounded text-vs-muted hover:text-vs-text hover:bg-vs-raised">
+            <X size={12} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 const PER_PAGE = 40;
@@ -111,6 +185,16 @@ function CatalogPageInner() {
 
   const [prices, setPrices] = useState<Record<string, PriceData | null | undefined>>({});
   const pricesFetchedRef = useRef<Set<string>>(new Set());
+  const lastSelectedIndexRef = useRef<number | null>(null);
+  const isShiftRef = useRef(false);
+  const recordsRef = useRef<CatalogRecord[]>([]);
+
+  const [autoPriceOpen, setAutoPriceOpen] = useState(false);
+  const [autoPriceScope, setAutoPriceScope] = useState<"unpriced" | "selected">("unpriced");
+  const [autoPriceStrategy, setAutoPriceStrategy] = useState<"suggested" | "lowest_x" | "manual">("suggested");
+  const [autoPriceMultiplier, setAutoPriceMultiplier] = useState("1.5");
+  const [autoPriceManual, setAutoPriceManual] = useState("");
+  const [autoPricing, setAutoPricing] = useState(false);
 
   const fetchRecords = useCallback(async (pg: number, status: string, lot: string, q: string) => {
     setLoading(true);
@@ -132,6 +216,19 @@ function CatalogPageInner() {
     api.listLots().then(setLots).catch(() => {});
     api.me().then(setUser).catch(() => {});
   }, [router]);
+
+  // Track shift key globally — more reliable than e.shiftKey on React events
+  useEffect(() => {
+    const dn = (e: KeyboardEvent) => { if (e.key === "Shift") isShiftRef.current = true; };
+    const up = (e: KeyboardEvent) => { if (e.key === "Shift") isShiftRef.current = false; };
+    window.addEventListener("keydown", dn);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", () => { isShiftRef.current = false; });
+    return () => { window.removeEventListener("keydown", dn); window.removeEventListener("keyup", up); };
+  }, []);
+
+  // Keep recordsRef in sync so toggleSelect updater never has stale closure
+  useEffect(() => { recordsRef.current = records; }, [records]);
 
   useEffect(() => {
     setPage(1);
@@ -177,22 +274,36 @@ function CatalogPageInner() {
   }
 
   async function handleDelete(id: string) {
-    await api.deleteRecord(id);
-    setRecords((prev) => prev.filter((r) => r.id !== id));
-    setDeleteId(null);
+    try {
+      await api.deleteRecord(id);
+      setRecords((prev) => prev.filter((r) => r.id !== id));
+      setDeleteId(null);
+      toast.success("Record deleted");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    }
   }
 
   function openEdit(r: CatalogRecord) { setEditRecord(r); setShowModal(true); }
 
-  function toggleSelect(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
+  function toggleSelect(id: string, index: number, eventShift = false) {
+    const shift = eventShift || isShiftRef.current;
+    const recs = recordsRef.current;
+    // Direct read — function is never memoized so selectedIds is always fresh
+    const next = new Set(selectedIds);
+    if (shift && lastSelectedIndexRef.current !== null) {
+      const from = Math.min(lastSelectedIndexRef.current, index);
+      const to = Math.max(lastSelectedIndexRef.current, index);
+      for (let i = from; i <= to; i++) { if (recs[i]) next.add(recs[i].id); }
+    } else {
       next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+    }
+    setSelectedIds(next);
+    lastSelectedIndexRef.current = index;
   }
 
   function toggleSelectAll() {
+    lastSelectedIndexRef.current = null;
     setSelectedIds(selectedIds.size === records.length ? new Set() : new Set(records.map((r) => r.id)));
   }
 
@@ -204,14 +315,19 @@ function CatalogPageInner() {
     setSelectedIds(new Set());
     setBulkDeleteConfirm(false);
     const failed = results.filter((r) => r.status === "rejected").length;
-    if (failed > 0) alert(`${failed} record${failed > 1 ? "s" : ""} could not be deleted.`);
+    if (failed > 0) toast.error(`${failed} record${failed > 1 ? "s" : ""} could not be deleted`);
+    else toast.success(`${deleted.size} record${deleted.size > 1 ? "s" : ""} deleted`);
   }
 
   async function handleBulkAddToLot(lotId: string) {
     if (!lotId) return;
-    await Promise.allSettled([...selectedIds].map((id) => api.updateRecord(id, { lot_id: lotId })));
+    const results = await Promise.allSettled([...selectedIds].map((id) => api.updateRecord(id, { lot_id: lotId })));
+    const ok = results.filter((r) => r.status === "fulfilled").length;
+    const fail = results.filter((r) => r.status === "rejected").length;
     setSelectedIds(new Set());
     fetchRecords(page, statusFilter, lotFilter, search);
+    if (fail > 0) toast.error(`${fail} record${fail > 1 ? "s" : ""} could not be assigned`);
+    else toast.success(`${ok} record${ok > 1 ? "s" : ""} assigned to lot`);
   }
 
   function handleAddToCart() {
@@ -236,6 +352,40 @@ function CatalogPageInner() {
     setSelectedIds(new Set());
   }
 
+  async function handleAutoPrice() {
+    if (autoPricing) return;
+    setAutoPricing(true);
+    const targets = records.filter((r) => {
+      if (r.asking_price != null) return false; // skip already priced
+      if (autoPriceScope === "selected" && !selectedIds.has(r.id)) return false;
+      return true;
+    });
+
+    const mult = parseFloat(autoPriceMultiplier) || 1;
+    const updates: Array<{ id: string; price: number }> = [];
+    for (const r of targets) {
+      const liveLowest = r.discogs_release_id != null ? (prices[String(r.discogs_release_id)]?.lowest ?? null) : null;
+      const lowestPrice = r.discogs_lowest_price ?? liveLowest;
+      let price: number | null = null;
+      if (autoPriceStrategy === "suggested") {
+        price = r.discogs_suggested_price ?? lowestPrice ?? null;
+      } else if (autoPriceStrategy === "lowest_x") {
+        if (lowestPrice != null) price = parseFloat((lowestPrice * mult).toFixed(2));
+      } else if (autoPriceStrategy === "manual") {
+        const v = parseFloat(autoPriceManual);
+        if (!isNaN(v) && v > 0) price = v;
+      }
+      if (price != null && price > 0) updates.push({ id: r.id, price });
+    }
+
+    const results = await Promise.allSettled(updates.map(({ id, price }) => api.updateRecord(id, { asking_price: price })));
+    const ok = results.filter((r) => r.status === "fulfilled").length;
+    setAutoPricing(false);
+    setAutoPriceOpen(false);
+    fetchRecords(page, statusFilter, lotFilter, search);
+    toast.success(`Auto-priced ${ok} record${ok > 1 ? "s" : ""}`);
+  }
+
   async function handleBulkList() {
     if (bulkListing) return;
     const eligible = records.filter(
@@ -249,8 +399,12 @@ function CatalogPageInner() {
         handleSaved({ ...eligible[i], discogs_listing_id: res.value.listing_id ?? null });
       }
     });
+    const ok = results.filter((r) => r.status === "fulfilled").length;
+    const fail = results.filter((r) => r.status === "rejected").length;
     setBulkListing(false);
     setSelectedIds(new Set());
+    if (fail > 0) toast.error(`${fail} listing${fail > 1 ? "s" : ""} failed`);
+    else toast.success(`${ok} record${ok > 1 ? "s" : ""} listed on Discogs`);
   }
 
   const lotMap = Object.fromEntries(lots.map((l) => [l.id, l.name]));
@@ -266,12 +420,22 @@ function CatalogPageInner() {
           <h1 className="text-xl font-medium">Records</h1>
           <p className="text-sm text-vs-text-2 mt-0.5">{total} record{total !== 1 ? "s" : ""}</p>
         </div>
-        <button
-          onClick={() => { setEditRecord(undefined); setShowModal(true); }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus size={14} />New record
-        </button>
+        <div className="flex items-center gap-2">
+          {records.some((r) => r.asking_price == null) && (
+            <button
+              onClick={() => { setAutoPriceScope("unpriced"); setAutoPriceOpen(true); }}
+              className="btn-secondary flex items-center gap-1.5 text-sm"
+            >
+              <Wand2 size={13} />Auto-price
+            </button>
+          )}
+          <button
+            onClick={() => { setEditRecord(undefined); setShowModal(true); }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={14} />New record
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -372,7 +536,7 @@ function CatalogPageInner() {
               </tr>
             </thead>
             <tbody>
-              {records.map((r) => {
+              {records.map((r, rowIndex) => {
                 const priceData = r.discogs_release_id != null ? prices[String(r.discogs_release_id)] : null;
                 const priceLoading = r.discogs_release_id != null && priceData === undefined;
                 const unverifiedCond = r.discogs_synced && r.condition === "VG+";
@@ -381,33 +545,39 @@ function CatalogPageInner() {
                 return (
                   <tr
                     key={r.id}
-                    className={`cursor-pointer transition-colors ${isSelected ? "bg-vs-accent/5" : r.status === "sold" ? "opacity-60" : ""}`}
-                    onClick={() => openEdit(r)}
+                    className={`transition-colors select-none ${isSelected ? "bg-vs-accent/15 dark:bg-vs-accent/10" : r.status === "sold" ? "opacity-60" : ""}`}
                   >
-                    <td className="pr-0" onClick={(e) => e.stopPropagation()}>
-                      <RowCheckbox checked={isSelected} onChange={() => toggleSelect(r.id)} />
+                    <td className="pr-0">
+                      <RowCheckbox
+                        checked={isSelected}
+                        onChange={() => {}}
+                        onClick={(e) => { e.stopPropagation(); toggleSelect(r.id, rowIndex, e.shiftKey); }}
+                      />
                     </td>
-                    <td>
+                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}>
                       <div className="flex items-center gap-3">
                         <CoverThumb url={r.cover_image_url} />
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-vs-muted leading-tight">{r.artist || <span className="italic">Unknown artist</span>}</p>
-                          <p className="text-sm font-medium text-vs-text leading-snug">{r.title || <span className="italic text-vs-muted">Untitled</span>}</p>
+                        <div
+                          className="min-w-0 cursor-pointer group"
+                          onClick={(e) => { e.stopPropagation(); if (e.shiftKey || isShiftRef.current) { toggleSelect(r.id, rowIndex, true); } else { openEdit(r); } }}
+                        >
+                          <p className="text-xs font-medium text-vs-muted leading-tight group-hover:text-vs-text-2 transition-colors">{r.artist || <span className="italic">Unknown artist</span>}</p>
+                          <p className="text-sm font-medium text-vs-text leading-snug group-hover:text-vs-accent transition-colors">{r.title || <span className="italic text-vs-muted">Untitled</span>}</p>
                           <p className="text-2xs text-vs-muted mt-0.5">{[r.year, r.label].filter(Boolean).join(" · ")}</p>
                         </div>
                       </div>
                     </td>
-                    <td><span className="text-xs text-vs-text-2">{r.format ?? "—"}</span></td>
-                    <td><CondBadge c={r.condition} unverified={unverifiedCond} /></td>
-                    <td><MarketCell data={priceData} loading={priceLoading} /></td>
-                    <td>
+                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><span className="text-xs text-vs-text-2">{r.format ?? "—"}</span></td>
+                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><CondBadge c={r.condition} unverified={unverifiedCond} /></td>
+                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><MarketCell data={priceData} loading={priceLoading} /></td>
+                    <td onClick={(e) => e.stopPropagation()}>
                       {r.status === "sold"
                         ? <span className="text-xs text-vs-teal">{r.sold_price != null ? fmt(r.sold_price) : "—"}</span>
-                        : <span className="text-sm font-medium text-vs-gold">{r.asking_price != null ? fmt(r.asking_price) : <span className="text-vs-muted text-xs">—</span>}</span>
+                        : <InlinePrice record={r} onSaved={handleSaved} />
                       }
                     </td>
-                    <td><span className="text-xs text-vs-text-2">{r.lot_id && lotMap[r.lot_id] ? lotMap[r.lot_id] : "—"}</span></td>
-                    <td>
+                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><span className="text-xs text-vs-text-2">{r.lot_id && lotMap[r.lot_id] ? lotMap[r.lot_id] : "—"}</span></td>
+                    <td onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-2 justify-end">
                         <SellButton record={r} onSold={(updated) => handleSaved(updated)} />
                         <button
@@ -421,6 +591,9 @@ function CatalogPageInner() {
                           <span className="text-2xs px-1.5 py-0.5 rounded-full bg-vs-accent/15 text-vs-accent border border-vs-accent/20 font-medium whitespace-nowrap">
                             Listed
                           </span>
+                        )}
+                        {discogsConnected && !r.discogs_listing_id && r.discogs_release_id && r.asking_price && r.status === "in_stock" && (
+                          <span title="Eligible to list on Discogs"><Tag size={12} className="text-vs-muted/40 flex-shrink-0" /></span>
                         )}
                         {r.discogs_release_id && (
                           <a
@@ -458,52 +631,87 @@ function CatalogPageInner() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-vs-card border border-vs-border rounded-xl px-4 py-3 shadow-2xl shadow-black/40">
-          <span className="text-sm font-medium text-vs-text">{selectedIds.size} selected</span>
-          <button onClick={() => setSelectedIds(new Set())} className="text-vs-muted hover:text-vs-text"><X size={14} /></button>
-          <div className="w-px h-4 bg-vs-border" />
-          <button onClick={() => setBulkDeleteConfirm(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-vs-danger hover:bg-vs-danger/10 text-sm font-medium transition-colors">
-            <Trash2 size={13} />Delete
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-vs-card border border-vs-border rounded-xl px-3 py-2.5 shadow-2xl shadow-black/30">
+          {/* Count + clear */}
+          <span className="text-xs font-semibold text-vs-text tabular-nums px-1 whitespace-nowrap">{selectedIds.size} selected</span>
+          <button onClick={() => setSelectedIds(new Set())} className="p-1 text-vs-muted hover:text-vs-text rounded" title="Clear selection"><X size={13} /></button>
+          <div className="w-px h-5 bg-vs-border mx-0.5" />
+
+          {/* Delete */}
+          <button
+            onClick={() => setBulkDeleteConfirm(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-vs-danger hover:bg-vs-danger/10 text-xs font-medium transition-colors whitespace-nowrap"
+            title="Delete selected"
+          >
+            <Trash2 size={12} />Delete
           </button>
+
+          {/* Lot */}
           {lots.length > 0 && (
             <div className="relative">
               <select
                 defaultValue=""
                 onChange={(e) => { if (e.target.value) { handleBulkAddToLot(e.target.value); (e.target as HTMLSelectElement).value = ""; } }}
-                className="pl-3 pr-7 py-1.5 bg-vs-raised border border-vs-border rounded-lg text-sm text-vs-text-2 focus:outline-none focus:border-vs-accent appearance-none cursor-pointer"
+                className="pl-2.5 pr-6 py-1.5 bg-vs-raised border border-vs-border rounded-lg text-xs text-vs-text-2 focus:outline-none focus:border-vs-accent appearance-none cursor-pointer whitespace-nowrap"
               >
                 <option value="" disabled>Add to lot…</option>
                 {lots.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
-              <Tag size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-vs-muted pointer-events-none" />
+              <Tag size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-vs-muted pointer-events-none" />
             </div>
           )}
+
+          <div className="w-px h-5 bg-vs-border mx-0.5" />
+
+          {/* Store */}
           <button
             onClick={() => handleBulkStoreListed(true)}
             disabled={!records.some((r) => selectedIds.has(r.id) && !r.store_listed)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-vs-accent/40 text-vs-accent text-sm font-medium hover:bg-vs-accent/10 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-vs-text-2 hover:text-vs-accent hover:bg-vs-accent/10 transition-colors disabled:opacity-35 whitespace-nowrap"
+            title="Add to store"
           >
-            <Store size={13} />Add to store
+            <Store size={12} />In store
           </button>
           <button
             onClick={() => handleBulkStoreListed(false)}
             disabled={!records.some((r) => selectedIds.has(r.id) && r.store_listed)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-vs-border text-vs-muted text-sm font-medium hover:text-vs-text hover:border-vs-border-2 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-vs-text-2 hover:text-vs-text hover:bg-vs-raised transition-colors disabled:opacity-35 whitespace-nowrap"
+            title="Remove from store"
           >
-            <Store size={13} />Remove from store
+            <Store size={12} />Hide
           </button>
+
+          {/* Discogs list */}
           {discogsConnected && (
             <button
               onClick={handleBulkList}
               disabled={bulkListing || !records.some((r) => selectedIds.has(r.id) && r.discogs_release_id && r.asking_price && r.status === "in_stock" && !r.discogs_listing_id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-vs-accent/40 text-vs-accent text-sm font-medium hover:bg-vs-accent/10 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-vs-text-2 hover:text-vs-accent hover:bg-vs-accent/10 transition-colors disabled:opacity-35 whitespace-nowrap"
+              title="List on Discogs marketplace"
             >
-              {bulkListing ? <Loader2 size={13} className="animate-spin" /> : <ExternalLink size={13} />}
-              List for sale
+              {bulkListing ? <Loader2 size={12} className="animate-spin" /> : <Tag size={12} />}
+              List
             </button>
           )}
-          <button onClick={handleAddToCart} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-vs-accent text-vs-bg text-sm font-medium hover:bg-vs-accent/90 transition-colors">
-            <ShoppingCart size={13} />Add to cart
+
+          {/* Auto-price */}
+          <button
+            onClick={() => { setAutoPriceScope("selected"); setAutoPriceOpen(true); }}
+            disabled={!records.some((r) => selectedIds.has(r.id) && r.asking_price == null)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-vs-text-2 hover:text-vs-accent hover:bg-vs-accent/10 transition-colors disabled:opacity-35 whitespace-nowrap"
+            title="Auto-price selected"
+          >
+            <Wand2 size={12} />Price
+          </button>
+
+          <div className="w-px h-5 bg-vs-border mx-0.5" />
+
+          {/* Add to cart — primary CTA */}
+          <button
+            onClick={handleAddToCart}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-vs-accent text-white text-xs font-semibold hover:bg-vs-accent-bright transition-colors whitespace-nowrap"
+          >
+            <ShoppingCart size={12} />Add to cart
           </button>
         </div>
       )}
@@ -539,6 +747,158 @@ function CatalogPageInner() {
           </div>
         </div>
       )}
+
+      {autoPriceOpen && (() => {
+        const targets = records.filter((r) => {
+          if (r.asking_price != null) return false;
+          if (autoPriceScope === "selected" && !selectedIds.has(r.id)) return false;
+          return true;
+        });
+        const mult = parseFloat(autoPriceMultiplier) || 1;
+        const manualVal = parseFloat(autoPriceManual);
+        function calcPrice(r: CatalogRecord): number | null {
+          const liveLowest = r.discogs_release_id != null ? (prices[String(r.discogs_release_id)]?.lowest ?? null) : null;
+          const lowestPrice = r.discogs_lowest_price ?? liveLowest;
+          if (autoPriceStrategy === "suggested") return r.discogs_suggested_price ?? lowestPrice ?? null;
+          if (autoPriceStrategy === "lowest_x") return lowestPrice != null ? parseFloat((lowestPrice * mult).toFixed(2)) : null;
+          if (autoPriceStrategy === "manual") return !isNaN(manualVal) && manualVal > 0 ? manualVal : null;
+          return null;
+        }
+        const eligible = targets.filter((r) => calcPrice(r) != null);
+        const preview = eligible.slice(0, 3);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/70" onClick={() => setAutoPriceOpen(false)} />
+            <div className="relative bg-vs-card border border-vs-border rounded-xl p-6 max-w-md w-full shadow-2xl">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                  <Wand2 size={16} className="text-vs-accent" />
+                  <h3 className="text-base font-medium">Auto-price records</h3>
+                </div>
+                <button onClick={() => setAutoPriceOpen(false)} className="text-vs-muted hover:text-vs-text"><X size={15} /></button>
+              </div>
+
+              {/* Scope */}
+              <div className="mb-4">
+                <p className="text-xs text-vs-muted uppercase tracking-wider mb-2">Scope</p>
+                <div className="flex gap-2">
+                  {(["unpriced", "selected"] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setAutoPriceScope(s)}
+                      disabled={s === "selected" && selectedIds.size === 0}
+                      className={`px-3 py-1.5 rounded-lg text-sm border transition-colors disabled:opacity-40 ${autoPriceScope === s ? "bg-vs-accent/15 border-vs-accent/40 text-vs-accent font-medium" : "border-vs-border text-vs-text-2 hover:border-vs-border-2"}`}
+                    >
+                      {s === "unpriced" ? `All unpriced (${records.filter((r) => r.asking_price == null).length})` : `Selected (${selectedIds.size})`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Strategy */}
+              <div className="mb-4">
+                <p className="text-xs text-vs-muted uppercase tracking-wider mb-2">Pricing strategy</p>
+                <div className="flex flex-col gap-2">
+                  {([
+                    { key: "suggested", label: "Discogs suggested price", desc: "Uses Discogs suggested price for the record's condition" },
+                    { key: "lowest_x", label: "Lowest × multiplier", desc: "Lowest marketplace price times a multiplier" },
+                    { key: "manual", label: "Fixed price", desc: "Same price applied to all records" },
+                  ] as const).map(({ key, label, desc }) => (
+                    <button
+                      key={key}
+                      onClick={() => setAutoPriceStrategy(key)}
+                      className={`flex items-start gap-3 px-3 py-2.5 rounded-lg border text-left transition-colors ${autoPriceStrategy === key ? "bg-vs-accent/10 border-vs-accent/40" : "border-vs-border hover:border-vs-border-2"}`}
+                    >
+                      <span className={`mt-0.5 flex-shrink-0 w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${autoPriceStrategy === key ? "border-vs-accent" : "border-vs-muted"}`}>
+                        {autoPriceStrategy === key && <span className="w-1.5 h-1.5 rounded-full bg-vs-accent" />}
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-vs-text">{label}</p>
+                        <p className="text-xs text-vs-muted mt-0.5">{desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Multiplier / manual input */}
+              {autoPriceStrategy === "lowest_x" && (
+                <div className="mb-4 flex items-center gap-2">
+                  <label className="text-sm text-vs-text-2 whitespace-nowrap">Multiplier:</label>
+                  <input
+                    type="number" min="0.1" step="0.1" value={autoPriceMultiplier}
+                    onChange={(e) => setAutoPriceMultiplier(e.target.value)}
+                    className="input w-24"
+                  />
+                  <span className="text-xs text-vs-muted">e.g. 1.5 = 150% of lowest</span>
+                </div>
+              )}
+              {autoPriceStrategy === "manual" && (
+                <div className="mb-4 flex items-center gap-2">
+                  <label className="text-sm text-vs-text-2 whitespace-nowrap">Price ($):</label>
+                  <input
+                    type="number" min="0" step="0.01" value={autoPriceManual}
+                    onChange={(e) => setAutoPriceManual(e.target.value)}
+                    placeholder="0.00"
+                    className="input w-28"
+                  />
+                </div>
+              )}
+
+              {/* Preview */}
+              <div className="mb-5">
+                <p className="text-xs text-vs-muted uppercase tracking-wider mb-2">
+                  Preview —{" "}
+                  {eligible.length > 0
+                    ? `${eligible.length} record${eligible.length !== 1 ? "s" : ""} will be priced`
+                    : targets.length === 0
+                      ? "no unpriced records in this scope"
+                      : autoPriceStrategy !== "manual"
+                        ? "no records have market data — switch to Fixed price"
+                        : "enter a price above"}
+                </p>
+                {eligible.length > 0 ? (
+                  <div className="rounded-lg border border-vs-border overflow-hidden">
+                    {preview.map((r, i) => (
+                      <div key={r.id} className={`flex items-center justify-between px-3 py-2 ${i < preview.length - 1 ? "border-b border-vs-border/50" : ""}`}>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-vs-text truncate">{r.title || "Untitled"}</p>
+                          <p className="text-2xs text-vs-muted truncate">{r.artist}</p>
+                        </div>
+                        <span className="text-sm font-medium text-vs-gold ml-3">${calcPrice(r)!.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {eligible.length > 3 && (
+                      <div className="px-3 py-2 border-t border-vs-border/50 text-xs text-vs-muted">
+                        + {eligible.length - 3} more
+                      </div>
+                    )}
+                  </div>
+                ) : targets.length > 0 && autoPriceStrategy !== "manual" ? (
+                  <button
+                    onClick={() => setAutoPriceStrategy("manual")}
+                    className="w-full py-3 rounded-lg border border-dashed border-vs-border text-sm text-vs-muted hover:text-vs-accent hover:border-vs-accent/40 transition-colors"
+                  >
+                    Switch to Fixed price →
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setAutoPriceOpen(false)} className="btn-secondary">Cancel</button>
+                <button
+                  onClick={handleAutoPrice}
+                  disabled={autoPricing || eligible.length === 0}
+                  className="btn-primary flex items-center gap-2 disabled:opacity-50"
+                >
+                  {autoPricing ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
+                  Apply to {eligible.length} record{eligible.length !== 1 ? "s" : ""}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

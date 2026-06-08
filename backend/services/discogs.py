@@ -264,6 +264,97 @@ async def get_marketplace_stats(
     return data
 
 
+async def get_release_details(
+    release_id: int, access_token: str, access_token_secret: str
+) -> dict | None:
+    """
+    Fetch full release details from Discogs.
+    Returns {"styles": ["Deep House", ...], "lowest_price": float|None, "num_for_sale": int} or None.
+    """
+    import asyncio
+    import requests as req
+
+    auth = _oauth1(access_token, access_token_secret)
+
+    def _sync_fetch():
+        resp = req.get(
+            f"{DISCOGS_BASE}/releases/{release_id}",
+            auth=auth,
+            headers={"User-Agent": USER_AGENT},
+            timeout=10,
+        )
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        return resp.json()
+
+    loop = asyncio.get_running_loop()
+    try:
+        raw = await loop.run_in_executor(None, _sync_fetch)
+    except Exception:
+        return None
+
+    if not raw:
+        return None
+
+    lp = raw.get("lowest_price")
+    return {
+        "styles": raw.get("styles", []),
+        "genres": raw.get("genres", []),
+        "lowest_price": float(lp) if lp is not None else None,
+        "num_for_sale": raw.get("num_for_sale", 0),
+    }
+
+
+async def get_price_suggestions(
+    release_id: int, access_token: str, access_token_secret: str
+) -> dict | None:
+    """
+    Fetch Discogs price suggestions by condition.
+    Returns {"Mint (M)": 35.0, "Near Mint (NM or M-)": 28.0, ...} or None.
+    """
+    import asyncio
+    import requests as req
+
+    auth = _oauth1(access_token, access_token_secret)
+
+    def _sync_fetch():
+        resp = req.get(
+            f"{DISCOGS_BASE}/marketplace/price_suggestions/{release_id}",
+            auth=auth,
+            headers={"User-Agent": USER_AGENT},
+            timeout=10,
+        )
+        if resp.status_code in (404, 403):
+            return None
+        resp.raise_for_status()
+        return resp.json()
+
+    loop = asyncio.get_running_loop()
+    try:
+        raw = await loop.run_in_executor(None, _sync_fetch)
+    except Exception:
+        return None
+
+    if not raw:
+        return None
+
+    # Map Discogs condition names to our short codes
+    _COND_MAP = {
+        "Mint (M)": "M",
+        "Near Mint (NM or M-)": "NM",
+        "Very Good Plus (VG+)": "VG+",
+        "Very Good (VG)": "VG",
+        "Good Plus (G+)": "G",
+        "Good (G)": "G",
+    }
+    return {
+        _COND_MAP[k]: v["value"]
+        for k, v in raw.items()
+        if k in _COND_MAP and isinstance(v, dict) and v.get("value")
+    }
+
+
 async def add_to_collection(
     username: str, release_id: int, access_token: str, access_token_secret: str
 ) -> dict:

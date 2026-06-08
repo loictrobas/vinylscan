@@ -2,16 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Light mode (default) ──────────────────────────────────── */
 :root {
-  --background: #07070a;
-  --foreground: #e2e2ea;
+  --vs-bg:             247 247 250;
+  --vs-surface:        241 241 246;
+  --vs-card:           255 255 255;
+  --vs-raised:         242 242 247;
+  --vs-border:         226 226 236;
+  --vs-border-2:       210 210 224;
+  --vs-accent:         74  127 160;
+  --vs-accent-dim:     58  106 138;
+  --vs-accent-bright:  90  154 184;
+  --vs-text:           22  22  42;
+  --vs-text-2:         74  74  104;
+  --vs-muted:          138 138 162;
+  --vs-gold:           138 104 32;
+  --vs-success:        22  163 74;
+  --vs-danger:         220 38  38;
+  --vs-warning:        217 119 6;
+  --vs-teal:           13  148 136;
+  --vs-sidebar:        240 240 248;
+}
+
+/* ── Dark mode ─────────────────────────────────────────────── */
+:root.dark {
+  --vs-bg:             7   7   10;
+  --vs-surface:        13  13  18;
+  --vs-card:           19  19  24;
+  --vs-raised:         24  24  30;
+  --vs-border:         30  30  38;
+  --vs-border-2:       40  40  50;
+  --vs-accent:         157 180 198;
+  --vs-accent-dim:     110 138 158;
+  --vs-accent-bright:  194 214 230;
+  --vs-text:           226 226 234;
+  --vs-text-2:         142 142 158;
+  --vs-muted:          82  82  95;
+  --vs-gold:           196 165 100;
+  --vs-success:        74  222 128;
+  --vs-danger:         248 113 113;
+  --vs-warning:        245 158 11;
+  --vs-teal:           94  234 212;
+  --vs-sidebar:        9   9   14;
 }
 
 * { box-sizing: border-box; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: rgb(var(--vs-bg));
+  color: rgb(var(--vs-text));
   font-family: Inter, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-weight: 400;
@@ -20,8 +59,8 @@ body {
 /* Thin scrollbars */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #282832; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #3a3a48; }
+::-webkit-scrollbar-thumb { background: rgb(var(--vs-border-2)); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--vs-muted) / 0.5); }
 
 @layer utilities {
   /* ── Cards ─────────────────────────────── */
@@ -34,7 +73,7 @@ body {
 
   /* ── Buttons ────────────────────────────── */
   .btn-primary {
-    @apply bg-vs-accent hover:bg-vs-accent-bright text-vs-bg font-medium
+    @apply bg-vs-accent hover:bg-vs-accent-bright text-white font-medium
            px-4 py-2 rounded-lg transition-colors text-sm;
   }
   .btn-secondary {

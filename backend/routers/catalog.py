@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 from middleware.auth_middleware import decrypt
-from models import Lot, Record, RecordCondition, RecordStatus, User
+from models import Lot, Record, RecordCondition, RecordEvent, RecordStatus, User
 from routers.auth import get_current_user
 from routers.scan import _set_credit_header
 from services import discogs as discogs_svc
@@ -18,6 +18,10 @@ from services import discogs as discogs_svc
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
+
+
+async def _log(db: AsyncSession, record_id, event_type: str, detail: str | None = None):
+    db.add(RecordEvent(record_id=record_id, event_type=event_type, detail=detail))
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────────
@@ -33,6 +37,7 @@ class RecordOut(BaseModel):
     catalog_number: str | None
     format: str | None
     genre: str | None
+    styles: str | None
     country: str | None
     condition: str
     discogs_release_id: int | None
@@ -40,6 +45,9 @@ class RecordOut(BaseModel):
     discogs_listing_id: int | None
     discogs_synced: bool
     discogs_url: str | None
+    discogs_lowest_price: float | None
+    discogs_num_for_sale: int | None
+    discogs_suggested_price: float | None
     cover_image_url: str | None
     status: str
     cost_price: float | None
@@ -66,6 +74,7 @@ class RecordOut(BaseModel):
             catalog_number=r.catalog_number,
             format=r.format,
             genre=getattr(r, "genre", None),
+            styles=getattr(r, "styles", None),
             country=getattr(r, "country", None),
             condition=r.condition,
             discogs_release_id=r.discogs_release_id,
@@ -73,6 +82,9 @@ class RecordOut(BaseModel):
             discogs_listing_id=getattr(r, "discogs_listing_id", None),
             discogs_synced=getattr(r, "discogs_synced", False) or False,
             discogs_url=r.discogs_url,
+            discogs_lowest_price=float(r.discogs_lowest_price) if getattr(r, "discogs_lowest_price", None) is not None else None,
+            discogs_num_for_sale=getattr(r, "discogs_num_for_sale", None),
+            discogs_suggested_price=float(r.discogs_suggested_price) if getattr(r, "discogs_suggested_price", None) is not None else None,
             cover_image_url=getattr(r, "cover_image_url", None),
             status=r.status.value if hasattr(r.status, "value") else r.status,
             cost_price=float(r.cost_price) if getattr(r, "cost_price", None) is not None else None,
@@ -464,6 +476,8 @@ async def create_record(
         notes=body.notes,
     )
     db.add(record)
+    title_str = f"{body.artist or ''} – {body.title or ''}".strip(" –") or "Record"
+    await _log(db, record.id, "added", f"Added to catalog: {title_str}")
     await db.commit()
     await db.refresh(record)
     _set_credit_header(response, user)
@@ -619,8 +633,14 @@ async def update_record(
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
 
+    # Capture old values for history logging
+    old_price = record.asking_price
+    old_condition = record.condition if isinstance(record.condition, str) else record.condition.value
+    old_lot = record.lot_id
+    old_store_listed = record.store_listed
+
     simple_fields = ["artist", "title", "year", "label", "catalog_number", "format",
-                     "genre", "country", "cost_price", "asking_price", "tags", "notes", "store_listed"]
+                     "genre", "styles", "country", "cost_price", "asking_price", "tags", "notes", "store_listed"]
     for field in simple_fields:
         if field in body.model_fields_set:
             setattr(record, field, getattr(body, field))
@@ -632,6 +652,18 @@ async def update_record(
         record.condition = body.condition
     if "lot_id" in body.model_fields_set:
         record.lot_id = body.lot_id
+
+    # Log meaningful changes
+    if "asking_price" in body.model_fields_set and body.asking_price != old_price:
+        old_str = f"${float(old_price):.2f}" if old_price is not None else "unpriced"
+        new_str = f"${float(body.asking_price):.2f}" if body.asking_price is not None else "removed"
+        await _log(db, record.id, "price_changed", f"Price: {old_str} → {new_str}")
+    if body.condition is not None and body.condition != old_condition:
+        await _log(db, record.id, "condition_changed", f"Condition: {old_condition} → {body.condition}")
+    if "lot_id" in body.model_fields_set and body.lot_id != old_lot:
+        await _log(db, record.id, "lot_changed", "Moved to different lot" if body.lot_id else "Removed from lot")
+    if "store_listed" in body.model_fields_set and body.store_listed != old_store_listed:
+        await _log(db, record.id, "store_listed", "Listed in store" if body.store_listed else "Removed from store")
 
     await db.commit()
     await db.refresh(record)
@@ -683,6 +715,7 @@ async def sell_record(
     record.sold_price = body.sold_price
     record.sold_at = datetime.now(timezone.utc)
     record.discogs_listing_id = None
+    await _log(db, record.id, "sold", f"Sold for ${body.sold_price:.2f}")
     await db.commit()
     await db.refresh(record)
 
@@ -697,3 +730,35 @@ async def sell_record(
 
     _set_credit_header(response, user)
     return RecordOut.from_orm_safe(record)
+
+
+# ── Record history ─────────────────────────────────────────────────────────────
+
+class RecordEventOut(BaseModel):
+    id: int
+    event_type: str
+    detail: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/{record_id}/history", response_model=list[RecordEventOut])
+async def record_history(
+    record_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Record).where(Record.id == record_id, Record.user_id == user.id)
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    events = await db.execute(
+        select(RecordEvent)
+        .where(RecordEvent.record_id == record_id)
+        .order_by(RecordEvent.created_at.asc())
+    )
+    return events.scalars().all()

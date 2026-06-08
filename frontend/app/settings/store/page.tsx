@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Store, ExternalLink, Copy, Check, Loader2, Eye, EyeOff } from "lucide-react";
+import { Store, ExternalLink, Copy, Check, Loader2, Eye, Instagram } from "lucide-react";
 import { api, getToken, type StoreSettings } from "@/lib/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -17,6 +17,8 @@ export default function StoreSettingsPage() {
     store_description: "",
     store_contact: "",
     store_public: false,
+    store_info_banner: "",
+    store_instagram: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,6 +37,8 @@ export default function StoreSettingsPage() {
           store_description: s.store_description ?? "",
           store_contact: s.store_contact ?? "",
           store_public: s.store_public,
+          store_info_banner: s.store_info_banner ?? "",
+          store_instagram: s.store_instagram ?? "",
         });
       })
       .finally(() => setLoading(false));
@@ -49,6 +53,8 @@ export default function StoreSettingsPage() {
         store_description: form.store_description || null,
         store_contact: form.store_contact || null,
         store_public: form.store_public,
+        store_info_banner: form.store_info_banner || null,
+        store_instagram: form.store_instagram || null,
       });
       setSettings(updated);
       setForm({
@@ -57,6 +63,8 @@ export default function StoreSettingsPage() {
         store_description: updated.store_description ?? "",
         store_contact: updated.store_contact ?? "",
         store_public: updated.store_public,
+        store_info_banner: updated.store_info_banner ?? "",
+        store_instagram: updated.store_instagram ?? "",
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -117,16 +125,24 @@ export default function StoreSettingsPage() {
         </button>
       </div>
 
-      {/* Store URL */}
+      {/* Store URL + Preview */}
       {storeUrl && (
-        <div className="mb-5 p-3 rounded-xl bg-vs-raised border border-vs-border flex items-center gap-2">
-          <p className="text-xs text-vs-text-2 flex-1 truncate">{storeUrl}</p>
-          <button onClick={copyUrl} className="text-vs-muted hover:text-vs-text flex-shrink-0 transition-colors">
-            {copied ? <Check size={14} className="text-vs-success" /> : <Copy size={14} />}
-          </button>
-          <a href={`/store/${settings!.store_slug}`} target="_blank" rel="noopener noreferrer"
-            className="text-vs-muted hover:text-vs-text flex-shrink-0 transition-colors">
-            <ExternalLink size={14} />
+        <div className="mb-5 flex flex-col gap-2">
+          <div className="p-3 rounded-xl bg-vs-raised border border-vs-border flex items-center gap-2">
+            <p className="text-xs text-vs-text-2 flex-1 truncate">{storeUrl}</p>
+            <button onClick={copyUrl} className="text-vs-muted hover:text-vs-text flex-shrink-0 transition-colors">
+              {copied ? <Check size={14} className="text-vs-success" /> : <Copy size={14} />}
+            </button>
+          </div>
+          <a
+            href={`/store/${settings!.store_slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-vs-accent/40 text-vs-accent text-sm font-medium hover:bg-vs-accent/10 transition-colors"
+          >
+            <Eye size={14} />
+            Preview as customer
+            <ExternalLink size={12} />
           </a>
         </div>
       )}
@@ -179,6 +195,32 @@ export default function StoreSettingsPage() {
             placeholder="+1 555 000 0000 or hello@store.com"
           />
           <p className="text-2xs text-vs-muted mt-1">Used for the "Send cart" button on your store. Phone numbers get a WhatsApp link.</p>
+        </div>
+
+        <div>
+          <label className="text-xs text-vs-text-2 mb-1 block">Info banner</label>
+          <input
+            className="input"
+            value={form.store_info_banner}
+            onChange={(e) => setForm((f) => ({ ...f, store_info_banner: e.target.value }))}
+            placeholder="e.g. Pickup in Buenos Aires · Ships worldwide"
+            maxLength={500}
+          />
+          <p className="text-2xs text-vs-muted mt-1">Shown at the top of your store page.</p>
+        </div>
+
+        <div>
+          <label className="text-xs text-vs-text-2 mb-1 block">Instagram handle</label>
+          <div className="flex items-center gap-0">
+            <span className="px-3 py-2 bg-vs-raised border border-r-0 border-vs-border rounded-l-lg text-xs text-vs-muted">@</span>
+            <input
+              className="input rounded-l-none"
+              value={form.store_instagram}
+              onChange={(e) => setForm((f) => ({ ...f, store_instagram: e.target.value.replace(/^@/, "") }))}
+              placeholder="yourstore"
+            />
+          </div>
+          <p className="text-2xs text-vs-muted mt-1">Shown in your store header.</p>
         </div>
 
         {error && <p className="text-xs text-vs-danger">{error}</p>}

@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 from middleware.auth_middleware import decrypt
-from models import Record, RecordCondition, RecordStatus, User
+from models import Record, RecordCondition, RecordEvent, RecordStatus, User
 from routers.auth import get_current_user
 from services import discogs as discogs_svc
 
@@ -86,6 +86,8 @@ async def _run_sync(user_id: str, username: str, token: str, secret: str) -> Non
                 label = labels[0].get("name") if labels else None
                 genres = basic.get("genres", [])
                 genre = genres[0] if genres else None
+                styles_list = basic.get("styles", [])
+                styles = ", ".join(styles_list[:5]) if styles_list else None
                 thumb = basic.get("cover_image") or basic.get("thumb")  # cover_image > thumb (higher res, more reliable)
 
                 record = Record(
@@ -96,6 +98,7 @@ async def _run_sync(user_id: str, username: str, token: str, secret: str) -> Non
                     format=fmt,
                     label=label,
                     genre=genre,
+                    styles=styles,
                     discogs_release_id=release_id,
                     discogs_instance_id=instance_id,
                     discogs_synced=True,
@@ -105,6 +108,8 @@ async def _run_sync(user_id: str, username: str, token: str, secret: str) -> Non
                     cover_image_url=thumb or None,
                 )
                 db.add(record)
+                title_str = f"{artist} — {title}" if artist and title else (artist or title or "Unknown")
+                db.add(RecordEvent(record_id=record.id, event_type="added", detail=f"Synced from Discogs collection: {title_str}"))
                 state["imported"] += 1
 
                 # Commit in batches of 50
@@ -289,6 +294,105 @@ async def backfill_covers_status(user: User = Depends(get_current_user)):
     })
 
 
+# ── Market data backfill ──────────────────────────────────────────────────────
+
+_market_backfill_state: dict[str, dict] = {}
+
+
+async def _run_market_backfill(user_id: str, token: str, secret: str) -> None:
+    """
+    For every record with a discogs_release_id that is missing styles or market prices,
+    fetch full release details + price suggestions and update the DB.
+    Rate-limited to ~1 req/s to stay well within Discogs limits.
+    """
+    from database import AsyncSessionLocal as async_session_maker
+    from sqlalchemy import or_
+
+    state = _market_backfill_state[user_id]
+
+    try:
+        async with async_session_maker() as db:
+            result = await db.execute(
+                select(Record).where(
+                    Record.user_id == user_id,
+                    Record.discogs_release_id.is_not(None),
+                    or_(
+                        Record.styles.is_(None),
+                        Record.discogs_lowest_price.is_(None),
+                    ),
+                )
+            )
+            records = result.scalars().all()
+            state["total"] = len(records)
+
+            for i, record in enumerate(records):
+                state["processed"] = i + 1
+                rid = record.discogs_release_id
+
+                details = await discogs_svc.get_release_details(rid, token, secret)
+                await asyncio.sleep(1.1)  # respect Discogs rate limit
+
+                if details:
+                    if not record.styles and details.get("styles"):
+                        record.styles = ", ".join(details["styles"][:5])
+                    if not record.genre and details.get("genres"):
+                        record.genre = details["genres"][0]
+                    if details.get("lowest_price") is not None:
+                        record.discogs_lowest_price = details["lowest_price"]
+                    if details.get("num_for_sale") is not None:
+                        record.discogs_num_for_sale = details["num_for_sale"]
+
+                suggestions = await discogs_svc.get_price_suggestions(rid, token, secret)
+                await asyncio.sleep(1.1)
+
+                if suggestions:
+                    cond = record.condition if isinstance(record.condition, str) else record.condition.value
+                    suggested = suggestions.get(cond)
+                    if suggested:
+                        record.discogs_suggested_price = suggested
+
+                state["updated"] += 1
+
+                # Commit every 10 records
+                if (i + 1) % 10 == 0:
+                    await db.commit()
+
+            await db.commit()
+
+        state["status"] = "done"
+
+    except Exception as exc:
+        logger.exception("Market backfill failed for user %s", user_id)
+        state["status"] = "error"
+        state["error"] = str(exc)
+
+
+@router.post("/backfill-market")
+async def start_market_backfill(
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user),
+):
+    """Backfill styles + market prices for all records missing them. ~2s per record."""
+    user_id = str(user.id)
+    if _market_backfill_state.get(user_id, {}).get("status") == "running":
+        return _market_backfill_state[user_id]
+    if not user.discogs_oauth_token:
+        raise HTTPException(status_code=400, detail="Discogs not connected")
+    token, secret = _get_tokens(user)
+    _market_backfill_state[user_id] = {
+        "status": "running", "total": 0, "processed": 0, "updated": 0, "error": None,
+    }
+    background_tasks.add_task(_run_market_backfill, user_id, token, secret)
+    return _market_backfill_state[user_id]
+
+
+@router.get("/backfill-market/status")
+async def market_backfill_status(user: User = Depends(get_current_user)):
+    return _market_backfill_state.get(str(user.id), {
+        "status": "idle", "total": 0, "processed": 0, "updated": 0, "error": None,
+    })
+
+
 class PushResult(BaseModel):
     ok: bool
     instance_id: int | None
@@ -323,6 +427,8 @@ async def create_marketplace_listing(
         raise HTTPException(status_code=422, detail="Set an asking price before listing")
     if record.status != RecordStatus.in_stock:
         raise HTTPException(status_code=422, detail="Only in-stock records can be listed")
+    if record.discogs_listing_id:
+        return ListingResult(ok=True, listing_id=record.discogs_listing_id, message="Already listed on Discogs marketplace")
 
     token, secret = _get_tokens(user)
     try:
@@ -334,6 +440,7 @@ async def create_marketplace_listing(
             secret,
         )
         record.discogs_listing_id = data.get("listing_id") or data.get("id")
+        db.add(RecordEvent(record_id=record.id, event_type="listed_on_discogs", detail=f"Discogs listing {record.discogs_listing_id} created"))
         await db.commit()
         return ListingResult(ok=True, listing_id=record.discogs_listing_id, message="Listed on Discogs marketplace")
     except Exception as exc:
@@ -365,6 +472,7 @@ async def delete_marketplace_listing(
     try:
         await discogs_svc.delete_listing(listing_id, token, secret)
         record.discogs_listing_id = None
+        db.add(RecordEvent(record_id=record.id, event_type="delisted_from_discogs", detail=f"Discogs listing {listing_id} removed"))
         await db.commit()
         return ListingResult(ok=True, listing_id=None, message="Listing removed")
     except Exception as exc:

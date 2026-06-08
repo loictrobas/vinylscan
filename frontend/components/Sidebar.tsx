@@ -9,13 +9,15 @@ import {
   Camera,
   Package,
   ShoppingCart,
-  History,
   Users,
   ClipboardList,
   Settings,
   LogOut,
   Layers,
   Store,
+  Sun,
+  Moon,
+  Smartphone,
 } from "lucide-react";
 import { api, clearToken, clearMeCache, getToken, type User } from "@/lib/api";
 
@@ -48,8 +50,7 @@ const NAV: NavSection[] = [
   {
     label: "Inventory",
     items: [
-      { href: "/catalog/lots",        label: "Lots",      icon: <Layers size={16} /> },
-      { href: "/inventory/movements", label: "Movements", icon: <History size={16} /> },
+      { href: "/catalog/lots", label: "Lots", icon: <Layers size={16} /> },
     ],
   },
   {
@@ -83,11 +84,19 @@ function isActive(pathname: string, href: string, exact?: boolean): boolean {
 export function Sidebar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
     if (!getToken()) return;
     api.me().then(setUser).catch(() => {});
+    setDark(document.documentElement.classList.contains("dark"));
   }, []);
+
+  function toggleTheme() {
+    const isDark = document.documentElement.classList.toggle("dark");
+    localStorage.setItem("vs-theme", isDark ? "dark" : "light");
+    setDark(isDark);
+  }
 
   async function handleLogout() {
     clearToken();
@@ -139,6 +148,18 @@ export function Sidebar() {
         <Link href="/settings" className={`sidebar-link ${isActive(pathname, "/settings") ? "active" : ""}`}>
           <span className="text-vs-muted"><Settings size={16} /></span>
           Settings
+        </Link>
+        <button
+          onClick={toggleTheme}
+          className="sidebar-link w-full text-left"
+          title={dark ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          <span className="text-vs-muted">{dark ? <Sun size={16} /> : <Moon size={16} />}</span>
+          {dark ? "Light mode" : "Dark mode"}
+        </button>
+        <Link href="/mobile" className="sidebar-link text-vs-muted">
+          <Smartphone size={16} />
+          Mobile view
         </Link>
         <button
           onClick={handleLogout}

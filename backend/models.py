@@ -66,6 +66,8 @@ class User(Base):
     store_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     store_contact: Mapped[str | None] = mapped_column(String(255), nullable=True)
     store_public: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    store_info_banner: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    store_instagram: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -146,6 +148,7 @@ class Record(Base):
     catalog_number: Mapped[str | None] = mapped_column(String(255), nullable=True)
     format: Mapped[str | None] = mapped_column(String(50), nullable=True)
     genre: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    styles: Mapped[str | None] = mapped_column(String(500), nullable=True)  # comma-separated Discogs styles
     country: Mapped[str | None] = mapped_column(String(100), nullable=True)
     cost_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)  # comma-separated free tags
@@ -159,6 +162,9 @@ class Record(Base):
     discogs_listing_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)   # marketplace listing_id
     discogs_synced: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     discogs_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    discogs_lowest_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    discogs_num_for_sale: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    discogs_suggested_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     cover_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     store_listed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
@@ -196,6 +202,16 @@ class Invite(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     creator: Mapped["User"] = relationship("User", back_populates="invites_created", foreign_keys=[created_by])
+
+
+class RecordEvent(Base):
+    __tablename__ = "record_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    record_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("records.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False)  # added, price_changed, condition_changed, lot_changed, sold, store_listed, notes_updated
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class PasswordResetToken(Base):

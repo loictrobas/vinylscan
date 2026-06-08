@@ -13,6 +13,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 # Use SQLite for tests — no PostgreSQL needed
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
@@ -23,7 +24,14 @@ from database import Base, get_db
 from main import app
 from models import CreditReason, CreditTransaction, Scan, ScanStatus, User
 
-TEST_ENGINE = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+# StaticPool forces all sessions to share the same in-memory SQLite connection,
+# which is necessary for data committed in fixtures to be visible to the app's
+# override_get_db dependency.
+TEST_ENGINE = create_async_engine(
+    "sqlite+aiosqlite:///:memory:",
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
 TestSessionLocal = async_sessionmaker(TEST_ENGINE, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -59,7 +67,7 @@ async def test_user(db: AsyncSession) -> User:
     from middleware.auth_middleware import encrypt
     user = User(
         id=uuid.uuid4(),
-        discogs_username="testuser",
+        discogs_username=f"testuser_{uuid.uuid4().hex[:8]}",
         discogs_oauth_token=encrypt("fake-token"),
         discogs_oauth_token_secret=encrypt("fake-secret"),
         credits=10,
@@ -74,7 +82,7 @@ async def test_user(db: AsyncSession) -> User:
 async def auth_headers(test_user: User) -> dict:
     """Return Authorization header with a valid JWT for test_user."""
     from routers.auth import create_access_token
-    token = create_access_token({"sub": str(test_user.id)})
+    token = create_access_token(str(test_user.id))
     return {"Authorization": f"Bearer {token}"}
 
 

@@ -1,12 +1,23 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { X, ExternalLink } from "lucide-react";
-import { api, type CatalogRecord, type Lot } from "@/lib/api";
+import { X, ExternalLink, Wand2, Loader2, Clock } from "lucide-react";
+import { toast } from "sonner";
+import { api, type CatalogRecord, type Lot, type RecordEvent } from "@/lib/api";
 import { CoverThumb } from "./CoverThumb";
 
 const CONDITIONS = ["M", "NM", "VG+", "VG", "G"] as const;
 const FORMATS = ["LP", "EP", "7\"", "12\"", "CD", "Cassette", "Box Set", "Other"];
+
+const HISTORY_LABEL: Record<string, string> = {
+  added: "Added to catalog",
+  price_changed: "Price changed",
+  condition_changed: "Condition changed",
+  lot_changed: "Lot assignment changed",
+  store_listed: "Store listing changed",
+  notes_updated: "Notes updated",
+  sold: "Sold",
+};
 
 interface RecordModalProps {
   record?: CatalogRecord;
@@ -30,6 +41,7 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
   const [autoSaved, setAutoSaved] = useState(false);
   const [autoSaveError, setAutoSaveError] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [autoPricing, setAutoPricing] = useState(false);
 
   const [form, setFormState] = useState({
     artist: record?.artist ?? "",
@@ -48,6 +60,8 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [history, setHistory] = useState<RecordEvent[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   function set(k: string, v: string) { setFormState((f) => ({ ...f, [k]: v })); }
 
@@ -63,6 +77,16 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, []);
 
+  // Fetch record history for existing records
+  useEffect(() => {
+    if (isNew || !record) return;
+    setHistoryLoading(true);
+    api.recordHistory(record.id)
+      .then(setHistory)
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false));
+  }, [record?.id, isNew]);
+
   // Auto-save price (edit mode only)
   function handlePriceChange(v: string) {
     setAskingPrice(v);
@@ -77,12 +101,27 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
           setAutoSaved(true);
           setAutoSaveError(false);
           setTimeout(() => setAutoSaved(false), 2000);
-        } catch {
+        } catch (e: unknown) {
           setAutoSaveError(true);
           setTimeout(() => setAutoSaveError(false), 4000);
+          toast.error(e instanceof Error ? e.message : "Price save failed");
         }
       }, 600);
     }
+  }
+
+  async function applyAutoPrice() {
+    if (autoPricing || !record?.discogs_release_id) return;
+    let price = record.discogs_suggested_price ?? record.discogs_lowest_price ?? null;
+    if (price == null) {
+      setAutoPricing(true);
+      try {
+        const data = await api.fetchDiscogsPrices([record.discogs_release_id]);
+        price = data[String(record.discogs_release_id)]?.lowest ?? null;
+      } catch { /* ignore */ }
+      finally { setAutoPricing(false); }
+    }
+    if (price != null && price > 0) handlePriceChange(String(price));
   }
 
   async function save() {
@@ -110,9 +149,12 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
         ? await api.createRecord(body as Parameters<typeof api.createRecord>[0])
         : await api.updateRecord(record!.id, body as Parameters<typeof api.updateRecord>[1]);
       onSaved(saved);
+      toast.success(isNew ? "Record added" : "Changes saved");
       onClose();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Save failed");
+      const msg = e instanceof Error ? e.message : "Save failed";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -171,6 +213,18 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
                   placeholder="0.00"
                   className="text-3xl font-bold bg-transparent border-none outline-none text-vs-gold w-40 placeholder:text-vs-muted/40 focus:text-vs-gold"
                 />
+                {record?.discogs_release_id && (
+                  <button
+                    type="button"
+                    onClick={applyAutoPrice}
+                    disabled={autoPricing}
+                    title="Fill with Discogs suggested price"
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-vs-accent/10 hover:bg-vs-accent/20 text-vs-accent text-xs font-medium transition-colors border border-vs-accent/20 disabled:opacity-50"
+                  >
+                    {autoPricing ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
+                    Auto
+                  </button>
+                )}
                 {record?.discogs_release_id && (
                   <a
                     href={`https://www.discogs.com/release/${record.discogs_release_id}`}
@@ -290,7 +344,10 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
                     const updated = await api.updateRecord(record.id, { store_listed: !storeListed });
                     setStoreListed(!storeListed);
                     onSaved(updated);
-                  } catch { /* non-fatal */ }
+                    toast.success(storeListed ? "Removed from store" : "Listed in store");
+                  } catch (e: unknown) {
+                    toast.error(e instanceof Error ? e.message : "Store toggle failed");
+                  }
                   finally { setStoreToggling(false); }
                 }}
                 disabled={storeToggling}
@@ -313,7 +370,18 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
               <div>
                 <p className="text-xs font-medium text-vs-text-2">Discogs Marketplace</p>
                 {listingId ? (
-                  <p className="text-xs text-vs-success mt-0.5">Listed for sale</p>
+                  <p className="text-xs text-vs-success mt-0.5 flex items-center gap-1">
+                    Listed for sale
+                    <a
+                      href={`https://www.discogs.com/sell/item/${listingId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-vs-success hover:opacity-70"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink size={11} />
+                    </a>
+                  </p>
                 ) : (
                   <p className="text-xs text-vs-muted mt-0.5">
                     {record.asking_price ? "Not listed" : "Set a price to list"}
@@ -329,24 +397,60 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
                       await api.discogsDelistRecord(record.id);
                       setListingId(null);
                       onSaved({ ...record, discogs_listing_id: null });
+                      toast.success("Listing removed");
                     } else {
                       const res = await api.discogsListRecord(record.id);
                       setListingId(res.listing_id);
                       onSaved({ ...record, discogs_listing_id: res.listing_id });
+                      toast.success("Listed on Discogs");
                     }
-                  } catch { /* errors surface via global error handling */ }
+                  } catch (e: unknown) {
+                    toast.error(e instanceof Error ? e.message : "Listing change failed");
+                  }
                   finally { setListing(false); }
                 }}
                 disabled={listing || (!listingId && !record.asking_price)}
-                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40 ${
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40 flex items-center gap-1.5 ${
                   listingId
-                    ? "border-vs-danger/40 text-vs-danger hover:bg-vs-danger/10"
+                    ? "border-vs-border text-vs-text-2 hover:bg-vs-raised hover:text-vs-text"
                     : "border-vs-accent/40 text-vs-accent hover:bg-vs-accent/10"
                 }`}
               >
-                {listing ? "…" : listingId ? "Remove listing" : "List for sale"}
+                {listing ? <Loader2 size={12} className="animate-spin" /> : null}
+                {!listing && (listingId ? "Remove listing" : "List for sale")}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Record history */}
+        {!isNew && (
+          <div className="px-6 pb-6 border-t border-vs-border pt-4">
+            <div className="flex items-center gap-1.5 mb-3">
+              <Clock size={13} className="text-vs-muted" />
+              <p className="text-xs font-medium text-vs-text-2">History</p>
+            </div>
+            {historyLoading ? (
+              <p className="text-xs text-vs-muted">Loading…</p>
+            ) : history.length === 0 ? (
+              <p className="text-xs text-vs-muted">No history yet.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {history.map((ev, i) => (
+                  <div key={ev.id} className="flex items-start gap-3">
+                    <div className="flex flex-col items-center flex-shrink-0">
+                      <div className="w-2 h-2 rounded-full border-2 border-vs-accent bg-vs-card mt-1" />
+                      {i < history.length - 1 && <div className="w-px flex-1 min-h-[12px] bg-vs-border mt-1" />}
+                    </div>
+                    <div className="min-w-0 pb-1">
+                      <p className="text-xs font-medium text-vs-text">{HISTORY_LABEL[ev.event_type] ?? ev.event_type.replace(/_/g, " ")}</p>
+                      {ev.detail && <p className="text-2xs text-vs-muted mt-0.5 leading-snug">{ev.detail}</p>}
+                      <p className="text-2xs text-vs-muted/60 mt-0.5">{new Date(ev.created_at).toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

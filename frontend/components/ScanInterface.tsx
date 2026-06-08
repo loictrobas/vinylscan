@@ -209,7 +209,7 @@ function ScanItem({
   if (item.phase === "queued") {
     return (
       <div className="card p-4 flex items-center gap-3 opacity-60">
-        <img src={item.preview} alt="" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
+        <img src={item.preview} alt="" loading="lazy" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
         <p className="text-vinyl-muted text-sm">Waiting...</p>
       </div>
     );
@@ -218,7 +218,7 @@ function ScanItem({
   if (item.phase === "uploading") {
     return (
       <div className="card p-4 flex items-center gap-3">
-        <img src={item.preview} alt="" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
+        <img src={item.preview} alt="" loading="lazy" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
             <Loader2 size={16} className="text-vinyl-accent animate-spin" />
@@ -235,7 +235,7 @@ function ScanItem({
   if (item.phase === "error") {
     return (
       <div className="card p-4 flex items-center gap-3">
-        <img src={item.preview} alt="" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
+        <img src={item.preview} alt="" loading="lazy" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <AlertCircle size={16} className="text-vinyl-accent flex-shrink-0" />
           <p className="text-sm text-vinyl-muted flex-1">{item.errorMsg}</p>
@@ -261,7 +261,7 @@ function ScanItem({
         : "Added to catalog";
     return (
       <div className="card p-4 flex items-center gap-3">
-        <img src={item.preview} alt="" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
+        <img src={item.preview} alt="" loading="lazy" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
         <div className="flex items-center gap-2 flex-1">
           <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
           <div>
@@ -285,7 +285,7 @@ function ScanItem({
       <div className="card overflow-hidden">
         {/* AI identification header */}
         <div className="p-4 border-b border-vinyl-border flex items-center gap-3">
-          <img src={item.preview} alt="" className="w-14 h-14 object-cover rounded-lg flex-shrink-0" />
+          <img src={item.preview} alt="" loading="lazy" className="w-14 h-14 object-cover rounded-lg flex-shrink-0" />
           <div className="flex-1">
             <p className="font-semibold">{result.artist} — {result.title}</p>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -414,7 +414,7 @@ function ScanItem({
                 type="checkbox"
                 checked={listForSale}
                 onChange={(e) => setListForSale(e.target.checked)}
-                className="w-3.5 h-3.5 accent-vinyl-accent"
+                className="w-3.5 h-3.5 accent-[color:var(--vs-accent)]"
               />
               <span className="text-xs text-vinyl-muted">Also list on Discogs Marketplace</span>
             </label>

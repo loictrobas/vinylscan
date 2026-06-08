@@ -115,6 +115,7 @@ export interface CatalogRecord {
   catalog_number: string | null;
   format: string | null;
   genre: string | null;
+  styles: string | null;
   country: string | null;
   condition: string;
   discogs_release_id: number | null;
@@ -122,6 +123,9 @@ export interface CatalogRecord {
   discogs_listing_id: number | null;
   discogs_synced: boolean;
   discogs_url: string | null;
+  discogs_lowest_price: number | null;
+  discogs_num_for_sale: number | null;
+  discogs_suggested_price: number | null;
   cover_image_url: string | null;
   status: "in_stock" | "sold";
   cost_price: number | null;
@@ -134,12 +138,22 @@ export interface CatalogRecord {
   created_at: string;
 }
 
+export interface RecordEvent {
+  id: number;
+  record_id: string;
+  event_type: string;
+  detail: string | null;
+  created_at: string;
+}
+
 export interface StoreSettings {
   store_slug: string | null;
   store_name: string | null;
   store_description: string | null;
   store_contact: string | null;
   store_public: boolean;
+  store_info_banner: string | null;
+  store_instagram: string | null;
 }
 
 export interface PublicRecord {
@@ -150,6 +164,7 @@ export interface PublicRecord {
   label: string | null;
   format: string | null;
   genre: string | null;
+  styles: string | null;
   condition: string;
   asking_price: number | null;
   cover_image_url: string | null;
@@ -159,6 +174,8 @@ export interface PublicStore {
   store_name: string | null;
   store_description: string | null;
   store_contact: string | null;
+  store_info_banner: string | null;
+  store_instagram: string | null;
   records: PublicRecord[];
 }
 
@@ -269,9 +286,11 @@ let _creditBalance: number | null = null;
 const _creditListeners: Array<(n: number) => void> = [];
 
 // Cache /auth/me so multiple components don't each fire a request on mount.
-// Cleared on logout so next login fetches fresh data.
+// TTL: 5 minutes. Cleared on logout so next login fetches fresh data.
 let _meCache: Promise<User> | null = null;
-export function clearMeCache() { _meCache = null; }
+let _meCacheAt = 0;
+const ME_CACHE_TTL = 5 * 60 * 1000;
+export function clearMeCache() { _meCache = null; _meCacheAt = 0; }
 
 export function subscribeCreditBalance(fn: (n: number) => void) {
   _creditListeners.push(fn);
@@ -332,6 +351,14 @@ async function apiFetch<T>(
     });
     _updateCreditBalance(res.headers.get("X-Credit-Balance"));
     if (!res.ok) {
+      if (res.status === 401) {
+        clearToken();
+        clearMeCache();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        throw Object.assign(new Error("Session expired"), { status: 401 });
+      }
       const err = await res.json().catch(() => ({}));
       throw Object.assign(new Error(err.detail || res.statusText), { status: res.status, data: err });
     }
@@ -345,7 +372,10 @@ async function apiFetch<T>(
 export const api = {
   me: () => {
     if (!getToken()) return Promise.reject(new Error("Not authenticated"));
-    if (!_meCache) _meCache = apiFetch<User>("/auth/me");
+    if (!_meCache || Date.now() - _meCacheAt > ME_CACHE_TTL) {
+      _meCache = apiFetch<User>("/auth/me");
+      _meCacheAt = Date.now();
+    }
     return _meCache;
   },
   logout: () => { clearToken(); clearMeCache(); return apiFetch<void>("/auth/logout", { method: "POST" }); },
@@ -364,6 +394,12 @@ export const api = {
       });
       _updateCreditBalance(res.headers.get("X-Credit-Balance"));
       if (!res.ok) {
+        if (res.status === 401) {
+          clearToken();
+          clearMeCache();
+          if (typeof window !== "undefined") window.location.href = "/login";
+          throw Object.assign(new Error("Session expired"), { status: 401 });
+        }
         const err = await res.json().catch(() => ({}));
         throw Object.assign(new Error(err.detail || res.statusText), { status: res.status, data: err });
       }
@@ -457,6 +493,9 @@ export const api = {
   sellRecord: (id: string, sold_price: number) =>
     apiFetch<CatalogRecord>(`/catalog/${id}/sell`, { method: "POST", body: JSON.stringify({ sold_price }) }),
 
+  recordHistory: (id: string) =>
+    apiFetch<RecordEvent[]>(`/catalog/${id}/history`),
+
   getPriceMarkup: () => apiFetch<{ price_markup_pct: number | null }>("/catalog/settings/price-markup"),
 
   setPriceMarkup: (pct: number | null) =>
@@ -491,6 +530,16 @@ export const api = {
   fetchDiscogsPrices: (releaseIds: number[]) =>
     apiFetch<Record<string, { lowest: number; currency: string; num_for_sale: number } | null>>(
       `/discogs/prices?release_ids=${releaseIds.join(",")}`
+    ),
+
+  discogsBackfillMarket: () =>
+    apiFetch<{ status: string; total: number; processed: number; updated: number; error: string | null }>(
+      "/discogs/backfill-market", { method: "POST" }
+    ),
+
+  discogsBackfillMarketStatus: () =>
+    apiFetch<{ status: string; total: number; processed: number; updated: number; error: string | null }>(
+      "/discogs/backfill-market/status"
     ),
 
   discogsListRecord: (id: string) =>

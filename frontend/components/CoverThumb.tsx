@@ -15,6 +15,6 @@ export function CoverThumb({ url, large = false }: { url: string | null | undefi
     );
   }
   return (
-    <img src={url} alt="" onError={() => setErr(true)} className={`${cls} object-cover`} />
+    <img src={url} alt="" loading="lazy" onError={() => setErr(true)} className={`${cls} object-cover`} />
   );
 }

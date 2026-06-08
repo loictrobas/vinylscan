@@ -279,7 +279,7 @@ export default function SessionPage() {
           return (
             <div key={scan.id} className={`card p-4 flex items-center gap-3 ${!isAdded && scan.status !== "pending" ? "opacity-50" : ""}`}>
               {scan.image_url && (
-                <img src={scan.image_url} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />
+                <img src={scan.image_url} alt="" loading="lazy" className="w-10 h-10 object-cover rounded flex-shrink-0" />
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">

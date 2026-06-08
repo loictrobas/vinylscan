@@ -328,18 +328,40 @@ async def _fetch_and_set_price(
     from models import User as _User
     async with AsyncSessionLocal() as db:
         try:
-            pricing = await discogs_svc.get_marketplace_stats(release_id, access_token, access_token_secret)
-            lowest = pricing.get("lowest") if pricing else None
-            if lowest is not None:
-                result = await db.execute(select(Record).where(Record.id == record_id))
-                record = result.scalar_one_or_none()
-                if record and record.asking_price is None:
-                    # Apply user's markup if set
-                    user_result = await db.execute(select(_User).where(_User.id == record.user_id))
-                    user = user_result.scalar_one_or_none()
-                    markup = (user.price_markup_pct or 0) if user else 0
-                    record.asking_price = round(lowest * (1 + markup / 100), 2)
-                    await db.commit()
+            result = await db.execute(select(Record).where(Record.id == record_id))
+            record = result.scalar_one_or_none()
+            if not record:
+                return
+
+            # Fetch full release details (styles + market prices)
+            details = await discogs_svc.get_release_details(release_id, access_token, access_token_secret)
+            if details:
+                if not record.styles and details.get("styles"):
+                    record.styles = ", ".join(details["styles"][:5])
+                if not record.genre and details.get("genres"):
+                    record.genre = details["genres"][0]
+                if details.get("lowest_price") is not None:
+                    record.discogs_lowest_price = details["lowest_price"]
+                if details.get("num_for_sale") is not None:
+                    record.discogs_num_for_sale = details["num_for_sale"]
+
+            # Fetch condition-specific price suggestion
+            suggestions = await discogs_svc.get_price_suggestions(release_id, access_token, access_token_secret)
+            if suggestions:
+                cond = record.condition if isinstance(record.condition, str) else record.condition.value
+                suggested = suggestions.get(cond)
+                if suggested:
+                    record.discogs_suggested_price = suggested
+
+            # Set asking_price if not already set
+            lowest = details.get("lowest_price") if details else None
+            if lowest is not None and record.asking_price is None:
+                user_result = await db.execute(select(_User).where(_User.id == record.user_id))
+                user = user_result.scalar_one_or_none()
+                markup = (user.price_markup_pct or 0) if user else 0
+                record.asking_price = round(lowest * (1 + markup / 100), 2)
+
+            await db.commit()
         except Exception as e:
             logger.warning("Price fetch failed for record %s release %s: %s", record_id, release_id, e)
 

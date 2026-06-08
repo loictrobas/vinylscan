@@ -15,7 +15,8 @@
     "@zxing/library": "^0.22.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.469.0",
-    "next": "^16.2.6"
+    "next": "^16.2.6",
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@types/node": "^22",

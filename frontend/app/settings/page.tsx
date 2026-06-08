@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Disc3, RefreshCw, CheckCircle2, AlertCircle, ExternalLink,
-  Loader2, Clock, ArrowDownToLine, Image, Shield,
+  Loader2, Clock, ArrowDownToLine, Image, Shield, TrendingUp,
 } from "lucide-react";
 import { api, getToken, type DiscogsSyncStatus, type User } from "@/lib/api";
 
@@ -72,8 +72,10 @@ export default function SettingsPage() {
   const [sync, setSync] = useState<DiscogsSyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [backfill, setBackfill] = useState<BackfillStatus | null>(null);
+  const [marketBackfill, setMarketBackfill] = useState<{ status: string; total: number; processed: number; updated: number; error: string | null } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const backfillPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const marketPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!getToken()) { router.replace("/"); return; }
@@ -117,6 +119,23 @@ export default function SettingsPage() {
     return () => { if (backfillPollRef.current) clearInterval(backfillPollRef.current); };
   }, [backfill?.status]);
 
+  // Poll market backfill while running
+  useEffect(() => {
+    if (marketBackfill?.status === "running") {
+      marketPollRef.current = setInterval(async () => {
+        const b = await api.discogsBackfillMarketStatus().catch(() => null);
+        if (b) {
+          setMarketBackfill(b);
+          if (b.status !== "running" && marketPollRef.current) {
+            clearInterval(marketPollRef.current);
+            marketPollRef.current = null;
+          }
+        }
+      }, 3000);
+    }
+    return () => { if (marketPollRef.current) clearInterval(marketPollRef.current); };
+  }, [marketBackfill?.status]);
+
   async function startSync() {
     const s = await api.discogsStartSync();
     setSync(s);
@@ -125,6 +144,11 @@ export default function SettingsPage() {
   async function startBackfillCovers() {
     const b = await api.discogsBackfillCovers();
     setBackfill(b);
+  }
+
+  async function startMarketBackfill() {
+    const b = await api.discogsBackfillMarket();
+    setMarketBackfill(b);
   }
 
   if (loading) {
@@ -354,6 +378,79 @@ export default function SettingsPage() {
                 onClick={startBackfillCovers}
                 className="mt-2 text-xs text-vs-muted hover:text-vs-accent underline underline-offset-2"
               >
+                Try again
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Market data backfill */}
+      <div className="card p-5 space-y-3">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-vs-raised border border-vs-border-2 flex items-center justify-center flex-shrink-0">
+            <TrendingUp size={14} className="text-vs-accent" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Fetch styles & market prices</p>
+            <p className="text-xs text-vs-muted mt-0.5">
+              Pulls Discogs genre/style tags and marketplace pricing for all records missing them. ~2s per record.
+            </p>
+          </div>
+        </div>
+
+        {(!marketBackfill || marketBackfill.status === "idle") && (
+          <button onClick={startMarketBackfill} className="btn-primary flex items-center gap-1.5 py-1.5 text-xs">
+            <TrendingUp size={12} />
+            Fetch market data
+          </button>
+        )}
+
+        {marketBackfill?.status === "running" && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Loader2 size={14} className="animate-spin text-vs-accent" />
+              <span className="text-vs-text-2">
+                {marketBackfill.total > 0
+                  ? `${marketBackfill.processed} / ${marketBackfill.total} records processed…`
+                  : "Starting…"}
+              </span>
+            </div>
+            {marketBackfill.total > 0 && (
+              <div className="h-1.5 bg-vs-raised rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-vs-accent rounded-full transition-all duration-500"
+                  style={{ width: `${Math.round((marketBackfill.processed / marketBackfill.total) * 100)}%` }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {marketBackfill?.status === "done" && (
+          <div className="flex items-start gap-2 p-3 bg-vs-success/5 border border-vs-success/20 rounded-lg">
+            <CheckCircle2 size={14} className="text-vs-success flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-vs-success font-medium">Done</p>
+              <p className="text-xs text-vs-text-2 mt-0.5">
+                {marketBackfill.updated > 0
+                  ? `Updated ${marketBackfill.updated} record${marketBackfill.updated !== 1 ? "s" : ""}`
+                  : "All records already up to date"}
+              </p>
+              <button onClick={startMarketBackfill} className="mt-2 text-xs text-vs-muted hover:text-vs-accent underline underline-offset-2">
+                Run again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {marketBackfill?.status === "error" && (
+          <div className="flex items-start gap-2 p-3 bg-vs-danger/5 border border-vs-danger/20 rounded-lg">
+            <AlertCircle size={14} className="text-vs-danger flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-vs-danger font-medium">Failed</p>
+              <p className="text-xs text-vs-text-2 mt-0.5">{marketBackfill.error}</p>
+              <button onClick={startMarketBackfill} className="mt-2 text-xs text-vs-muted hover:text-vs-accent underline underline-offset-2">
                 Try again
               </button>
             </div>

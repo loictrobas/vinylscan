@@ -28,6 +28,8 @@ class StoreSettings(BaseModel):
     store_description: str | None
     store_contact: str | None
     store_public: bool
+    store_info_banner: str | None
+    store_instagram: str | None
 
 
 class UpdateStoreSettings(BaseModel):
@@ -36,6 +38,8 @@ class UpdateStoreSettings(BaseModel):
     store_description: str | None = None
     store_contact: str | None = None
     store_public: bool | None = None
+    store_info_banner: str | None = None
+    store_instagram: str | None = None
 
 
 class PublicRecord(BaseModel):
@@ -46,6 +50,7 @@ class PublicRecord(BaseModel):
     label: str | None
     format: str | None
     genre: str | None
+    styles: str | None
     condition: str
     asking_price: float | None
     cover_image_url: str | None
@@ -55,6 +60,8 @@ class PublicStore(BaseModel):
     store_name: str | None
     store_description: str | None
     store_contact: str | None
+    store_info_banner: str | None
+    store_instagram: str | None
     records: list[PublicRecord]
 
 
@@ -68,6 +75,8 @@ async def get_store_settings(user: User = Depends(get_current_user)):
         store_description=user.store_description,
         store_contact=user.store_contact,
         store_public=user.store_public,
+        store_info_banner=user.store_info_banner,
+        store_instagram=user.store_instagram,
     )
 
 
@@ -100,7 +109,7 @@ async def update_store_settings(
     elif "store_slug" in body.model_fields_set and body.store_slug is None:
         db_user.store_slug = None
 
-    for field in ["store_name", "store_description", "store_contact", "store_public"]:
+    for field in ["store_name", "store_description", "store_contact", "store_public", "store_info_banner", "store_instagram"]:
         if field in body.model_fields_set:
             setattr(db_user, field, getattr(body, field))
 
@@ -123,6 +132,8 @@ async def update_store_settings(
         store_description=db_user.store_description,
         store_contact=db_user.store_contact,
         store_public=db_user.store_public,
+        store_info_banner=db_user.store_info_banner,
+        store_instagram=db_user.store_instagram,
     )
 
 
@@ -162,6 +173,8 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
         store_name=store_user.store_name or store_user.display_name or store_user.discogs_username,
         store_description=store_user.store_description,
         store_contact=store_user.store_contact,
+        store_info_banner=store_user.store_info_banner,
+        store_instagram=store_user.store_instagram,
         records=[
             PublicRecord(
                 id=str(r.id),
@@ -171,6 +184,7 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
                 label=r.label,
                 format=r.format,
                 genre=getattr(r, "genre", None),
+                styles=getattr(r, "styles", None),
                 condition=r.condition if isinstance(r.condition, str) else r.condition.value,
                 asking_price=float(r.asking_price) if r.asking_price is not None else None,
                 cover_image_url=getattr(r, "cover_image_url", None),

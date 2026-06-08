@@ -9,8 +9,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = AUTH_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "?"));
   const isPublicPage = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
+  const isMobilePage = pathname.startsWith("/mobile");
 
-  if (isAuthPage || isPublicPage) {
+  if (isAuthPage || isPublicPage || isMobilePage) {
     return <>{children}</>;
   }
 
