@@ -595,16 +595,18 @@ function CatalogPageInner() {
                         {discogsConnected && !r.discogs_listing_id && r.discogs_release_id && r.asking_price && r.status === "in_stock" && (
                           <span title="Eligible to list on Discogs"><Tag size={12} className="text-vs-muted/40 flex-shrink-0" /></span>
                         )}
-                        {r.discogs_release_id && (
-                          <a
-                            href={`https://www.discogs.com/release/${r.discogs_release_id}`}
-                            target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-0.5 rounded text-vs-muted hover:text-vs-text hover:bg-vs-raised text-xs border border-transparent hover:border-vs-border transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLink size={11} /><span className="text-2xs">Discogs</span>
-                          </a>
-                        )}
+                        <div className="w-[60px] flex justify-center">
+                          {r.discogs_release_id && (
+                            <a
+                              href={`https://www.discogs.com/release/${r.discogs_release_id}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2 py-0.5 rounded text-vs-muted hover:text-vs-text hover:bg-vs-raised text-xs border border-transparent hover:border-vs-border transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink size={11} /><span className="text-2xs">Discogs</span>
+                            </a>
+                          )}
+                        </div>
                         <button onClick={(e) => { e.stopPropagation(); setDeleteId(r.id); }} className="text-vs-muted hover:text-vs-danger p-1 rounded">
                           <Trash2 size={13} />
                         </button>
