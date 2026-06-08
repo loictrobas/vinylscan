@@ -196,9 +196,13 @@ function CatalogPageInner() {
   const [autoPriceManual, setAutoPriceManual] = useState("");
   const [autoPricing, setAutoPricing] = useState(false);
 
+  const [slowLoad, setSlowLoad] = useState(false);
+
   const fetchRecords = useCallback(async (pg: number, status: string, lot: string, q: string) => {
     setLoading(true);
+    setSlowLoad(false);
     setSelectedIds(new Set());
+    const slowTimer = setTimeout(() => setSlowLoad(true), 8000);
     try {
       const res = await api.listCatalog({
         page: pg, per_page: PER_PAGE, status,
@@ -208,7 +212,11 @@ function CatalogPageInner() {
       });
       setRecords(res.records);
       setTotal(res.total);
-    } finally { setLoading(false); }
+    } finally {
+      clearTimeout(slowTimer);
+      setLoading(false);
+      setSlowLoad(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -470,6 +478,7 @@ function CatalogPageInner() {
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
+          <>
           <table className="data-table">
             <thead>
               <tr>
@@ -507,6 +516,12 @@ function CatalogPageInner() {
               ))}
             </tbody>
           </table>
+          {slowLoad && (
+            <p className="text-xs text-vs-muted text-center py-3 animate-pulse">
+              Server is waking up — this takes up to 60s on first load…
+            </p>
+          )}
+          </>
         ) : records.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center px-4">
             <Disc3 size={36} className="text-vs-muted" />

@@ -335,7 +335,8 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
-  timeoutMs = 30000
+  timeoutMs = 65000,
+  _isRetry = false
 ): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -364,6 +365,13 @@ async function apiFetch<T>(
     }
     recordApiSuccess();
     return res.json();
+  } catch (err: unknown) {
+    if (!_isRetry && err instanceof Error && err.name === "AbortError") {
+      // Backend cold-start (Render free tier): retry once after brief delay
+      await new Promise((r) => setTimeout(r, 2000));
+      return apiFetch<T>(path, options, timeoutMs, true);
+    }
+    throw err;
   } finally {
     clearTimeout(timer);
   }
