@@ -175,7 +175,7 @@ export function Sidebar() {
           <span className="text-vs-muted">{dark ? <Sun size={16} /> : <Moon size={16} />}</span>
           {dark ? "Light mode" : "Dark mode"}
         </button>
-        <Link href="/mobile" className="sidebar-link text-vs-muted">
+        <Link href="/?mobile=1" className="sidebar-link text-vs-muted">
           <Smartphone size={16} />
           Mobile view
         </Link>

@@ -18,7 +18,14 @@ export function middleware(req: NextRequest) {
     const dest = new URL(req.url);
     dest.searchParams.delete("desktop");
     const res = NextResponse.redirect(dest);
-    res.cookies.set(DESKTOP_COOKIE, "1", { path: "/", maxAge: 60 * 60 * 24 * 30 }); // 30 days
+    res.cookies.set(DESKTOP_COOKIE, "1", { path: "/", maxAge: 60 * 60 * 24 * 30 });
+    return res;
+  }
+
+  // If user explicitly requested mobile, clear desktop cookie and redirect to mobile home
+  if (searchParams.get("mobile") === "1") {
+    const res = NextResponse.redirect(new URL("/mobile/home", req.url));
+    res.cookies.set(DESKTOP_COOKIE, "", { path: "/", maxAge: 0 });
     return res;
   }
 
