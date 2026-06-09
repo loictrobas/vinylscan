@@ -68,6 +68,7 @@ class User(Base):
     store_public: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     store_info_banner: Mapped[str | None] = mapped_column(String(500), nullable=True)
     store_instagram: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    account_type: Mapped[str] = mapped_column(String(20), nullable=False, default="store")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -211,6 +212,20 @@ class RecordEvent(Base):
     record_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("records.id", ondelete="CASCADE"), nullable=False, index=True)
     event_type: Mapped[str] = mapped_column(String(50), nullable=False)  # added, price_changed, condition_changed, lot_changed, sold, store_listed, notes_updated
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class WantlistItem(Base):
+    __tablename__ = "wantlist_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    artist: Mapped[str] = mapped_column(String(500), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    label: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    discogs_release_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

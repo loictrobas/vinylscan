@@ -63,6 +63,11 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: rgb(var(--vs-muted) / 0.5); }
 
 @layer utilities {
+  /* ── Mobile safe area ───────────────────── */
+  .pt-safe {
+    padding-top: calc(env(safe-area-inset-top) + 1rem);
+  }
+
   /* ── Cards ─────────────────────────────── */
   .card {
     @apply bg-vs-card border border-vs-border rounded-xl;

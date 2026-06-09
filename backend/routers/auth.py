@@ -206,6 +206,30 @@ class RegisterRequest(_BM):
     token: str
     password: str
     display_name: str | None = None
+    account_type: str = "collector"
+
+
+class UpdateMeRequest(_BM):
+    account_type: str | None = None
+    display_name: str | None = None
+
+
+@router.patch("/me", response_model=UserOut)
+async def update_me(
+    body: UpdateMeRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    valid_types = {"collector", "store", "both"}
+    if body.account_type is not None:
+        if body.account_type not in valid_types:
+            raise HTTPException(status_code=422, detail="account_type must be collector, store, or both")
+        user.account_type = body.account_type
+    if body.display_name is not None:
+        user.display_name = body.display_name
+    await db.commit()
+    await db.refresh(user)
+    return user
 
 
 class ChangePasswordRequest(_BM):
@@ -263,6 +287,8 @@ async def register_via_invite(
     if len(body.password) < 8:
         raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
 
+    valid_types = {"collector", "store", "both"}
+    account_type = body.account_type if body.account_type in valid_types else "collector"
     user = User(
         email=invite.email.lower(),
         password_hash=_hash_password(body.password),
@@ -271,6 +297,7 @@ async def register_via_invite(
         is_admin=False,
         credits=5,
         last_free_topup_month="",
+        account_type=account_type,
     )
     db.add(user)
     await db.flush()

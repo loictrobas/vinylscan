@@ -15,6 +15,7 @@ class UserOut(BaseModel):
     is_admin: bool = False
     is_active: bool = True
     credits: int
+    account_type: str = "store"
     created_at: datetime
 
     model_config = {"from_attributes": True}

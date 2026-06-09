@@ -7,7 +7,7 @@ import {
   Trash2, DollarSign, Check, ShoppingCart, Tag, Loader2, Store, Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, getToken, type CatalogRecord, type Lot, type User } from "@/lib/api";
+import { api, getToken, isStore, isCollector, type CatalogRecord, type Lot, type User } from "@/lib/api";
 import { CoverThumb } from "@/components/CoverThumb";
 import { CondBadge } from "@/components/CondBadge";
 import { RowCheckbox } from "@/components/RowCheckbox";
@@ -80,6 +80,63 @@ function SellButton({ record, onSold }: { record: CatalogRecord; onSold: (r: Cat
         <Check size={12} />
       </button>
       <button onClick={() => setOpen(false)} className="text-vs-muted hover:text-vs-text"><X size={11} /></button>
+    </div>
+  );
+}
+
+// ── Remove button (collector) ─────────────────────────────────────────────────
+
+const REMOVE_REASONS = [
+  { value: "sold", label: "Sold privately" },
+  { value: "traded", label: "Traded" },
+  { value: "gift", label: "Gift" },
+  { value: "lost", label: "Lost" },
+  { value: "broken", label: "Broken" },
+  { value: "other", label: "Other" },
+] as const;
+
+function RemoveButton({ record, onRemoved }: { record: CatalogRecord; onRemoved: (r: CatalogRecord) => void }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<string>("gift");
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  if (record.status === "sold") {
+    return <span className="text-xs text-vs-teal font-medium px-2 py-1">Gone</span>;
+  }
+  if (!open) {
+    return (
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(true); }}
+        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-vs-raised hover:bg-vs-border text-vs-text-2 text-xs font-medium transition-colors border border-vs-border"
+      >
+        Remove
+      </button>
+    );
+  }
+  async function confirm() {
+    setSaving(true);
+    try {
+      onRemoved(await api.catalogRemoveRecord(record.id, { reason, note: note || undefined }));
+      setOpen(false);
+    } finally { setSaving(false); }
+  }
+  return (
+    <div className="flex flex-col gap-1.5 p-2 bg-vs-card border border-vs-border rounded-lg shadow-lg min-w-[180px]" onClick={(e) => e.stopPropagation()}>
+      <select value={reason} onChange={(e) => setReason(e.target.value)} className="input text-xs py-0.5">
+        {REMOVE_REASONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+      </select>
+      <input
+        type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)"
+        className="input text-xs py-0.5"
+        onKeyDown={(e) => { if (e.key === "Enter") confirm(); if (e.key === "Escape") setOpen(false); }}
+      />
+      <div className="flex gap-1.5 justify-end">
+        <button onClick={() => setOpen(false)} className="text-xs text-vs-muted hover:text-vs-text px-2 py-0.5 rounded">Cancel</button>
+        <button onClick={confirm} disabled={saving} className="text-xs bg-vs-raised border border-vs-border hover:bg-vs-border rounded px-2 py-0.5 disabled:opacity-50">
+          {saving ? "…" : "Confirm"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -170,6 +227,7 @@ function CatalogPageInner() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"in_stock" | "sold" | "all">("in_stock");
+  const [noDiscogsFilter, setNoDiscogsFilter] = useState(false);
   const [lotFilter, setLotFilter] = useState(searchParams.get("lot_id") ?? "");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -198,14 +256,15 @@ function CatalogPageInner() {
 
   const [slowLoad, setSlowLoad] = useState(false);
 
-  const fetchRecords = useCallback(async (pg: number, status: string, lot: string, q: string) => {
+  const fetchRecords = useCallback(async (pg: number, status: string, lot: string, q: string, noDiscogs = false) => {
     setLoading(true);
     setSlowLoad(false);
     setSelectedIds(new Set());
     const slowTimer = setTimeout(() => setSlowLoad(true), 8000);
     try {
       const res = await api.listCatalog({
-        page: pg, per_page: PER_PAGE, status,
+        page: pg, per_page: PER_PAGE,
+        ...(noDiscogs ? { no_discogs: true } : { status }),
         no_lot: lot === "none",
         lot_id: lot !== "" && lot !== "none" ? lot : undefined,
         search: q || undefined,
@@ -240,8 +299,8 @@ function CatalogPageInner() {
 
   useEffect(() => {
     setPage(1);
-    fetchRecords(1, statusFilter, lotFilter, search);
-  }, [statusFilter, lotFilter, search, fetchRecords]);
+    fetchRecords(1, statusFilter, lotFilter, search, noDiscogsFilter);
+  }, [statusFilter, lotFilter, search, noDiscogsFilter, fetchRecords]);
 
   useEffect(() => {
     if (records.length === 0) return;
@@ -333,7 +392,7 @@ function CatalogPageInner() {
     const ok = results.filter((r) => r.status === "fulfilled").length;
     const fail = results.filter((r) => r.status === "rejected").length;
     setSelectedIds(new Set());
-    fetchRecords(page, statusFilter, lotFilter, search);
+    fetchRecords(page, statusFilter, lotFilter, search, noDiscogsFilter);
     if (fail > 0) toast.error(`${fail} record${fail > 1 ? "s" : ""} could not be assigned`);
     else toast.success(`${ok} record${ok > 1 ? "s" : ""} assigned to lot`);
   }
@@ -390,7 +449,7 @@ function CatalogPageInner() {
     const ok = results.filter((r) => r.status === "fulfilled").length;
     setAutoPricing(false);
     setAutoPriceOpen(false);
-    fetchRecords(page, statusFilter, lotFilter, search);
+    fetchRecords(page, statusFilter, lotFilter, search, noDiscogsFilter);
     toast.success(`Auto-priced ${ok} record${ok > 1 ? "s" : ""}`);
   }
 
@@ -419,6 +478,12 @@ function CatalogPageInner() {
   const totalPages = Math.ceil(total / PER_PAGE);
   const allSelected = records.length > 0 && selectedIds.size === records.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
+  const storeMode = isStore(user);
+  const collectorMode = isCollector(user);
+  const pureCollector = collectorMode && !storeMode;
+  const inStockLabel = pureCollector ? "In collection" : "In stock";
+  const soldLabel = pureCollector ? "Gone" : "Sold";
+  const priceColLabel = pureCollector ? "Value" : "Your price";
 
   return (
     <div className="px-6 py-6 pb-28">
@@ -429,7 +494,7 @@ function CatalogPageInner() {
           <p className="text-sm text-vs-text-2 mt-0.5">{total} record{total !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
-          {records.some((r) => r.asking_price == null) && (
+          {storeMode && records.some((r) => r.asking_price == null) && (
             <button
               onClick={() => { setAutoPriceScope("unpriced"); setAutoPriceOpen(true); }}
               className="btn-secondary flex items-center gap-1.5 text-sm"
@@ -457,11 +522,15 @@ function CatalogPageInner() {
         </div>
         <div className="flex bg-vs-raised border border-vs-border rounded-lg overflow-hidden flex-shrink-0">
           {(["in_stock", "sold", "all"] as const).map((s) => (
-            <button key={s} onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 text-sm transition-colors ${statusFilter === s ? "bg-vs-accent text-vs-bg font-medium" : "text-vs-text-2 hover:text-vs-text"}`}>
-              {s === "in_stock" ? "In stock" : s === "sold" ? "Sold" : "All"}
+            <button key={s} onClick={() => { setNoDiscogsFilter(false); setStatusFilter(s); }}
+              className={`px-3 py-1.5 text-sm transition-colors ${!noDiscogsFilter && statusFilter === s ? "bg-vs-accent text-vs-bg font-medium" : "text-vs-text-2 hover:text-vs-text"}`}>
+              {s === "in_stock" ? inStockLabel : s === "sold" ? soldLabel : "All"}
             </button>
           ))}
+          <button onClick={() => setNoDiscogsFilter((v) => !v)}
+            className={`px-3 py-1.5 text-sm transition-colors border-l border-vs-border ${noDiscogsFilter ? "bg-vs-warning/20 text-vs-warning font-medium" : "text-vs-text-2 hover:text-vs-text"}`}>
+            Unlinked
+          </button>
         </div>
         {lots.length > 0 && (
           <div className="relative">
@@ -487,7 +556,7 @@ function CatalogPageInner() {
                 <th>Format</th>
                 <th>Cond.</th>
                 <th>Market</th>
-                <th>Your price</th>
+                <th>{priceColLabel}</th>
                 <th>Lot</th>
                 <th></th>
               </tr>
@@ -545,7 +614,7 @@ function CatalogPageInner() {
                 <th>Format</th>
                 <th>Cond.</th>
                 <th>Market</th>
-                <th>Your price</th>
+                <th>{priceColLabel}</th>
                 <th>Lot</th>
                 <th></th>
               </tr>
@@ -594,20 +663,23 @@ function CatalogPageInner() {
                     <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><span className="text-xs text-vs-text-2">{r.lot_id && lotMap[r.lot_id] ? lotMap[r.lot_id] : "—"}</span></td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-2 justify-end">
-                        <SellButton record={r} onSold={(updated) => handleSaved(updated)} />
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleToggleStoreListed(r); }}
-                          title={r.store_listed ? "Remove from store" : "Show in store"}
-                          className={`p-1 rounded transition-colors ${r.store_listed ? "text-vs-accent hover:text-vs-accent/70" : "text-vs-muted hover:text-vs-text"}`}
-                        >
-                          <Store size={13} />
-                        </button>
-                        {discogsConnected && r.discogs_listing_id && (
+                        {storeMode && <SellButton record={r} onSold={(updated) => handleSaved(updated)} />}
+                        {pureCollector && <RemoveButton record={r} onRemoved={(updated) => handleSaved(updated)} />}
+                        {storeMode && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleToggleStoreListed(r); }}
+                            title={r.store_listed ? "Remove from store" : "Show in store"}
+                            className={`p-1 rounded transition-colors ${r.store_listed ? "text-vs-accent hover:text-vs-accent/70" : "text-vs-muted hover:text-vs-text"}`}
+                          >
+                            <Store size={13} />
+                          </button>
+                        )}
+                        {storeMode && discogsConnected && r.discogs_listing_id && (
                           <span className="text-2xs px-1.5 py-0.5 rounded-full bg-vs-accent/15 text-vs-accent border border-vs-accent/20 font-medium whitespace-nowrap">
                             Listed
                           </span>
                         )}
-                        {discogsConnected && !r.discogs_listing_id && r.discogs_release_id && r.asking_price && r.status === "in_stock" && (
+                        {storeMode && discogsConnected && !r.discogs_listing_id && r.discogs_release_id && r.asking_price && r.status === "in_stock" && (
                           <span title="Eligible to list on Discogs"><Tag size={12} className="text-vs-muted/40 flex-shrink-0" /></span>
                         )}
                         <div className="w-[60px] flex justify-center">
@@ -638,10 +710,10 @@ function CatalogPageInner() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 mt-4">
-          <button disabled={page <= 1} onClick={() => { const p = page - 1; setPage(p); fetchRecords(p, statusFilter, lotFilter, search); }}
+          <button disabled={page <= 1} onClick={() => { const p = page - 1; setPage(p); fetchRecords(p, statusFilter, lotFilter, search, noDiscogsFilter); }}
             className="btn-secondary py-1.5 px-3 text-xs disabled:opacity-40">Previous</button>
           <span className="text-xs text-vs-text-2">{page} / {totalPages}</span>
-          <button disabled={page >= totalPages} onClick={() => { const p = page + 1; setPage(p); fetchRecords(p, statusFilter, lotFilter, search); }}
+          <button disabled={page >= totalPages} onClick={() => { const p = page + 1; setPage(p); fetchRecords(p, statusFilter, lotFilter, search, noDiscogsFilter); }}
             className="btn-secondary py-1.5 px-3 text-xs disabled:opacity-40">Next</button>
         </div>
       )}
@@ -674,13 +746,14 @@ function CatalogPageInner() {
                 <option value="" disabled>Add to lot…</option>
                 {lots.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
-              <Tag size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-vs-muted pointer-events-none" />
+              <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-vs-muted pointer-events-none" />
             </div>
           )}
 
           <div className="w-px h-5 bg-vs-border mx-0.5" />
 
-          {/* Store */}
+          {/* Store — store only */}
+          {storeMode && <>
           <button
             onClick={() => handleBulkStoreListed(true)}
             disabled={!records.some((r) => selectedIds.has(r.id) && !r.store_listed)}
@@ -697,9 +770,10 @@ function CatalogPageInner() {
           >
             <Store size={12} />Hide
           </button>
+          </>}
 
-          {/* Discogs list */}
-          {discogsConnected && (
+          {/* Discogs list — store only */}
+          {storeMode && discogsConnected && (
             <button
               onClick={handleBulkList}
               disabled={bulkListing || !records.some((r) => selectedIds.has(r.id) && r.discogs_release_id && r.asking_price && r.status === "in_stock" && !r.discogs_listing_id)}
@@ -711,30 +785,30 @@ function CatalogPageInner() {
             </button>
           )}
 
-          {/* Auto-price */}
-          <button
+          {/* Auto-price — store only */}
+          {storeMode && <button
             onClick={() => { setAutoPriceScope("selected"); setAutoPriceOpen(true); }}
             disabled={!records.some((r) => selectedIds.has(r.id) && r.asking_price == null)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-vs-text-2 hover:text-vs-accent hover:bg-vs-accent/10 transition-colors disabled:opacity-35 whitespace-nowrap"
             title="Auto-price selected"
           >
             <Wand2 size={12} />Price
-          </button>
+          </button>}
 
           <div className="w-px h-5 bg-vs-border mx-0.5" />
 
-          {/* Add to cart — primary CTA */}
-          <button
+          {/* Add to cart — store only */}
+          {storeMode && <button
             onClick={handleAddToCart}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-vs-accent text-white text-xs font-semibold hover:bg-vs-accent-bright transition-colors whitespace-nowrap"
           >
             <ShoppingCart size={12} />Add to cart
-          </button>
+          </button>}
         </div>
       )}
 
       {showModal && (
-        <RecordModal record={editRecord} lots={lots} onClose={() => setShowModal(false)} onSaved={handleSaved} discogsConnected={discogsConnected} />
+        <RecordModal record={editRecord} lots={lots} onClose={() => setShowModal(false)} onSaved={handleSaved} discogsConnected={discogsConnected} user={user} />
       )}
 
       {deleteId && (

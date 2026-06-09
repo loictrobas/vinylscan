@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { Camera, Upload, CheckCircle, AlertCircle, Loader2, Plus, ExternalLink, Music, Barcode, WifiOff, ClipboardList } from "lucide-react";
-import { api, isLikelyColdStart, type ScanUploadResponse, type DiscogsMatch, type User } from "@/lib/api";
+import { api, isLikelyColdStart, isStore, isCollector, type ScanUploadResponse, type DiscogsMatch, type User } from "@/lib/api";
 import { isOnline, getOfflineQueue, addToOfflineQueue, removeFromOfflineQueue, fileToDataUrl, dataUrlToFile } from "@/lib/offline";
 import dynamic from "next/dynamic";
 
@@ -58,6 +58,7 @@ function MatchCard({
   isAdding,
   ownedReleaseIds,
   ownedFuzzyKeys,
+  pureCollector,
 }: {
   match: DiscogsMatch;
   onAdd: () => void;
@@ -65,6 +66,7 @@ function MatchCard({
   isAdding: boolean;
   ownedReleaseIds: Set<number>;
   ownedFuzzyKeys: Set<string>;
+  pureCollector?: boolean;
 }) {
   const exactOwned = ownedReleaseIds.has(match.release_id);
   // Fuzzy: same artist+title but different release_id → likely a different pressing/reissue
@@ -149,7 +151,7 @@ function MatchCard({
         className="flex-shrink-0 btn-primary text-sm py-1.5 px-4 flex items-center gap-1.5 disabled:opacity-50"
       >
         {isAdding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-        {alreadyOwned ? "Add copy" : "Add"}
+        {alreadyOwned ? "Add copy" : pureCollector ? "Add to collection" : "Add"}
       </button>
     </div>
   );
@@ -186,6 +188,7 @@ function ScanItem({
   ownedReleaseIds,
   ownedFuzzyKeys,
   discogsConnected,
+  pureCollector,
 }: {
   item: QueueItem;
   onConfirm: (itemId: string, releaseId: number, listForSale: boolean) => void;
@@ -196,6 +199,7 @@ function ScanItem({
   ownedReleaseIds: Set<number>;
   ownedFuzzyKeys: Set<string>;
   discogsConnected: boolean;
+  pureCollector?: boolean;
 }) {
   const [showAllMatches, setShowAllMatches] = useState(false);
   const [editingSearch, setEditingSearch] = useState(false);
@@ -254,11 +258,12 @@ function ScanItem({
 
   if (item.phase === "done") {
     const r = item.result;
+    const addedLabel = pureCollector ? "Added to collection" : "Added to catalog";
     const doneLabel = item.skipped
       ? "Skipped"
       : item.listedForSale
-        ? "Added to catalog · Listed on Discogs"
-        : "Added to catalog";
+        ? `${addedLabel} · Listed on Discogs`
+        : addedLabel;
     return (
       <div className="card p-4 flex items-center gap-3">
         <img src={item.preview} alt="" loading="lazy" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
@@ -384,6 +389,7 @@ function ScanItem({
                   isAdding={isConfirming}
                   ownedReleaseIds={ownedReleaseIds}
                   ownedFuzzyKeys={ownedFuzzyKeys}
+                  pureCollector={pureCollector}
                 />
               ))}
               {result.matches.length > 2 && (
@@ -408,7 +414,7 @@ function ScanItem({
             />
           </div>
 
-          {discogsConnected && item.result?.scan_id && (
+          {!pureCollector && discogsConnected && item.result?.scan_id && (
             <label className="flex items-center gap-2 cursor-pointer select-none pt-1">
               <input
                 type="checkbox"
@@ -694,6 +700,7 @@ export function ScanInterface() {
   const doneCount = queue.filter((i) => i.phase === "done").length;
   const pendingCount = queue.filter((i) => !["done", "error"].includes(i.phase)).length;
   const discogsConnected = !!user?.discogs_username;
+  const pureCollector = isCollector(user) && !isStore(user);
 
   return (
     <div className="max-w-xl mx-auto flex flex-col gap-4">
@@ -823,6 +830,7 @@ export function ScanInterface() {
               ownedReleaseIds={ownedReleaseIds}
               ownedFuzzyKeys={ownedFuzzyKeys}
               discogsConnected={discogsConnected}
+              pureCollector={pureCollector}
             />
           ))}
         </div>

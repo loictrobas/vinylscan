@@ -18,63 +18,9 @@ import {
   Sun,
   Moon,
   Smartphone,
+  Heart,
 } from "lucide-react";
-import { api, clearToken, clearMeCache, getToken, type User } from "@/lib/api";
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-  exact?: boolean;
-}
-
-interface NavSection {
-  label: string;
-  items: NavItem[];
-}
-
-const NAV: NavSection[] = [
-  {
-    label: "",
-    items: [
-      { href: "/dashboard", label: "Home", icon: <LayoutDashboard size={16} />, exact: true },
-    ],
-  },
-  {
-    label: "Catalog",
-    items: [
-      { href: "/catalog",      label: "Records",   icon: <Disc3 size={16} /> },
-      { href: "/scan",         label: "Scan & add", icon: <Camera size={16} /> },
-    ],
-  },
-  {
-    label: "Inventory",
-    items: [
-      { href: "/catalog/lots", label: "Lots", icon: <Layers size={16} /> },
-    ],
-  },
-  {
-    label: "Store",
-    items: [
-      { href: "/settings/store", label: "My store", icon: <Store size={16} /> },
-    ],
-  },
-  {
-    label: "Sales",
-    items: [
-      { href: "/sales",              label: "POS",          icon: <ShoppingCart size={16} /> },
-      { href: "/sales/history",      label: "Sales history", icon: <ClipboardList size={16} /> },
-      { href: "/sales/consignments", label: "Consignments", icon: <Package size={16} /> },
-    ],
-  },
-  {
-    label: "Purchases",
-    items: [
-      { href: "/purchases/suppliers", label: "Suppliers",       icon: <Users size={16} /> },
-      { href: "/purchases",           label: "Purchase orders", icon: <ClipboardList size={16} /> },
-    ],
-  },
-];
+import { api, clearToken, clearMeCache, getToken, isStore as userIsStore, isCollector as userIsCollector, type User } from "@/lib/api";
 
 function isActive(pathname: string, href: string, exact?: boolean): boolean {
   if (exact) return pathname === href;
@@ -104,6 +50,12 @@ export function Sidebar() {
     window.location.href = "/";
   }
 
+  const storeMode = userIsStore(user);
+  const collectorMode = userIsCollector(user);
+  const lotsLabel = collectorMode && !storeMode ? "Hauls" : "Lots";
+  const inventoryLabel = collectorMode && !storeMode ? "COLLECTION" : "INVENTORY";
+  const footerLabel = storeMode ? "Record store" : "My collection";
+
   return (
     <aside className="fixed inset-y-0 left-0 w-56 bg-vs-sidebar border-r border-vs-border flex flex-col z-40">
       {/* Logo */}
@@ -116,33 +68,99 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3">
-        {NAV.map((section) => (
-          <div key={section.label}>
-            {section.label && (
-              <p className="sidebar-section-label">{section.label}</p>
-            )}
-            {section.items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`sidebar-link ${isActive(pathname, item.href, item.exact) ? "active" : ""}`}
-              >
-                <span className={isActive(pathname, item.href, item.exact) ? "text-vs-accent" : "text-vs-muted"}>
-                  {item.icon}
-                </span>
-                {item.label}
-              </Link>
-            ))}
+        {/* Home — always visible */}
+        <div>
+          <Link
+            href="/dashboard"
+            className={`sidebar-link ${isActive(pathname, "/dashboard", true) ? "active" : ""}`}
+          >
+            <span className={isActive(pathname, "/dashboard", true) ? "text-vs-accent" : "text-vs-muted"}>
+              <LayoutDashboard size={16} />
+            </span>
+            Home
+          </Link>
+        </div>
+
+        {/* Catalog — always visible */}
+        <div>
+          <p className="sidebar-section-label">CATALOG</p>
+          <Link href="/catalog" className={`sidebar-link ${isActive(pathname, "/catalog") ? "active" : ""}`}>
+            <span className={isActive(pathname, "/catalog") ? "text-vs-accent" : "text-vs-muted"}><Disc3 size={16} /></span>
+            Records
+          </Link>
+          <Link href="/scan" className={`sidebar-link ${isActive(pathname, "/scan") ? "active" : ""}`}>
+            <span className={isActive(pathname, "/scan") ? "text-vs-accent" : "text-vs-muted"}><Camera size={16} /></span>
+            Scan &amp; add
+          </Link>
+        </div>
+
+        {/* Inventory / Collection — always visible */}
+        <div>
+          <p className="sidebar-section-label">{inventoryLabel}</p>
+          <Link href="/catalog/lots" className={`sidebar-link ${isActive(pathname, "/catalog/lots") ? "active" : ""}`}>
+            <span className={isActive(pathname, "/catalog/lots") ? "text-vs-accent" : "text-vs-muted"}><Layers size={16} /></span>
+            {lotsLabel}
+          </Link>
+          {collectorMode && (
+            <Link href="/wantlist" className={`sidebar-link ${isActive(pathname, "/wantlist") ? "active" : ""}`}>
+              <span className={isActive(pathname, "/wantlist") ? "text-vs-accent" : "text-vs-muted"}><Heart size={16} /></span>
+              Wantlist
+            </Link>
+          )}
+        </div>
+
+        {/* Store — store only */}
+        {storeMode && (
+          <div>
+            <p className="sidebar-section-label">STORE</p>
+            <Link href="/settings/store" className={`sidebar-link ${isActive(pathname, "/settings/store") ? "active" : ""}`}>
+              <span className={isActive(pathname, "/settings/store") ? "text-vs-accent" : "text-vs-muted"}><Store size={16} /></span>
+              My store
+            </Link>
           </div>
-        ))}
+        )}
+
+        {/* Sales — store only */}
+        {storeMode && (
+          <div>
+            <p className="sidebar-section-label">SALES</p>
+            <Link href="/sales" className={`sidebar-link ${isActive(pathname, "/sales") ? "active" : ""}`}>
+              <span className={isActive(pathname, "/sales") ? "text-vs-accent" : "text-vs-muted"}><ShoppingCart size={16} /></span>
+              POS
+            </Link>
+            <Link href="/sales/history" className={`sidebar-link ${isActive(pathname, "/sales/history") ? "active" : ""}`}>
+              <span className={isActive(pathname, "/sales/history") ? "text-vs-accent" : "text-vs-muted"}><ClipboardList size={16} /></span>
+              Sales history
+            </Link>
+            <Link href="/sales/consignments" className={`sidebar-link ${isActive(pathname, "/sales/consignments") ? "active" : ""}`}>
+              <span className={isActive(pathname, "/sales/consignments") ? "text-vs-accent" : "text-vs-muted"}><Package size={16} /></span>
+              Consignments
+            </Link>
+          </div>
+        )}
+
+        {/* Purchases — store only */}
+        {storeMode && (
+          <div>
+            <p className="sidebar-section-label">PURCHASES</p>
+            <Link href="/purchases/suppliers" className={`sidebar-link ${isActive(pathname, "/purchases/suppliers") ? "active" : ""}`}>
+              <span className={isActive(pathname, "/purchases/suppliers") ? "text-vs-accent" : "text-vs-muted"}><Users size={16} /></span>
+              Suppliers
+            </Link>
+            <Link href="/purchases" className={`sidebar-link ${isActive(pathname, "/purchases") ? "active" : ""}`}>
+              <span className={isActive(pathname, "/purchases") ? "text-vs-accent" : "text-vs-muted"}><ClipboardList size={16} /></span>
+              Purchase orders
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* User / settings footer */}
       <div className="border-t border-vs-border px-2 py-3 flex-shrink-0">
         {user && (
           <div className="px-3 py-2 mb-1">
-            <p className="text-xs font-medium text-vs-text truncate">{user.discogs_username}</p>
-            <p className="text-2xs text-vs-muted">Record store</p>
+            <p className="text-xs font-medium text-vs-text truncate">{user.display_name || user.discogs_username || user.email}</p>
+            <p className="text-2xs text-vs-muted">{footerLabel}</p>
           </div>
         )}
         <Link href="/settings" className={`sidebar-link ${isActive(pathname, "/settings") ? "active" : ""}`}>

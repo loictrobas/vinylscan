@@ -4,11 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Camera, Barcode, X, Check, ChevronDown, Zap, WifiOff,
-  RotateCcw, Loader2, AlertCircle, CheckCircle2
+  RotateCcw, Loader2, AlertCircle, CheckCircle2, AlertTriangle, BookMarked,
 } from "lucide-react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { NotFoundException } from "@zxing/library";
-import { api, getToken, type ScanUploadResponse, type Lot } from "@/lib/api";
+import { api, getToken, isStore, isCollector, type ScanUploadResponse, type Lot, type User } from "@/lib/api";
 import {
   addToOfflineQueue, getOfflineQueue, removeFromOfflineQueue,
   fileToDataUrl, dataUrlToFile, isOnline
@@ -39,10 +39,17 @@ export default function MobileScanPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ ok: number; fail: number } | null>(null);
   const [flashConfirm, setFlashConfirm] = useState(false);
+  const [duplicate, setDuplicate] = useState<{ in_collection: boolean; in_wantlist: boolean } | null>(null);
+  const [ownedIds, setOwnedIds] = useState<Set<number>>(new Set());
+  const [user, setUser] = useState<User | null>(null);
+  const [wantlistRemoving, setWantlistRemoving] = useState(false);
+  const [wantlistRemoved, setWantlistRemoved] = useState(false);
+
+  const pureCollector = isCollector(user) && !isStore(user);
 
   useEffect(() => {
     if (!getToken()) { router.replace("/login"); return; }
-    api.me().then((u) => setCredits(u.credits)).catch(() => {});
+    api.me().then((u) => { setUser(u); setCredits(u.credits); }).catch(() => {});
     api.listLots().then(setLots).catch(() => {});
     refreshQueue();
   }, [router]);
@@ -125,6 +132,7 @@ export default function MobileScanPage() {
       }
       setBarcodeMatches(data.matches);
       setMode("barcode-results");
+      api.ownedReleaseIds().then((r) => setOwnedIds(new Set(r.release_ids))).catch(() => {});
     } catch {
       setError("Barcode search failed. Check connection.");
       setMode("idle");
@@ -178,6 +186,9 @@ export default function MobileScanPage() {
       setScanResult(result);
       setCredits((c) => (c != null ? c - 1 : c));
       setMode("result");
+      if (result.discogs_release_id) {
+        api.checkDuplicate(result.discogs_release_id).then(setDuplicate).catch(() => {});
+      }
     } catch (e: unknown) {
       const err = e as { status?: number; message?: string };
       if (err.status === 402) {
@@ -257,6 +268,10 @@ export default function MobileScanPage() {
     setLotId("");
     setError(null);
     setMode("idle");
+    setDuplicate(null);
+    setOwnedIds(new Set());
+    setWantlistRemoving(false);
+    setWantlistRemoved(false);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -306,7 +321,7 @@ export default function MobileScanPage() {
       )}
 
       {/* Main content */}
-      <div className="px-4 pt-10">
+      <div className="px-4 pt-safe">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold">Scan</h1>
@@ -395,25 +410,35 @@ export default function MobileScanPage() {
         {mode === "barcode-results" && barcodeMatches.length > 0 && (
           <div>
             <p className="text-sm font-medium mb-4">Select release</p>
-            <ConditionAndLot condition={condition} setCondition={setCondition} lots={lots} lotId={lotId} setLotId={setLotId} />
+            <ConditionAndLot condition={condition} setCondition={setCondition} lots={lots} lotId={lotId} setLotId={setLotId} pureCollector={pureCollector} />
             <div className="flex flex-col gap-2 mt-4">
-              {barcodeMatches.map((m) => (
-                <button key={m.release_id}
-                  onClick={() => confirmBarcodeRelease(m.release_id)}
-                  disabled={confirming}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-vs-raised border border-vs-border text-left active:bg-vs-border transition-colors disabled:opacity-50"
-                >
-                  {m.cover_image && (
-                    <img src={m.cover_image} alt="" loading="lazy" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{m.artist}</p>
-                    <p className="text-xs text-vs-muted truncate">{m.title}</p>
-                    {m.year && <p className="text-xs text-vs-muted/60">{m.year} · {m.format}</p>}
-                  </div>
-                  {confirming ? <Loader2 size={16} className="animate-spin flex-shrink-0 text-vs-muted" /> : <Check size={16} className="flex-shrink-0 text-vs-accent" />}
-                </button>
-              ))}
+              {barcodeMatches.map((m) => {
+                const alreadyOwned = ownedIds.has(m.release_id);
+                return (
+                  <button key={m.release_id}
+                    onClick={() => confirmBarcodeRelease(m.release_id)}
+                    disabled={confirming}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-vs-raised border border-vs-border text-left active:bg-vs-border transition-colors disabled:opacity-50"
+                  >
+                    {m.cover_image && (
+                      <img src={m.cover_image} alt="" loading="lazy" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{m.artist}</p>
+                      <p className="text-xs text-vs-muted truncate">{m.title}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {m.year && <p className="text-xs text-vs-muted/60">{m.year} · {m.format}</p>}
+                        {alreadyOwned && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-vs-gold/20 text-vs-gold font-medium">
+                            Owned
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {confirming ? <Loader2 size={16} className="animate-spin flex-shrink-0 text-vs-muted" /> : <Check size={16} className="flex-shrink-0 text-vs-accent" />}
+                  </button>
+                );
+              })}
             </div>
             <button onClick={reset} className="mt-4 w-full py-3 text-xs text-vs-muted">Cancel</button>
           </div>
@@ -423,7 +448,19 @@ export default function MobileScanPage() {
         {mode === "result" && scanResult && (
           <div>
             <ResultCard result={scanResult} />
-            <ConditionAndLot condition={condition} setCondition={setCondition} lots={lots} lotId={lotId} setLotId={setLotId} />
+            {duplicate?.in_collection && (
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-vs-gold/10 border border-vs-gold/30 text-vs-gold text-xs font-medium mb-3">
+                <AlertTriangle size={13} className="flex-shrink-0" />
+                Already in your catalog
+              </div>
+            )}
+            {duplicate?.in_wantlist && !duplicate.in_collection && (
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-vs-accent/10 border border-vs-accent/30 text-vs-accent text-xs font-medium mb-3">
+                <BookMarked size={13} className="flex-shrink-0" />
+                On your wantlist — adding will keep it there
+              </div>
+            )}
+            <ConditionAndLot condition={condition} setCondition={setCondition} lots={lots} lotId={lotId} setLotId={setLotId} pureCollector={pureCollector} />
             <div className="flex gap-3 mt-5">
               <button onClick={skipResult} className="flex-1 py-3.5 rounded-xl border border-vs-border text-sm font-medium text-vs-muted active:opacity-70 transition-opacity">
                 Skip
@@ -434,7 +471,7 @@ export default function MobileScanPage() {
                 className="flex-1 py-3.5 rounded-xl bg-vs-accent text-white text-sm font-semibold active:opacity-80 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {confirming ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
-                Add to catalog
+                {pureCollector ? "Add to collection" : "Add to catalog"}
               </button>
             </div>
             {!scanResult.discogs_release_id && (
@@ -453,12 +490,42 @@ export default function MobileScanPage() {
             </div>
             <div className="text-center">
               <p className="text-lg font-semibold">
-                {queueCount > 0 ? "Queued for sync" : "Added to catalog"}
+                {queueCount > 0 ? "Queued for sync" : pureCollector ? "Added to collection" : "Added to catalog"}
               </p>
               <p className="text-xs text-vs-muted mt-1">
                 {queueCount > 0 ? "Will sync when back online" : "Record saved successfully"}
               </p>
             </div>
+            {duplicate?.in_wantlist && queueCount === 0 && (
+              <div className="w-full px-1">
+                {wantlistRemoved ? (
+                  <p className="text-xs text-vs-success text-center flex items-center justify-center gap-1.5">
+                    <Check size={12} /> Removed from wantlist
+                  </p>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      if (!scanResult?.discogs_release_id) return;
+                      setWantlistRemoving(true);
+                      try {
+                        const items = await api.listWantlist();
+                        const match = items.find((i) => i.discogs_release_id === scanResult.discogs_release_id);
+                        if (match) {
+                          await api.deleteWantlistItem(match.id);
+                          setWantlistRemoved(true);
+                        }
+                      } catch { /* ignore */ }
+                      finally { setWantlistRemoving(false); }
+                    }}
+                    disabled={wantlistRemoving}
+                    className="w-full py-2.5 rounded-xl border border-vs-border text-vs-text-2 text-xs font-medium flex items-center justify-center gap-1.5 active:opacity-70 disabled:opacity-50 transition-opacity"
+                  >
+                    {wantlistRemoving ? <Loader2 size={12} className="animate-spin" /> : <BookMarked size={12} />}
+                    Remove from wantlist
+                  </button>
+                )}
+              </div>
+            )}
             <div className="flex gap-3 w-full">
               <button onClick={reset}
                 className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-vs-accent text-white text-sm font-semibold active:opacity-80 transition-opacity">
@@ -506,13 +573,14 @@ function ResultCard({ result }: { result: ScanUploadResponse }) {
 }
 
 function ConditionAndLot({
-  condition, setCondition, lots, lotId, setLotId
+  condition, setCondition, lots, lotId, setLotId, pureCollector,
 }: {
   condition: string;
   setCondition: (c: string) => void;
   lots: Lot[];
   lotId: string;
   setLotId: (id: string) => void;
+  pureCollector?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -534,14 +602,14 @@ function ConditionAndLot({
       </div>
       {lots.length > 0 && (
         <div>
-          <p className="text-xs text-vs-muted mb-2">Lot (optional)</p>
+          <p className="text-xs text-vs-muted mb-2">{pureCollector ? "Haul (optional)" : "Lot (optional)"}</p>
           <div className="relative">
             <select
               value={lotId}
               onChange={(e) => setLotId(e.target.value)}
               className="w-full appearance-none input pr-8 text-sm"
             >
-              <option value="">No lot</option>
+              <option value="">{pureCollector ? "No haul" : "No lot"}</option>
               {lots.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-vs-muted pointer-events-none" />

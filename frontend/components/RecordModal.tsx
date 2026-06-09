@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { X, ExternalLink, Wand2, Loader2, Clock } from "lucide-react";
+import { X, ExternalLink, Wand2, Loader2, Clock, Search } from "lucide-react";
 import { toast } from "sonner";
-import { api, type CatalogRecord, type Lot, type RecordEvent } from "@/lib/api";
+import { api, isStore, isCollector, type CatalogRecord, type Lot, type RecordEvent, type DiscogsMatch, type User } from "@/lib/api";
 import { CoverThumb } from "./CoverThumb";
 
 const CONDITIONS = ["M", "NM", "VG+", "VG", "G"] as const;
@@ -17,6 +17,9 @@ const HISTORY_LABEL: Record<string, string> = {
   store_listed: "Store listing changed",
   notes_updated: "Notes updated",
   sold: "Sold",
+  linked_discogs: "Linked to Discogs",
+  listed_on_discogs: "Listed on Discogs",
+  delisted_from_discogs: "Delisted from Discogs",
 };
 
 interface RecordModalProps {
@@ -25,9 +28,11 @@ interface RecordModalProps {
   onClose: () => void;
   onSaved: (r: CatalogRecord) => void;
   discogsConnected?: boolean;
+  user?: User | null;
 }
 
-export function RecordModal({ record, lots, onClose, onSaved, discogsConnected = false }: RecordModalProps) {
+export function RecordModal({ record, lots, onClose, onSaved, discogsConnected = false, user }: RecordModalProps) {
+  const pureCollector = isCollector(user) && !isStore(user);
   const isNew = !record;
   const [lightbox, setLightbox] = useState(false);
   const [listing, setListing] = useState(false);
@@ -62,6 +67,13 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
   const [error, setError] = useState("");
   const [history, setHistory] = useState<RecordEvent[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  const [findDiscogsOpen, setFindDiscogsOpen] = useState(false);
+  const [findDiscogsSearching, setFindDiscogsSearching] = useState(false);
+  const [findDiscogsMatches, setFindDiscogsMatches] = useState<DiscogsMatch[]>([]);
+  const [findDiscogsArtist, setFindDiscogsArtist] = useState(record?.artist ?? "");
+  const [findDiscogsTitle, setFindDiscogsTitle] = useState(record?.title ?? "");
+  const [findDiscogsLinking, setFindDiscogsLinking] = useState<number | null>(null);
 
   function set(k: string, v: string) { setFormState((f) => ({ ...f, [k]: v })); }
 
@@ -196,7 +208,7 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
                 </p>
               )}
               <label className="text-xs text-vs-muted flex items-center gap-2">
-                Asking price
+                {pureCollector ? "Estimated value" : "Asking price"}
                 <span className={`text-2xs transition-opacity duration-300 ${autoSaved ? "opacity-100 text-vs-success" : "opacity-0"}`}>
                   ✓ Saved
                 </span>
@@ -309,7 +321,7 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
           </div>
 
           <div>
-            <label className="text-xs text-vs-text-2 mb-1 block">Cost price</label>
+            <label className="text-xs text-vs-text-2 mb-1 block">{pureCollector ? "What I paid" : "Cost price"}</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-vs-muted text-xs">$</span>
               <input className="input pl-6" type="number" min="0" step="0.01" value={form.cost_price} onChange={(e) => set("cost_price", e.target.value)} placeholder="0.00" />
@@ -326,8 +338,8 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
           </div>
         </div>
 
-        {/* Store listing toggle */}
-        {!isNew && (
+        {/* Store listing toggle — store only */}
+        {!isNew && !pureCollector && (
           <div className="px-6 pb-4 border-t border-vs-border pt-4">
             <div className="flex items-center justify-between">
               <div>
@@ -363,8 +375,106 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
           </div>
         )}
 
-        {/* Discogs marketplace listing — only for Discogs-connected users with an existing record */}
-        {!isNew && discogsConnected && record?.discogs_release_id && (
+        {/* Find on Discogs — shown when record has no discogs_release_id */}
+        {!isNew && discogsConnected && !record?.discogs_release_id && (
+          <div className="px-6 pb-4 border-t border-vs-border pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-vs-text-2">Discogs Link</p>
+                <p className="text-xs text-vs-muted mt-0.5">No Discogs release linked</p>
+              </div>
+              <button
+                onClick={() => setFindDiscogsOpen((v) => !v)}
+                className="text-xs px-3 py-1.5 rounded-lg border border-vs-accent/40 text-vs-accent hover:bg-vs-accent/10 transition-colors flex items-center gap-1.5"
+              >
+                <Search size={12} />
+                Search Discogs
+              </button>
+            </div>
+            {findDiscogsOpen && (
+              <div className="mt-3 space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    className="input flex-1 text-xs"
+                    placeholder="Artist"
+                    value={findDiscogsArtist}
+                    onChange={(e) => setFindDiscogsArtist(e.target.value)}
+                  />
+                  <input
+                    className="input flex-1 text-xs"
+                    placeholder="Title"
+                    value={findDiscogsTitle}
+                    onChange={(e) => setFindDiscogsTitle(e.target.value)}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (findDiscogsSearching) return;
+                      setFindDiscogsSearching(true);
+                      setFindDiscogsMatches([]);
+                      try {
+                        const res = await api.catalogFindDiscogs(record.id, {
+                          artist: findDiscogsArtist || undefined,
+                          title: findDiscogsTitle || undefined,
+                        });
+                        setFindDiscogsMatches(res.matches);
+                        if (res.matches.length === 0) toast.error("No matches found");
+                      } catch (e: unknown) {
+                        toast.error(e instanceof Error ? e.message : "Search failed");
+                      } finally {
+                        setFindDiscogsSearching(false);
+                      }
+                    }}
+                    disabled={findDiscogsSearching || (!findDiscogsArtist && !findDiscogsTitle)}
+                    className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1 disabled:opacity-40"
+                  >
+                    {findDiscogsSearching ? <Loader2 size={12} className="animate-spin" /> : <Search size={12} />}
+                    {findDiscogsSearching ? "" : "Search"}
+                  </button>
+                </div>
+                {findDiscogsMatches.length > 0 && (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {findDiscogsMatches.map((m) => (
+                      <div key={m.release_id} className="flex items-center gap-3 p-2 rounded-lg bg-vs-raised border border-vs-border hover:border-vs-accent/40 transition-colors">
+                        {m.cover_image && (
+                          <img src={m.cover_image} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-vs-text truncate">{m.artist} – {m.title}</p>
+                          <p className="text-2xs text-vs-muted truncate">
+                            {[m.year, m.label, m.format, m.country].filter(Boolean).join(" · ")}
+                          </p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            if (findDiscogsLinking !== null) return;
+                            setFindDiscogsLinking(m.release_id);
+                            try {
+                              const updated = await api.catalogLinkDiscogs(record.id, m.release_id);
+                              onSaved(updated);
+                              toast.success("Linked to Discogs");
+                              setFindDiscogsOpen(false);
+                            } catch (e: unknown) {
+                              toast.error(e instanceof Error ? e.message : "Link failed");
+                            } finally {
+                              setFindDiscogsLinking(null);
+                            }
+                          }}
+                          disabled={findDiscogsLinking !== null}
+                          className="text-xs px-2.5 py-1 rounded border border-vs-accent/40 text-vs-accent hover:bg-vs-accent/10 transition-colors disabled:opacity-40 flex-shrink-0"
+                        >
+                          {findDiscogsLinking === m.release_id ? <Loader2 size={11} className="animate-spin" /> : "Link"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Discogs marketplace listing — store only */}
+        {!isNew && !pureCollector && discogsConnected && record?.discogs_release_id && (
           <div className="px-6 pb-4 border-t border-vs-border pt-4">
             <div className="flex items-center justify-between">
               <div>

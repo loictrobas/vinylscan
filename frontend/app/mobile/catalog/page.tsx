@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, ChevronDown, Loader2, Check, DollarSign, ExternalLink } from "lucide-react";
+import { Search, X, ChevronDown, Loader2, Check, DollarSign, ExternalLink, Disc3, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { api, getToken, type CatalogRecord, type Lot } from "@/lib/api";
+import { api, getToken, isStore, isCollector, type CatalogRecord, type Lot, type User } from "@/lib/api";
 import { CoverThumb } from "@/components/CoverThumb";
 
 const CONDITIONS = ["M", "NM", "VG+", "VG", "G"] as const;
@@ -16,8 +16,18 @@ const CONDITION_COLOR: Record<string, string> = {
   G: "bg-vs-danger/10 text-vs-danger",
 };
 
+const REMOVE_REASONS = [
+  { value: "sold",    label: "Sold privately" },
+  { value: "traded",  label: "Traded" },
+  { value: "gift",    label: "Gift" },
+  { value: "lost",    label: "Lost" },
+  { value: "broken",  label: "Broken" },
+  { value: "other",   label: "Other" },
+] as const;
+
 export default function MobileCatalogPage() {
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
   const [records, setRecords] = useState<CatalogRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -37,13 +47,24 @@ export default function MobileCatalogPage() {
   const [discogsConnected, setDiscogsConnected] = useState(false);
   const [listingId, setListingId] = useState<number | null>(null);
   const [listing, setListing] = useState(false);
+  // Collector remove flow
+  const [showRemove, setShowRemove] = useState(false);
+  const [removeReason, setRemoveReason] = useState<string>("sold");
+  const [removeNote, setRemoveNote] = useState("");
+  const [removing, setRemoving] = useState(false);
 
   useEffect(() => {
     if (!getToken()) { router.replace("/login"); return; }
     api.listLots().then(setLots).catch(() => {});
-    api.me().then((u) => setDiscogsConnected(!!u.discogs_username)).catch(() => {});
+    api.me().then((u) => {
+      setUser(u);
+      setDiscogsConnected(!!u.discogs_username);
+    }).catch(() => {});
     loadRecords(1, "");
   }, [router]);
+
+  const storeMode = isStore(user);
+  const pureCollector = isCollector(user) && !storeMode;
 
   async function loadRecords(p: number, q: string) {
     if (p === 1) setLoading(true); else setLoadingMore(true);
@@ -68,6 +89,9 @@ export default function MobileCatalogPage() {
     setEditCondition(r.condition);
     setSaved(false);
     setShowSell(false);
+    setShowRemove(false);
+    setRemoveReason("sold");
+    setRemoveNote("");
     setListingId(r.discogs_listing_id ?? null);
     setSellPrice(r.asking_price != null ? String(r.asking_price) : "");
   }
@@ -75,6 +99,7 @@ export default function MobileCatalogPage() {
   function closeSheet() {
     setSelected(null);
     setShowSell(false);
+    setShowRemove(false);
   }
 
   async function saveRecord() {
@@ -114,6 +139,20 @@ export default function MobileCatalogPage() {
     finally { setSelling(false); }
   }
 
+  async function removeRecord() {
+    if (!selected || !removeReason) return;
+    setRemoving(true);
+    try {
+      await api.catalogRemoveRecord(selected.id, { reason: removeReason, note: removeNote || undefined });
+      setRecords((rs) => rs.filter((r) => r.id !== selected.id));
+      closeSheet();
+      toast.success("Removed from collection");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Remove failed");
+    }
+    finally { setRemoving(false); }
+  }
+
   async function toggleListing() {
     if (!selected) return;
     setListing(true);
@@ -138,8 +177,8 @@ export default function MobileCatalogPage() {
   return (
     <div className="min-h-full">
       {/* Header */}
-      <div className="px-4 pt-10 pb-3">
-        <h1 className="text-xl font-bold mb-4">Catalog</h1>
+      <div className="px-4 pt-safe pb-3">
+        <h1 className="text-xl font-bold mb-4">{pureCollector ? "Collection" : "Catalog"}</h1>
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-vs-muted pointer-events-none" />
           <input
@@ -163,7 +202,24 @@ export default function MobileCatalogPage() {
             <Loader2 size={28} className="animate-spin text-vs-muted" />
           </div>
         ) : records.length === 0 ? (
-          <p className="text-center py-16 text-vs-muted text-sm">No records found</p>
+          <div className="flex flex-col items-center gap-4 py-16 text-center">
+            <Disc3 size={40} className="text-vs-muted opacity-40" />
+            <div>
+              <p className="text-sm font-medium text-vs-text-2">
+                {pureCollector ? "Your collection is empty" : "No records found"}
+              </p>
+              {pureCollector && !search && (
+                <p className="text-xs text-vs-muted mt-1">Scan a record to get started</p>
+              )}
+            </div>
+            {pureCollector && !search && (
+              <a href="/mobile/scan"
+                className="mt-1 px-5 py-2.5 rounded-xl bg-vs-accent text-white text-sm font-semibold active:opacity-80 transition-opacity"
+              >
+                Scan first record
+              </a>
+            )}
+          </div>
         ) : (
           <>
             <div className="flex flex-col gap-2 pb-4">
@@ -180,7 +236,7 @@ export default function MobileCatalogPage() {
                         {r.condition}
                       </span>
                       {r.format && <span className="text-[10px] text-vs-muted">{r.format}</span>}
-                      {discogsConnected && r.discogs_listing_id && (
+                      {!pureCollector && discogsConnected && r.discogs_listing_id && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-vs-accent/15 text-vs-accent border border-vs-accent/20 font-medium">
                           Listed
                         </span>
@@ -215,7 +271,6 @@ export default function MobileCatalogPage() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeSheet} />
           <div className="relative bg-vs-card rounded-t-3xl border-t border-vs-border overflow-y-auto max-h-[85vh]"
                style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-            {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 rounded-full bg-vs-border" />
             </div>
@@ -233,7 +288,7 @@ export default function MobileCatalogPage() {
 
               {/* Price edit */}
               <div className="mb-4">
-                <p className="text-xs text-vs-muted mb-1.5">Asking price</p>
+                <p className="text-xs text-vs-muted mb-1.5">{pureCollector ? "Estimated value" : "Asking price"}</p>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-vs-muted text-sm">$</span>
@@ -273,41 +328,88 @@ export default function MobileCatalogPage() {
                 {saving ? <Loader2 size={15} className="animate-spin" /> : saved ? <><Check size={15} /> Saved</> : "Save changes"}
               </button>
 
-              {/* Sell section */}
-              {!showSell ? (
-                <button onClick={() => setShowSell(true)}
-                  className="w-full py-3.5 rounded-xl border border-vs-success/40 text-vs-success text-sm font-semibold flex items-center justify-center gap-2 active:opacity-70 transition-opacity mb-3"
-                >
-                  <DollarSign size={15} />
-                  Sell this record
-                </button>
-              ) : (
-                <div className="border border-vs-success/30 rounded-xl p-4 mb-3">
-                  <p className="text-xs text-vs-muted mb-2">Sold price</p>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-vs-muted text-sm">$</span>
-                      <input
-                        type="number" min="0" step="0.01"
-                        value={sellPrice}
-                        onChange={(e) => setSellPrice(e.target.value)}
-                        className="input pl-7 w-full"
-                        placeholder="0.00"
-                        autoFocus
-                      />
+              {/* Sell (store) or Remove (collector) */}
+              {pureCollector ? (
+                !showRemove ? (
+                  <button onClick={() => setShowRemove(true)}
+                    className="w-full py-3.5 rounded-xl border border-vs-danger/40 text-vs-danger text-sm font-semibold flex items-center justify-center gap-2 active:opacity-70 transition-opacity mb-3"
+                  >
+                    <Trash2 size={15} />
+                    Remove from collection
+                  </button>
+                ) : (
+                  <div className="border border-vs-danger/30 rounded-xl p-4 mb-3">
+                    <p className="text-xs text-vs-muted mb-2">Reason</p>
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {REMOVE_REASONS.map(({ value, label }) => (
+                        <button
+                          key={value}
+                          onClick={() => setRemoveReason(value)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                            removeReason === value
+                              ? "bg-vs-danger text-white border-vs-danger"
+                              : "border-vs-border text-vs-text-2 bg-vs-raised"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
                     </div>
-                    <button onClick={sellRecord} disabled={selling}
-                      className="px-4 rounded-xl bg-vs-success text-white text-sm font-semibold flex items-center gap-1.5 disabled:opacity-50 active:opacity-80 transition-opacity"
-                    >
-                      {selling ? <Loader2 size={14} className="animate-spin" /> : "Confirm"}
-                    </button>
+                    <input
+                      type="text"
+                      value={removeNote}
+                      onChange={(e) => setRemoveNote(e.target.value)}
+                      placeholder="Note (optional)"
+                      className="input w-full text-sm mb-3"
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={() => setShowRemove(false)} className="flex-1 py-2.5 rounded-xl border border-vs-border text-vs-text-2 text-sm font-medium">
+                        Cancel
+                      </button>
+                      <button onClick={removeRecord} disabled={removing}
+                        className="flex-1 py-2.5 rounded-xl bg-vs-danger text-white text-sm font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 active:opacity-80 transition-opacity"
+                      >
+                        {removing ? <Loader2 size={14} className="animate-spin" /> : "Confirm remove"}
+                      </button>
+                    </div>
                   </div>
-                  <button onClick={() => setShowSell(false)} className="mt-2 text-xs text-vs-muted w-full text-center">Cancel</button>
-                </div>
+                )
+              ) : (
+                !showSell ? (
+                  <button onClick={() => setShowSell(true)}
+                    className="w-full py-3.5 rounded-xl border border-vs-success/40 text-vs-success text-sm font-semibold flex items-center justify-center gap-2 active:opacity-70 transition-opacity mb-3"
+                  >
+                    <DollarSign size={15} />
+                    Sell this record
+                  </button>
+                ) : (
+                  <div className="border border-vs-success/30 rounded-xl p-4 mb-3">
+                    <p className="text-xs text-vs-muted mb-2">Sold price</p>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-vs-muted text-sm">$</span>
+                        <input
+                          type="number" min="0" step="0.01"
+                          value={sellPrice}
+                          onChange={(e) => setSellPrice(e.target.value)}
+                          className="input pl-7 w-full"
+                          placeholder="0.00"
+                          autoFocus
+                        />
+                      </div>
+                      <button onClick={sellRecord} disabled={selling}
+                        className="px-4 rounded-xl bg-vs-success text-white text-sm font-semibold flex items-center gap-1.5 disabled:opacity-50 active:opacity-80 transition-opacity"
+                      >
+                        {selling ? <Loader2 size={14} className="animate-spin" /> : "Confirm"}
+                      </button>
+                    </div>
+                    <button onClick={() => setShowSell(false)} className="mt-2 text-xs text-vs-muted w-full text-center">Cancel</button>
+                  </div>
+                )
               )}
 
-              {/* Discogs listing toggle — only for Discogs-connected users with a release ID */}
-              {discogsConnected && selected.discogs_release_id && (
+              {/* Discogs listing — store only */}
+              {!pureCollector && discogsConnected && selected.discogs_release_id && (
                 <div className="border border-vs-border rounded-xl p-4 mb-2">
                   <div className="flex items-center justify-between">
                     <div>

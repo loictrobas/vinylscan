@@ -8,7 +8,16 @@ export interface User {
   is_admin: boolean;
   is_active: boolean;
   credits: number;
+  account_type: "collector" | "store" | "both";
   created_at: string;
+}
+
+export function isStore(user: User | null | undefined): boolean {
+  return user?.account_type === "store" || user?.account_type === "both";
+}
+
+export function isCollector(user: User | null | undefined): boolean {
+  return user?.account_type === "collector" || user?.account_type === "both";
 }
 
 export interface AdminUser {
@@ -189,7 +198,19 @@ export interface CatalogStats {
   inventory_value: number;
   total_cost: number;
   avg_margin_pct: number | null;
+  added_this_month: number;
   recent_sales_today: { artist: string | null; title: string | null; sold_price: number | null; sold_at: string | null }[];
+}
+
+export interface WantlistItem {
+  id: number;
+  artist: string;
+  title: string;
+  year: number | null;
+  label: string | null;
+  notes: string | null;
+  discogs_release_id: number | null;
+  created_at: string;
 }
 
 export interface CreateRecordBody {
@@ -462,11 +483,12 @@ export const api = {
       body: JSON.stringify({ release_id: releaseId, condition, lot_id: lotId ?? null }),
     }),
 
-  listCatalog: (params?: { page?: number; per_page?: number; status?: string; lot_id?: string; no_lot?: boolean; search?: string; genre?: string; format?: string; condition?: string }) => {
+  listCatalog: (params?: { page?: number; per_page?: number; status?: string; lot_id?: string; no_lot?: boolean; no_discogs?: boolean; search?: string; genre?: string; format?: string; condition?: string }) => {
     const p = new URLSearchParams();
     if (params?.page) p.set("page", String(params.page));
     if (params?.per_page) p.set("per_page", String(params.per_page));
-    if (params?.status) p.set("status", params.status);
+    if (params?.no_discogs) p.set("no_discogs", "true");
+    else if (params?.status) p.set("status", params.status);
     if (params?.no_lot) p.set("no_lot", "true");
     else if (params?.lot_id) p.set("lot_id", params.lot_id);
     if (params?.search) p.set("search", params.search);
@@ -477,6 +499,8 @@ export const api = {
   },
 
   catalogStats: () => apiFetch<CatalogStats>("/catalog/stats"),
+  checkDuplicate: (discogsReleaseId: number) =>
+    apiFetch<{ in_collection: boolean; in_wantlist: boolean }>(`/catalog/check-duplicate?discogs_release_id=${discogsReleaseId}`),
   ownedReleaseIds: () =>
     apiFetch<{ release_ids: number[]; owned: { artist: string; title: string }[] }>("/catalog/owned-release-ids"),
 
@@ -501,8 +525,19 @@ export const api = {
   sellRecord: (id: string, sold_price: number) =>
     apiFetch<CatalogRecord>(`/catalog/${id}/sell`, { method: "POST", body: JSON.stringify({ sold_price }) }),
 
+  catalogRemoveRecord: (id: string, body: { reason: string; note?: string }) =>
+    apiFetch<CatalogRecord>(`/catalog/${id}/remove`, { method: "POST", body: JSON.stringify(body) }),
+
   recordHistory: (id: string) =>
     apiFetch<RecordEvent[]>(`/catalog/${id}/history`),
+
+  catalogFindDiscogs: (id: string, body: { artist?: string; title?: string; label?: string; catalog_number?: string }) =>
+    apiFetch<{ artist: string | null; title: string | null; label: string | null; catalog_number: string | null; matches: DiscogsMatch[] }>(
+      `/catalog/${id}/find-discogs`, { method: "POST", body: JSON.stringify(body) }
+    ),
+
+  catalogLinkDiscogs: (id: string, releaseId: number) =>
+    apiFetch<CatalogRecord>(`/catalog/${id}/link-discogs`, { method: "PATCH", body: JSON.stringify({ release_id: releaseId }) }),
 
   getPriceMarkup: () => apiFetch<{ price_markup_pct: number | null }>("/catalog/settings/price-markup"),
 
@@ -577,10 +612,13 @@ export const api = {
       "/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }
     ),
 
-  registerViaInvite: (token: string, password: string, displayName?: string) =>
+  registerViaInvite: (token: string, password: string, displayName?: string, accountType?: string) =>
     apiFetch<{ ok: boolean; token: string; user_id: string }>(
-      "/auth/register", { method: "POST", body: JSON.stringify({ token, password, display_name: displayName ?? null }) }
+      "/auth/register", { method: "POST", body: JSON.stringify({ token, password, display_name: displayName ?? null, account_type: accountType ?? "collector" }) }
     ),
+
+  updateMe: (body: { account_type?: string; display_name?: string }) =>
+    apiFetch<User>("/auth/me", { method: "PATCH", body: JSON.stringify(body) }),
 
   changePassword: (currentPassword: string, newPassword: string) =>
     apiFetch<{ ok: boolean }>(
@@ -619,4 +657,16 @@ export const api = {
 
   adminRevokeInvite: (inviteId: string) =>
     apiFetch<void>(`/admin/invites/${inviteId}`, { method: "DELETE" }),
+
+  // ── Wantlist ─────────────────────────────────────────────────────────────
+  listWantlist: () => apiFetch<WantlistItem[]>("/wantlist"),
+
+  addWantlistItem: (body: { artist: string; title: string; year?: number | null; label?: string | null; notes?: string | null; discogs_release_id?: number | null }) =>
+    apiFetch<WantlistItem>("/wantlist", { method: "POST", body: JSON.stringify(body) }),
+
+  deleteWantlistItem: (id: number) =>
+    apiFetch<void>(`/wantlist/${id}`, { method: "DELETE" }),
+
+  syncDiscogsWantlist: () =>
+    apiFetch<WantlistItem[]>("/wantlist/sync-discogs", { method: "POST" }),
 };

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Disc3, Loader2, CheckCircle2 } from "lucide-react";
+import { Disc3, Loader2, CheckCircle2, Music, Store } from "lucide-react";
 import { api, setToken } from "@/lib/api";
 
 function RegisterForm() {
@@ -9,6 +9,7 @@ function RegisterForm() {
   const params = useSearchParams();
   const token = params.get("token") ?? "";
 
+  const [accountType, setAccountType] = useState<"collector" | "store">("collector");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -27,7 +28,7 @@ function RegisterForm() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.registerViaInvite(token, password, displayName || undefined);
+      const res = await api.registerViaInvite(token, password, displayName || undefined, accountType);
       setToken(res.token);
       setDone(true);
       setTimeout(() => router.push("/dashboard"), 1500);
@@ -50,6 +51,27 @@ function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="card p-6 flex flex-col gap-4">
+      {/* Account type picker */}
+      <div>
+        <label className="text-xs text-vs-text-2 mb-2 block">I want to…</label>
+        <div className="grid grid-cols-2 gap-2">
+          {([
+            { value: "collector" as const, icon: <Music size={18} />, label: "Collect", sub: "Personal collection" },
+            { value: "store" as const,     icon: <Store size={18} />, label: "Sell",    sub: "POS & pricing tools" },
+          ]).map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setAccountType(opt.value)}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-colors ${accountType === opt.value ? "bg-vs-accent/10 border-vs-accent/40 text-vs-accent" : "border-vs-border text-vs-muted hover:border-vs-border-2"}`}
+            >
+              {opt.icon}
+              <span className="text-sm font-medium text-vs-text">{opt.label}</span>
+              <span className="text-2xs text-vs-muted">{opt.sub}</span>
+            </button>
+          ))}
+        </div>
+      </div>
       <div>
         <label className="text-xs text-vs-text-2 mb-1 block">Your name (optional)</label>
         <input

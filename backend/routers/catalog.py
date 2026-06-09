@@ -13,6 +13,7 @@ from middleware.auth_middleware import decrypt
 from models import Lot, Record, RecordCondition, RecordEvent, RecordStatus, User
 from routers.auth import get_current_user
 from routers.scan import _set_credit_header
+from schemas import DiscogsMatch, ResearchResponse
 from services import discogs as discogs_svc
 
 logger = logging.getLogger(__name__)
@@ -390,6 +391,15 @@ async def catalog_stats(
     ]
     avg_margin = sum(margins) / len(margins) if margins else None
 
+    # Added this month
+    added_this_month = (await db.execute(
+        select(func.count()).select_from(Record)
+        .where(
+            Record.user_id == user.id,
+            cast(Record.created_at, SADate) >= month_start,
+        )
+    )).scalar_one() or 0
+
     # Recent sold records (today)
     recent_sold = (await db.execute(
         select(Record.artist, Record.title, Record.sold_price, Record.sold_at)
@@ -413,6 +423,7 @@ async def catalog_stats(
         "inventory_value": float(inventory_value),
         "total_cost": float(total_cost),
         "avg_margin_pct": round(avg_margin, 1) if avg_margin is not None else None,
+        "added_this_month": added_this_month,
         "recent_sales_today": [
             {
                 "artist": r.artist,
@@ -543,6 +554,7 @@ async def list_catalog(
     status: Literal["in_stock", "sold", "all"] = Query("in_stock"),
     lot_id: uuid.UUID | None = Query(None),
     no_lot: bool = Query(False),
+    no_discogs: bool = Query(False),
     search: str | None = Query(None),
     genre: str | None = Query(None),
     format: str | None = Query(None),
@@ -551,7 +563,9 @@ async def list_catalog(
     user: User = Depends(get_current_user),
 ):
     q = select(Record).where(Record.user_id == user.id)
-    if status != "all":
+    if no_discogs:
+        q = q.where(Record.discogs_release_id.is_(None))
+    elif status != "all":
         q = q.where(Record.status == RecordStatus(status))
     if no_lot:
         q = q.where(Record.lot_id.is_(None))
@@ -733,6 +747,46 @@ async def sell_record(
     return RecordOut.from_orm_safe(record)
 
 
+# ── Collector remove ──────────────────────────────────────────────────────────
+
+class RemoveRequest(BaseModel):
+    reason: str  # sold|traded|gift|lost|broken|other
+    note: str | None = None
+
+
+VALID_REMOVE_REASONS = {"sold", "traded", "gift", "lost", "broken", "other"}
+
+
+@router.post("/{record_id}/remove", response_model=RecordOut)
+async def remove_record(
+    record_id: uuid.UUID,
+    body: RemoveRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if body.reason not in VALID_REMOVE_REASONS:
+        raise HTTPException(status_code=422, detail=f"reason must be one of {sorted(VALID_REMOVE_REASONS)}")
+    result = await db.execute(
+        select(Record).where(Record.id == record_id, Record.user_id == user.id)
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    if record.status == RecordStatus.sold:
+        raise HTTPException(status_code=400, detail="Record already removed")
+
+    record.status = RecordStatus.sold
+    record.sold_at = datetime.now(timezone.utc)
+    detail = body.reason if not body.note else f"{body.reason}: {body.note}"
+    await _log(db, record.id, "removed", detail)
+    await db.commit()
+    await db.refresh(record)
+
+    _set_credit_header(response, user)
+    return RecordOut.from_orm_safe(record)
+
+
 # ── Record history ─────────────────────────────────────────────────────────────
 
 class RecordEventOut(BaseModel):
@@ -743,6 +797,80 @@ class RecordEventOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class FindDiscogsRequest(BaseModel):
+    artist: str | None = None
+    title: str | None = None
+    label: str | None = None
+    catalog_number: str | None = None
+
+
+class LinkDiscogsRequest(BaseModel):
+    release_id: int
+
+
+@router.post("/{record_id}/find-discogs", response_model=ResearchResponse)
+async def find_discogs_for_record(
+    record_id: uuid.UUID,
+    body: FindDiscogsRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Search Discogs for a matching release for an unlinked catalog record."""
+    if not user.discogs_oauth_token or not user.discogs_username:
+        raise HTTPException(status_code=403, detail="Discogs account not connected")
+
+    result = await db.execute(
+        select(Record).where(Record.id == record_id, Record.user_id == user.id)
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    artist = body.artist or record.artist or ""
+    title = body.title or record.title or ""
+    token = decrypt(user.discogs_oauth_token)
+    secret = decrypt(user.discogs_oauth_token_secret)
+
+    matches_data = await discogs_svc.search_releases(
+        artist=artist,
+        title=title,
+        access_token=token,
+        access_token_secret=secret,
+        label=body.label or record.label,
+        catalog_number=body.catalog_number or record.catalog_number,
+    )
+    matches = [DiscogsMatch(**m) for m in matches_data]
+    return ResearchResponse(
+        artist=artist,
+        title=title,
+        label=body.label or record.label,
+        catalog_number=body.catalog_number or record.catalog_number,
+        matches=matches,
+    )
+
+
+@router.patch("/{record_id}/link-discogs", response_model=RecordOut)
+async def link_discogs_to_record(
+    record_id: uuid.UUID,
+    body: LinkDiscogsRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Link a Discogs release to a catalog record."""
+    result = await db.execute(
+        select(Record).where(Record.id == record_id, Record.user_id == user.id)
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    record.discogs_release_id = body.release_id
+    await _log(db, record.id, "linked_discogs", f"Linked to Discogs release {body.release_id}")
+    await db.commit()
+    await db.refresh(record)
+    return RecordOut.from_orm_safe(record)
 
 
 @router.get("/{record_id}/history", response_model=list[RecordEventOut])

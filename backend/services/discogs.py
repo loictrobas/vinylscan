@@ -530,6 +530,55 @@ async def get_full_collection(
     return items
 
 
+async def get_wantlist(
+    access_token: str, access_token_secret: str, username: str
+) -> list[dict]:
+    """Fetch all items from user's Discogs wantlist."""
+    import asyncio
+    import requests as req
+
+    auth = _oauth1(access_token, access_token_secret)
+
+    def _fetch_page(page: int) -> dict:
+        resp = req.get(
+            f"{DISCOGS_BASE}/users/{username}/wants",
+            params={"page": page, "per_page": 100},
+            auth=auth,
+            headers={"User-Agent": USER_AGENT},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    loop = asyncio.get_running_loop()
+    items: list[dict] = []
+    page = 1
+
+    while True:
+        data = await loop.run_in_executor(None, _fetch_page, page)
+        wants = data.get("wants", [])
+        for w in wants:
+            basic = w.get("basic_information", {})
+            artists = basic.get("artists", [])
+            artist = artists[0].get("name", "") if artists else ""
+            labels = basic.get("labels", [])
+            label = labels[0].get("name", "") if labels else None
+            items.append({
+                "release_id": basic.get("id"),
+                "artist": artist,
+                "title": basic.get("title", ""),
+                "year": basic.get("year") or None,
+                "label": label,
+                "notes": w.get("notes"),
+            })
+        pagination = data.get("pagination", {})
+        if page >= pagination.get("pages", 1):
+            break
+        page += 1
+
+    return items
+
+
 def parse_search_results(results: list[dict]) -> list[dict]:
     matches = []
     for r in results[:10]:

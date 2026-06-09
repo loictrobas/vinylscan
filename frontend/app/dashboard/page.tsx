@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Disc3, TrendingUp, DollarSign, Package, BarChart3,
-  ShoppingCart, Camera, ArrowRight, Layers,
+  ShoppingCart, Camera, ArrowRight, Layers, Heart, Plus,
 } from "lucide-react";
-import { api, setToken, getToken, type CatalogStats } from "@/lib/api";
+import { api, setToken, getToken, isStore, isCollector, type CatalogStats, type User } from "@/lib/api";
 
 function fmt(n: number) {
   return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -41,6 +41,7 @@ function DashboardPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [stats, setStats] = useState<CatalogStats | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,10 +53,13 @@ function DashboardPageInner() {
     }
     if (!getToken()) { router.replace("/"); return; }
 
-    api.catalogStats()
-      .then(setStats)
-      .catch(() => {/* stats optional — show dashboard anyway */})
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.catalogStats().catch(() => null),
+      api.me().catch(() => null),
+    ]).then(([s, u]) => {
+      if (s) setStats(s);
+      if (u) setUser(u);
+    }).finally(() => setLoading(false));
   }, [searchParams, router]);
 
   if (loading) {
@@ -70,8 +74,12 @@ function DashboardPageInner() {
     total_in_stock: 0, total_sold: 0, total_revenue: 0,
     revenue_today: 0, revenue_this_week: 0, revenue_this_month: 0,
     inventory_value: 0, total_cost: 0, avg_margin_pct: null,
-    recent_sales_today: [],
+    added_this_month: 0, recent_sales_today: [],
   };
+
+  const storeMode = isStore(user);
+  const collectorMode = isCollector(user);
+  const pureCollector = collectorMode && !storeMode;
 
   const hasRevenue = s.total_revenue > 0;
   const roi = s.total_cost > 0
@@ -89,10 +97,12 @@ function DashboardPageInner() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/sales" className="btn-primary flex items-center gap-2">
-            <ShoppingCart size={14} />
-            New sale
-          </Link>
+          {storeMode && (
+            <Link href="/sales" className="btn-primary flex items-center gap-2">
+              <ShoppingCart size={14} />
+              New sale
+            </Link>
+          )}
           <Link href="/scan" className="btn-secondary flex items-center gap-2">
             <Camera size={14} />
             Scan
@@ -100,59 +110,41 @@ function DashboardPageInner() {
         </div>
       </div>
 
-      {/* Revenue section */}
+      {/* Store: Revenue section */}
+      {storeMode && <>
       <div className="mb-2">
         <p className="text-xs text-vs-muted uppercase tracking-widest font-medium mb-3">Revenue</p>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <MetricCard
-          label="Today"
-          value={`$${fmt(s.revenue_today)}`}
-          icon={<DollarSign size={14} />}
-          accent
-        />
-        <MetricCard
-          label="This week"
-          value={`$${fmt(s.revenue_this_week)}`}
-          icon={<TrendingUp size={14} />}
-        />
-        <MetricCard
-          label="This month"
-          value={`$${fmt(s.revenue_this_month)}`}
-          icon={<BarChart3 size={14} />}
-        />
-        <MetricCard
-          label="All time"
-          value={`$${fmt(s.total_revenue)}`}
-          sub={`${s.total_sold} records sold`}
-          icon={<TrendingUp size={14} />}
-        />
+        <MetricCard label="Today" value={`$${fmt(s.revenue_today)}`} icon={<DollarSign size={14} />} accent />
+        <MetricCard label="This week" value={`$${fmt(s.revenue_this_week)}`} icon={<TrendingUp size={14} />} />
+        <MetricCard label="This month" value={`$${fmt(s.revenue_this_month)}`} icon={<BarChart3 size={14} />} />
+        <MetricCard label="All time" value={`$${fmt(s.total_revenue)}`} sub={`${s.total_sold} records sold`} icon={<TrendingUp size={14} />} />
       </div>
+      </>}
 
-      {/* Inventory section */}
+      {/* Collector: Collection stats */}
+      {pureCollector && <>
+      <div className="mb-2">
+        <p className="text-xs text-vs-muted uppercase tracking-widest font-medium mb-3">Collection</p>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <MetricCard label="In collection" value={String(s.total_in_stock)} sub="records" icon={<Disc3 size={14} />} accent />
+        <MetricCard label="Estimated value" value={`$${fmt(s.inventory_value)}`} sub="asking prices" icon={<Package size={14} />} />
+        <MetricCard label="Total paid" value={`$${fmt(s.total_cost)}`} sub="cost prices" icon={<DollarSign size={14} />} />
+        <MetricCard label="Added this month" value={String(s.added_this_month ?? 0)} sub="records" icon={<BarChart3 size={14} />} />
+      </div>
+      </>}
+
+      {/* Store: Inventory section */}
+      {storeMode && <>
       <div className="mb-2">
         <p className="text-xs text-vs-muted uppercase tracking-widest font-medium mb-3">Inventory</p>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <MetricCard
-          label="In stock"
-          value={String(s.total_in_stock)}
-          sub="records"
-          icon={<Disc3 size={14} />}
-          accent
-        />
-        <MetricCard
-          label="Stock value"
-          value={`$${fmt(s.inventory_value)}`}
-          sub="asking prices"
-          icon={<Package size={14} />}
-        />
-        <MetricCard
-          label="Total invested"
-          value={`$${fmt(s.total_cost)}`}
-          sub="cost prices"
-          icon={<DollarSign size={14} />}
-        />
+        <MetricCard label="In stock" value={String(s.total_in_stock)} sub="records" icon={<Disc3 size={14} />} accent />
+        <MetricCard label="Stock value" value={`$${fmt(s.inventory_value)}`} sub="asking prices" icon={<Package size={14} />} />
+        <MetricCard label="Total invested" value={`$${fmt(s.total_cost)}`} sub="cost prices" icon={<DollarSign size={14} />} />
         <MetricCard
           label="Avg margin"
           value={s.avg_margin_pct != null ? `${s.avg_margin_pct.toFixed(1)}%` : "—"}
@@ -160,55 +152,63 @@ function DashboardPageInner() {
           icon={<BarChart3 size={14} />}
         />
       </div>
+      </>}
 
       {/* Two-column bottom row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent sales today */}
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium text-vs-text">Sales today</p>
-            <Link href="/sales/history" className="text-xs text-vs-muted hover:text-vs-text flex items-center gap-1">
-              View all <ArrowRight size={11} />
-            </Link>
-          </div>
-          {s.recent_sales_today.length > 0 ? (
-            <div className="flex flex-col gap-0">
-              {s.recent_sales_today.map((s, i) => (
-                <div key={i} className="flex items-center justify-between py-2.5 border-b border-vs-border/50 last:border-0">
-                  <div className="min-w-0">
-                    <p className="text-sm text-vs-text truncate">
-                      {s.artist && s.title ? `${s.artist} — ${s.title}` : s.title || s.artist || "Unknown"}
-                    </p>
-                    <p className="text-xs text-vs-muted">
-                      {s.sold_at ? new Date(s.sold_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : ""}
-                    </p>
-                  </div>
-                  <span className="text-sm font-medium text-vs-gold ml-4">
-                    {s.sold_price != null ? `$${fmt(s.sold_price)}` : "—"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <p className="text-sm text-vs-muted">No sales yet today</p>
-              <Link href="/sales" className="text-xs text-vs-accent hover:underline mt-1 block">
-                Open POS →
+        {/* Store: Recent sales today */}
+        {storeMode && (
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-vs-text">Sales today</p>
+              <Link href="/sales/history" className="text-xs text-vs-muted hover:text-vs-text flex items-center gap-1">
+                View all <ArrowRight size={11} />
               </Link>
             </div>
-          )}
-        </div>
+            {s.recent_sales_today.length > 0 ? (
+              <div className="flex flex-col gap-0">
+                {s.recent_sales_today.map((sale, i) => (
+                  <div key={i} className="flex items-center justify-between py-2.5 border-b border-vs-border/50 last:border-0">
+                    <div className="min-w-0">
+                      <p className="text-sm text-vs-text truncate">
+                        {sale.artist && sale.title ? `${sale.artist} — ${sale.title}` : sale.title || sale.artist || "Unknown"}
+                      </p>
+                      <p className="text-xs text-vs-muted">
+                        {sale.sold_at ? new Date(sale.sold_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : ""}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium text-vs-gold ml-4">
+                      {sale.sold_price != null ? `$${fmt(sale.sold_price)}` : "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-sm text-vs-muted">No sales yet today</p>
+                <Link href="/sales" className="text-xs text-vs-accent hover:underline mt-1 block">
+                  Open POS →
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Quick actions */}
         <div className="card p-5">
           <p className="text-sm font-medium text-vs-text mb-4">Quick actions</p>
           <div className="flex flex-col gap-1">
-            {[
-              { href: "/scan",     icon: <Camera size={15} />,     label: "Scan a record",         sub: "Vision + Discogs" },
-              { href: "/sales",    icon: <ShoppingCart size={15} />, label: "Point of sale",        sub: "Search & sell" },
-              { href: "/catalog",  icon: <Disc3 size={15} />,       label: "Browse catalog",        sub: `${s.total_in_stock} in stock` },
-              { href: "/catalog/lots", icon: <Layers size={15} />,  label: "Manage lots",           sub: "Track purchases" },
-            ].map((item) => (
+            {(pureCollector ? [
+              { href: "/scan",         icon: <Camera size={15} />,       label: "Scan a record",       sub: "Vision + Discogs" },
+              { href: "/catalog",      icon: <Disc3 size={15} />,         label: "Browse collection",   sub: `${s.total_in_stock} records` },
+              { href: "/wantlist",     icon: <Heart size={15} />,         label: "Wantlist",            sub: "Records to find" },
+              { href: "/catalog/lots", icon: <Layers size={15} />,        label: "Hauls",               sub: "Track acquisitions" },
+            ] : [
+              { href: "/scan",         icon: <Camera size={15} />,        label: "Scan a record",       sub: "Vision + Discogs" },
+              { href: "/sales",        icon: <ShoppingCart size={15} />,  label: "Point of sale",       sub: "Search & sell" },
+              { href: "/catalog",      icon: <Disc3 size={15} />,         label: "Browse catalog",      sub: `${s.total_in_stock} in stock` },
+              { href: "/catalog/lots", icon: <Layers size={15} />,        label: "Manage lots",         sub: "Track purchases" },
+            ]).map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

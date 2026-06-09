@@ -6,7 +6,7 @@ import {
   Disc3, RefreshCw, CheckCircle2, AlertCircle, ExternalLink,
   Loader2, Clock, ArrowDownToLine, Image, Shield, TrendingUp,
 } from "lucide-react";
-import { api, getToken, type DiscogsSyncStatus, type User } from "@/lib/api";
+import { api, getToken, clearMeCache, isStore, isCollector, type DiscogsSyncStatus, type User } from "@/lib/api";
 
 function ClaimAdminCard({ onClaimed }: { onClaimed: () => void }) {
   const [loading, setLoading] = useState(false);
@@ -71,6 +71,7 @@ export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [sync, setSync] = useState<DiscogsSyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accountTypeSaving, setAccountTypeSaving] = useState(false);
   const [backfill, setBackfill] = useState<BackfillStatus | null>(null);
   const [marketBackfill, setMarketBackfill] = useState<{ status: string; total: number; processed: number; updated: number; error: string | null } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -146,6 +147,17 @@ export default function SettingsPage() {
     setBackfill(b);
   }
 
+  async function switchAccountType(type: string) {
+    setAccountTypeSaving(true);
+    try {
+      const updated = await api.updateMe({ account_type: type });
+      clearMeCache();
+      setUser(updated);
+    } catch { /* ignore */ } finally {
+      setAccountTypeSaving(false);
+    }
+  }
+
   async function startMarketBackfill() {
     const b = await api.discogsBackfillMarket();
     setMarketBackfill(b);
@@ -171,6 +183,45 @@ export default function SettingsPage() {
         <p className="text-sm text-vs-text-2 mt-0.5">Account &amp; integrations</p>
       </div>
 
+      {/* Account mode */}
+      {user && (
+        <div className="card p-5 mb-4">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <p className="text-sm font-medium">Account mode</p>
+              <p className="text-xs text-vs-muted mt-0.5">Your records are shared across modes.</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 mb-4">
+            {([
+              { value: "collector", label: "Collector", desc: "Personal collection, no store features" },
+              { value: "store",     label: "Store",     desc: "POS, pricing, and selling tools" },
+              { value: "both",      label: "Both",      desc: "Everything — collector + store" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => switchAccountType(opt.value)}
+                disabled={accountTypeSaving || user.account_type === opt.value}
+                className={`flex items-start gap-3 px-3 py-2.5 rounded-lg border text-left transition-colors disabled:cursor-default ${user.account_type === opt.value ? "bg-vs-accent/10 border-vs-accent/40" : "border-vs-border hover:border-vs-border-2"}`}
+              >
+                <span className={`mt-0.5 flex-shrink-0 w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${user.account_type === opt.value ? "border-vs-accent" : "border-vs-muted"}`}>
+                  {user.account_type === opt.value && <span className="w-1.5 h-1.5 rounded-full bg-vs-accent" />}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-vs-text">{opt.label}</p>
+                  <p className="text-xs text-vs-muted">{opt.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+          {accountTypeSaving && (
+            <p className="text-xs text-vs-muted flex items-center gap-1.5">
+              <Loader2 size={11} className="animate-spin" />Saving…
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Discogs connection */}
       <div className="card p-5 mb-4">
         <div className="flex items-start justify-between mb-4">
@@ -183,131 +234,152 @@ export default function SettingsPage() {
               <p className="text-xs text-vs-muted">Collection sync &amp; identity</p>
             </div>
           </div>
-          <span className="pill-in-stock">
-            <span className="w-1.5 h-1.5 rounded-full bg-vs-success" />
-            Connected
-          </span>
-        </div>
-
-        <div className="bg-vs-raised rounded-lg p-3 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-vs-muted">Signed in as</p>
-              <p className="text-sm font-medium text-vs-text">{user?.discogs_username}</p>
-            </div>
-            <a
-              href={`https://www.discogs.com/user/${user?.discogs_username}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-vs-muted hover:text-vs-accent"
-            >
-              <ExternalLink size={14} />
-            </a>
-          </div>
-          {sync?.last_sync && (
-            <p className="text-xs text-vs-muted mt-2 flex items-center gap-1.5">
-              <Clock size={11} />
-              Last synced {fmtDate(sync.last_sync)}
-            </p>
+          {user?.discogs_username ? (
+            <span className="pill-in-stock">
+              <span className="w-1.5 h-1.5 rounded-full bg-vs-success" />
+              Connected
+            </span>
+          ) : (
+            <span className="pill-sold">
+              <span className="w-1.5 h-1.5 rounded-full bg-vs-muted" />
+              Not connected
+            </span>
           )}
         </div>
 
-        {/* Sync section */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="text-sm font-medium">Collection sync</p>
-            {!isRunning && (
-              <button onClick={startSync} className="btn-primary flex items-center gap-1.5 py-1.5 text-xs">
-                {sync?.status === "done"
-                  ? <><RefreshCw size={12} />Re-sync</>
-                  : <><ArrowDownToLine size={12} />Import collection</>
-                }
-              </button>
+        {user?.discogs_username ? (
+          <div className="bg-vs-raised rounded-lg p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-vs-muted">Signed in as</p>
+                <p className="text-sm font-medium text-vs-text">{user.discogs_username}</p>
+              </div>
+              <a
+                href={`https://www.discogs.com/user/${user.discogs_username}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-vs-muted hover:text-vs-accent"
+              >
+                <ExternalLink size={14} />
+              </a>
+            </div>
+            {sync?.last_sync && (
+              <p className="text-xs text-vs-muted mt-2 flex items-center gap-1.5">
+                <Clock size={11} />
+                Last synced {fmtDate(sync.last_sync)}
+              </p>
             )}
           </div>
-          <p className="text-xs text-vs-muted mb-3">
-            Import your entire Discogs collection into the app. Records already in your catalog are skipped.
-            New records added here are automatically pushed to your Discogs collection too.
-          </p>
+        ) : (
+          <div className="bg-vs-raised rounded-lg p-4 mb-4 flex items-center justify-between">
+            <p className="text-xs text-vs-muted">Connect your Discogs account to sync your collection, auto-fetch cover art, and list records on the marketplace.</p>
+            <a href={api.loginUrl()} className="btn-primary text-xs ml-4 flex-shrink-0 flex items-center gap-1.5">
+              <Disc3 size={12} />
+              Connect Discogs
+            </a>
+          </div>
+        )}
 
-          {isRunning && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Loader2 size={14} className="animate-spin text-vs-accent" />
-                <span className="text-vs-text-2">
-                  Importing{sync.total > 0 ? ` ${sync.imported + sync.skipped} / ${sync.total}` : "…"}
-                </span>
+        {user?.discogs_username && (
+          <>
+            {/* Sync section */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-sm font-medium">Collection sync</p>
+                {!isRunning && (
+                  <button onClick={startSync} className="btn-primary flex items-center gap-1.5 py-1.5 text-xs">
+                    {sync?.status === "done"
+                      ? <><RefreshCw size={12} />Re-sync</>
+                      : <><ArrowDownToLine size={12} />Import collection</>
+                    }
+                  </button>
+                )}
               </div>
-              {sync.total > 0 && (
-                <div className="h-1.5 bg-vs-raised rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-vs-accent rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%` }}
-                  />
+              <p className="text-xs text-vs-muted mb-3">
+                Import your entire Discogs collection into the app. Records already in your catalog are skipped.
+                New records added here are automatically pushed to your Discogs collection too.
+              </p>
+
+              {isRunning && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Loader2 size={14} className="animate-spin text-vs-accent" />
+                    <span className="text-vs-text-2">
+                      Importing{sync.total > 0 ? ` ${sync.imported + sync.skipped} / ${sync.total}` : "…"}
+                    </span>
+                  </div>
+                  {sync.total > 0 && (
+                    <div className="h-1.5 bg-vs-raised rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-vs-accent rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  )}
+                  <p className="text-xs text-vs-muted">
+                    {sync.imported} new · {sync.skipped} skipped
+                  </p>
                 </div>
               )}
-              <p className="text-xs text-vs-muted">
-                {sync.imported} new · {sync.skipped} skipped
-              </p>
-            </div>
-          )}
 
-          {sync?.status === "done" && !isRunning && (
-            <div className="flex items-start gap-2 p-3 bg-vs-success/5 border border-vs-success/20 rounded-lg">
-              <CheckCircle2 size={14} className="text-vs-success flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-vs-success font-medium">Sync complete</p>
-                <p className="text-xs text-vs-text-2 mt-0.5">
-                  {sync.imported} records imported · {sync.skipped} already in catalog
-                  {sync.finished_at && ` · ${fmtDate(sync.finished_at)}`}
-                </p>
-              </div>
-            </div>
-          )}
+              {sync?.status === "done" && !isRunning && (
+                <div className="flex items-start gap-2 p-3 bg-vs-success/5 border border-vs-success/20 rounded-lg">
+                  <CheckCircle2 size={14} className="text-vs-success flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-vs-success font-medium">Sync complete</p>
+                    <p className="text-xs text-vs-text-2 mt-0.5">
+                      {sync.imported} records imported · {sync.skipped} already in catalog
+                      {sync.finished_at && ` · ${fmtDate(sync.finished_at)}`}
+                    </p>
+                  </div>
+                </div>
+              )}
 
-          {sync?.status === "error" && (
-            <div className="flex items-start gap-2 p-3 bg-vs-danger/5 border border-vs-danger/20 rounded-lg">
-              <AlertCircle size={14} className="text-vs-danger flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-vs-danger font-medium">Sync failed</p>
-                <p className="text-xs text-vs-text-2 mt-0.5">{sync.error}</p>
-              </div>
-            </div>
-          )}
+              {sync?.status === "error" && (
+                <div className="flex items-start gap-2 p-3 bg-vs-danger/5 border border-vs-danger/20 rounded-lg">
+                  <AlertCircle size={14} className="text-vs-danger flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-vs-danger font-medium">Sync failed</p>
+                    <p className="text-xs text-vs-text-2 mt-0.5">{sync.error}</p>
+                  </div>
+                </div>
+              )}
 
-          {(!sync || sync.status === "idle") && !isRunning && (
-            <div className="p-3 bg-vs-raised rounded-lg text-xs text-vs-muted">
-              No sync run yet. Click "Import collection" to pull your Discogs library.
+              {(!sync || sync.status === "idle") && !isRunning && (
+                <div className="p-3 bg-vs-raised rounded-lg text-xs text-vs-muted">
+                  No sync run yet. Click "Import collection" to pull your Discogs library.
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* How it works */}
-        <div className="border-t border-vs-border pt-4">
-          <p className="text-xs font-medium text-vs-text-2 mb-2">How it works</p>
-          <ul className="space-y-1.5 text-xs text-vs-muted">
-            <li className="flex items-start gap-2">
-              <span className="text-vs-accent mt-0.5">→</span>
-              <span>Import pulls every release from your Discogs collection. Existing records are untouched.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-vs-accent mt-0.5">→</span>
-              <span>Condition defaults to VG+. Edit individually after import.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-vs-accent mt-0.5">→</span>
-              <span>Adding a record here (with a Discogs release ID) automatically adds it to your Discogs collection.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-vs-accent mt-0.5">→</span>
-              <span>Synced records show a Discogs link in the catalog.</span>
-            </li>
-          </ul>
-        </div>
+            {/* How it works */}
+            <div className="border-t border-vs-border pt-4">
+              <p className="text-xs font-medium text-vs-text-2 mb-2">How it works</p>
+              <ul className="space-y-1.5 text-xs text-vs-muted">
+                <li className="flex items-start gap-2">
+                  <span className="text-vs-accent mt-0.5">→</span>
+                  <span>Import pulls every release from your Discogs collection. Existing records are untouched.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-vs-accent mt-0.5">→</span>
+                  <span>Condition defaults to VG+. Edit individually after import.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-vs-accent mt-0.5">→</span>
+                  <span>Adding a record here (with a Discogs release ID) automatically adds it to your Discogs collection.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-vs-accent mt-0.5">→</span>
+                  <span>Synced records show a Discogs link in the catalog.</span>
+                </li>
+              </ul>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Fix missing covers */}
-      <div className="card p-5 mb-4">
+      {/* Fix missing covers — requires Discogs OAuth */}
+      {user?.discogs_username && <div className="card p-5 mb-4">
         <div className="flex items-start gap-3 mb-4">
           <div className="w-9 h-9 rounded-xl bg-vs-accent/10 border border-vs-accent/20 flex items-center justify-center flex-shrink-0">
             <Image size={16} className="text-vs-accent" />
@@ -383,10 +455,10 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
-      </div>
+      </div>}
 
-      {/* Market data backfill */}
-      <div className="card p-5 space-y-3">
+      {/* Market data backfill — requires Discogs OAuth */}
+      {user?.discogs_username && <div className="card p-5 space-y-3">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-lg bg-vs-raised border border-vs-border-2 flex items-center justify-center flex-shrink-0">
             <TrendingUp size={14} className="text-vs-accent" />
@@ -456,19 +528,26 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Account section */}
       <div className="card p-5">
         <p className="text-sm font-medium mb-3">Account</p>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-vs-text">{user?.discogs_username}</p>
+            <p className="text-sm text-vs-text">{user?.discogs_username || user?.email || user?.display_name}</p>
             <p className="text-xs text-vs-muted">{user?.credits} scan credits remaining</p>
           </div>
-          <a href={api.loginUrl()} className="btn-secondary text-xs">
-            Reconnect Discogs
-          </a>
+          {user?.discogs_username ? (
+            <a href={api.loginUrl()} className="btn-secondary text-xs">
+              Reconnect Discogs
+            </a>
+          ) : (
+            <a href={api.loginUrl()} className="btn-secondary text-xs flex items-center gap-1.5">
+              <Disc3 size={12} />
+              Connect Discogs
+            </a>
+          )}
         </div>
         {user?.is_admin && (
           <div className="mt-3 pt-3 border-t border-vs-border">
