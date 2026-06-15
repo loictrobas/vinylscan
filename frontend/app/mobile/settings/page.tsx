@@ -5,13 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   User as UserIcon, Disc3, Monitor, LogOut, Check, Loader2, ChevronRight,
 } from "lucide-react";
-import { api, getToken, clearToken, clearMeCache, isStore, isCollector, type User } from "@/lib/api";
-
-const ACCOUNT_MODES = [
-  { value: "collector", label: "Collector",    sub: "Personal collection, no store features" },
-  { value: "store",     label: "Record store", sub: "POS, pricing & selling tools" },
-  { value: "both",      label: "Both",         sub: "Full access — collection + store" },
-] as const;
+import { api, getToken, clearToken, clearMeCache, type User } from "@/lib/api";
 
 export default function MobileSettingsPage() {
   const router = useRouter();
@@ -19,7 +13,6 @@ export default function MobileSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [nameSaving, setNameSaving] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
-  const [modeSaving, setModeSaving] = useState(false);
   const [editName, setEditName] = useState("");
 
   useEffect(() => {
@@ -44,17 +37,6 @@ export default function MobileSettingsPage() {
     finally { setNameSaving(false); }
   }
 
-  async function switchMode(mode: string) {
-    if (!user || user.account_type === mode) return;
-    setModeSaving(true);
-    try {
-      const updated = await api.updateMe({ account_type: mode });
-      setUser(updated);
-      clearMeCache();
-    } catch { /* ignore */ }
-    finally { setModeSaving(false); }
-  }
-
   function signOut() {
     clearToken();
     router.replace("/");
@@ -67,9 +49,6 @@ export default function MobileSettingsPage() {
       </div>
     );
   }
-
-  const storeMode = isStore(user);
-  const pureCollector = isCollector(user) && !storeMode;
 
   return (
     <div className="px-4 pt-safe pb-8">
@@ -103,40 +82,6 @@ export default function MobileSettingsPage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Account mode */}
-      <div className="mb-5">
-        <p className="text-xs text-vs-muted uppercase tracking-widest font-medium mb-3">Account mode</p>
-        <div className="flex flex-col gap-2">
-          {ACCOUNT_MODES.map(({ value, label, sub }) => {
-            const active = user?.account_type === value;
-            return (
-              <button
-                key={value}
-                onClick={() => switchMode(value)}
-                disabled={modeSaving || active}
-                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-colors disabled:cursor-default ${
-                  active
-                    ? "bg-vs-accent/10 border-vs-accent/40"
-                    : "bg-vs-raised border-vs-border active:opacity-70"
-                }`}
-              >
-                <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                  active ? "border-vs-accent" : "border-vs-muted"
-                }`}>
-                  {active && <span className="w-2 h-2 rounded-full bg-vs-accent" />}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{label}</p>
-                  <p className="text-xs text-vs-muted">{sub}</p>
-                </div>
-                {modeSaving && active && <Loader2 size={14} className="animate-spin text-vs-muted flex-shrink-0" />}
-              </button>
-            );
-          })}
-        </div>
-        <p className="text-xs text-vs-muted mt-2 px-1">Your records are shared across modes.</p>
       </div>
 
       {/* Discogs */}

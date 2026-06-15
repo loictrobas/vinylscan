@@ -18,9 +18,8 @@ import {
   Sun,
   Moon,
   Smartphone,
-  Heart,
 } from "lucide-react";
-import { api, clearToken, clearMeCache, getToken, isStore as userIsStore, isCollector as userIsCollector, type User } from "@/lib/api";
+import { api, clearToken, clearMeCache, getToken, type User } from "@/lib/api";
 
 function isActive(pathname: string, href: string, exact?: boolean): boolean {
   if (exact) return pathname === href;
@@ -50,11 +49,7 @@ export function Sidebar() {
     window.location.href = "/";
   }
 
-  const storeMode = userIsStore(user);
-  const collectorMode = userIsCollector(user);
-  const lotsLabel = collectorMode && !storeMode ? "Hauls" : "Lots";
-  const inventoryLabel = collectorMode && !storeMode ? "COLLECTION" : "INVENTORY";
-  const footerLabel = storeMode ? "Record store" : "My collection";
+  const footerLabel = "Record store";
 
   return (
     <aside className="fixed inset-y-0 left-0 w-56 bg-vs-sidebar border-r border-vs-border flex flex-col z-40">
@@ -94,23 +89,17 @@ export function Sidebar() {
           </Link>
         </div>
 
-        {/* Inventory / Collection — always visible */}
+        {/* Inventory */}
         <div>
-          <p className="sidebar-section-label">{inventoryLabel}</p>
+          <p className="sidebar-section-label">INVENTORY</p>
           <Link href="/catalog/lots" className={`sidebar-link ${isActive(pathname, "/catalog/lots") ? "active" : ""}`}>
             <span className={isActive(pathname, "/catalog/lots") ? "text-vs-accent" : "text-vs-muted"}><Layers size={16} /></span>
-            {lotsLabel}
+            Lots
           </Link>
-          {collectorMode && (
-            <Link href="/wantlist" className={`sidebar-link ${isActive(pathname, "/wantlist") ? "active" : ""}`}>
-              <span className={isActive(pathname, "/wantlist") ? "text-vs-accent" : "text-vs-muted"}><Heart size={16} /></span>
-              Wantlist
-            </Link>
-          )}
         </div>
 
-        {/* Store — store only */}
-        {storeMode && (
+        {/* Store */}
+        {(
           <div>
             <p className="sidebar-section-label">STORE</p>
             <Link href="/settings/store" className={`sidebar-link ${isActive(pathname, "/settings/store") ? "active" : ""}`}>
@@ -120,8 +109,8 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* Sales — store only */}
-        {storeMode && (
+        {/* Sales */}
+        {(true) && (
           <div>
             <p className="sidebar-section-label">SALES</p>
             <Link href="/sales" className={`sidebar-link ${isActive(pathname, "/sales") ? "active" : ""}`}>
@@ -139,8 +128,8 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* Purchases — store only */}
-        {storeMode && (
+        {/* Purchases */}
+        {(true) && (
           <div>
             <p className="sidebar-section-label">PURCHASES</p>
             <Link href="/purchases/suppliers" className={`sidebar-link ${isActive(pathname, "/purchases/suppliers") ? "active" : ""}`}>

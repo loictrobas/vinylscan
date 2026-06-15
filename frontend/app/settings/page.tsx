@@ -183,45 +183,6 @@ export default function SettingsPage() {
         <p className="text-sm text-vs-text-2 mt-0.5">Account &amp; integrations</p>
       </div>
 
-      {/* Account mode */}
-      {user && (
-        <div className="card p-5 mb-4">
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <p className="text-sm font-medium">Account mode</p>
-              <p className="text-xs text-vs-muted mt-0.5">Your records are shared across modes.</p>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2 mb-4">
-            {([
-              { value: "collector", label: "Collector", desc: "Personal collection, no store features" },
-              { value: "store",     label: "Store",     desc: "POS, pricing, and selling tools" },
-              { value: "both",      label: "Both",      desc: "Everything — collector + store" },
-            ] as const).map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => switchAccountType(opt.value)}
-                disabled={accountTypeSaving || user.account_type === opt.value}
-                className={`flex items-start gap-3 px-3 py-2.5 rounded-lg border text-left transition-colors disabled:cursor-default ${user.account_type === opt.value ? "bg-vs-accent/10 border-vs-accent/40" : "border-vs-border hover:border-vs-border-2"}`}
-              >
-                <span className={`mt-0.5 flex-shrink-0 w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${user.account_type === opt.value ? "border-vs-accent" : "border-vs-muted"}`}>
-                  {user.account_type === opt.value && <span className="w-1.5 h-1.5 rounded-full bg-vs-accent" />}
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-vs-text">{opt.label}</p>
-                  <p className="text-xs text-vs-muted">{opt.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-          {accountTypeSaving && (
-            <p className="text-xs text-vs-muted flex items-center gap-1.5">
-              <Loader2 size={11} className="animate-spin" />Saving…
-            </p>
-          )}
-        </div>
-      )}
-
       {/* Discogs connection */}
       <div className="card p-5 mb-4">
         <div className="flex items-start justify-between mb-4">
