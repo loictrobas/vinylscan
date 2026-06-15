@@ -30,6 +30,10 @@ class StoreSettings(BaseModel):
     store_public: bool
     store_info_banner: str | None
     store_instagram: str | None
+    store_location: str | None
+    store_accent_color: str | None
+    store_facebook: str | None
+    store_website: str | None
 
 
 class UpdateStoreSettings(BaseModel):
@@ -40,6 +44,10 @@ class UpdateStoreSettings(BaseModel):
     store_public: bool | None = None
     store_info_banner: str | None = None
     store_instagram: str | None = None
+    store_location: str | None = None
+    store_accent_color: str | None = None
+    store_facebook: str | None = None
+    store_website: str | None = None
 
 
 class PublicRecord(BaseModel):
@@ -62,6 +70,10 @@ class PublicStore(BaseModel):
     store_contact: str | None
     store_info_banner: str | None
     store_instagram: str | None
+    store_location: str | None
+    store_accent_color: str | None
+    store_facebook: str | None
+    store_website: str | None
     records: list[PublicRecord]
 
 
@@ -77,6 +89,10 @@ async def get_store_settings(user: User = Depends(get_current_user)):
         store_public=user.store_public,
         store_info_banner=user.store_info_banner,
         store_instagram=user.store_instagram,
+        store_location=user.store_location,
+        store_accent_color=user.store_accent_color,
+        store_facebook=user.store_facebook,
+        store_website=user.store_website,
     )
 
 
@@ -109,7 +125,7 @@ async def update_store_settings(
     elif "store_slug" in body.model_fields_set and body.store_slug is None:
         db_user.store_slug = None
 
-    for field in ["store_name", "store_description", "store_contact", "store_public", "store_info_banner", "store_instagram"]:
+    for field in ["store_name", "store_description", "store_contact", "store_public", "store_info_banner", "store_instagram", "store_location", "store_accent_color", "store_facebook", "store_website"]:
         if field in body.model_fields_set:
             setattr(db_user, field, getattr(body, field))
 
@@ -134,6 +150,10 @@ async def update_store_settings(
         store_public=db_user.store_public,
         store_info_banner=db_user.store_info_banner,
         store_instagram=db_user.store_instagram,
+        store_location=db_user.store_location,
+        store_accent_color=db_user.store_accent_color,
+        store_facebook=db_user.store_facebook,
+        store_website=db_user.store_website,
     )
 
 
@@ -175,6 +195,10 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
         store_contact=store_user.store_contact,
         store_info_banner=store_user.store_info_banner,
         store_instagram=store_user.store_instagram,
+        store_location=store_user.store_location,
+        store_accent_color=store_user.store_accent_color,
+        store_facebook=store_user.store_facebook,
+        store_website=store_user.store_website,
         records=[
             PublicRecord(
                 id=str(r.id),

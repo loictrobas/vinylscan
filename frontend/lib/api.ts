@@ -171,6 +171,10 @@ export interface StoreSettings {
   store_public: boolean;
   store_info_banner: string | null;
   store_instagram: string | null;
+  store_location: string | null;
+  store_accent_color: string | null;
+  store_facebook: string | null;
+  store_website: string | null;
 }
 
 export interface PublicRecord {
@@ -193,6 +197,10 @@ export interface PublicStore {
   store_contact: string | null;
   store_info_banner: string | null;
   store_instagram: string | null;
+  store_location: string | null;
+  store_accent_color: string | null;
+  store_facebook: string | null;
+  store_website: string | null;
   records: PublicRecord[];
 }
 

@@ -5,10 +5,12 @@ import { useParams } from "next/navigation";
 import {
   Search, X, ShoppingCart, Disc3, Loader2, Music,
   Instagram, MessageCircle, Plus, Check, SlidersHorizontal,
+  MapPin, Globe, Facebook, ArrowUpDown, ExternalLink,
 } from "lucide-react";
 import { api, type PublicRecord, type PublicStore } from "@/lib/api";
 
 const CONDITIONS = ["M", "NM", "VG+", "VG", "G"] as const;
+type SortKey = "newest" | "price_asc" | "price_desc" | "az";
 
 function fmt(n: number) { return `$${n.toFixed(2)}`; }
 function isPhone(s: string) { return /^[+\d\s\-().]{7,}$/.test(s.trim()); }
@@ -31,11 +33,32 @@ function buildShareLink(contact: string, items: PublicRecord[], storeName: strin
   return `mailto:${contact}?subject=${encodeURIComponent("Record order")}&body=${encodeURIComponent(msg)}`;
 }
 
-function RecordCard({ record, inCart, onToggle }: { record: PublicRecord; inCart: boolean; onToggle: () => void }) {
+function sortRecords(records: PublicRecord[], sort: SortKey): PublicRecord[] {
+  const copy = [...records];
+  switch (sort) {
+    case "price_asc":
+      return copy.sort((a, b) => (a.asking_price ?? Infinity) - (b.asking_price ?? Infinity));
+    case "price_desc":
+      return copy.sort((a, b) => (b.asking_price ?? -Infinity) - (a.asking_price ?? -Infinity));
+    case "az":
+      return copy.sort((a, b) => (a.artist ?? "").localeCompare(b.artist ?? ""));
+    default:
+      return copy; // newest = server order
+  }
+}
+
+function RecordCard({
+  record, inCart, onToggle, accent,
+}: {
+  record: PublicRecord; inCart: boolean; onToggle: () => void; accent: string;
+}) {
   return (
-    <div className={`group flex flex-col bg-vs-card border rounded-xl overflow-hidden transition-all duration-200 ${
-      inCart ? "border-vs-accent shadow-lg shadow-vs-accent/10" : "border-vs-border hover:border-vs-border-2"
-    }`}>
+    <div
+      className={`group flex flex-col bg-vs-card border rounded-xl overflow-hidden transition-all duration-200 ${
+        inCart ? "shadow-lg" : "border-vs-border hover:border-vs-border-2"
+      }`}
+      style={inCart ? { borderColor: accent } : undefined}
+    >
       {/* Cover */}
       <div className="aspect-square bg-vs-raised relative overflow-hidden">
         {record.cover_image_url ? (
@@ -50,13 +73,12 @@ function RecordCard({ record, inCart, onToggle }: { record: PublicRecord; inCart
           </div>
         )}
         {inCart && (
-          <div className="absolute inset-0 bg-vs-accent/20 flex items-center justify-center">
-            <div className="w-10 h-10 rounded-full bg-vs-accent flex items-center justify-center">
-              <Check size={18} className="text-vs-bg" strokeWidth={3} />
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: `${accent}33` }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: accent }}>
+              <Check size={18} className="text-white" strokeWidth={3} />
             </div>
           </div>
         )}
-        {/* Show specific style tags, fall back to broad genre */}
         {(record.styles || record.genre) && (
           <div className="absolute top-2 left-2 flex flex-wrap gap-1 max-w-[85%]">
             {(record.styles ? record.styles.split(", ").slice(0, 2) : [record.genre!]).map((tag) => (
@@ -94,13 +116,16 @@ function RecordCard({ record, inCart, onToggle }: { record: PublicRecord; inCart
 
         <button
           onClick={onToggle}
-          className={`w-full py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-            inCart
-              ? "bg-vs-accent/15 border border-vs-accent/40 text-vs-accent"
-              : "bg-vs-raised border border-vs-border hover:border-vs-accent hover:text-vs-accent text-vs-text-2"
-          }`}
+          className="w-full py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border"
+          style={inCart
+            ? { background: `${accent}1a`, borderColor: `${accent}66`, color: accent }
+            : undefined
+          }
         >
-          {inCart ? <><Check size={12} /> In cart</> : <><Plus size={12} /> Add to cart</>}
+          {inCart
+            ? <><Check size={12} /> In cart</>
+            : <><Plus size={12} /> Add to cart</>
+          }
         </button>
       </div>
     </div>
@@ -157,6 +182,7 @@ export default function StorePage() {
   const [formatFilter, setFormatFilter] = useState("");
   const [condFilter, setCondFilter] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [sort, setSort] = useState<SortKey>("newest");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [cart, setCart] = useState<PublicRecord[]>([]);
@@ -190,10 +216,12 @@ export default function StorePage() {
       <div className="min-h-screen bg-vs-bg flex flex-col items-center justify-center gap-3 px-4 text-center">
         <Disc3 size={40} className="text-vs-muted" />
         <p className="text-lg font-medium text-vs-text">Store not found</p>
-        <p className="text-sm text-vs-muted">This store doesn't exist or isn't public yet.</p>
+        <p className="text-sm text-vs-muted">This store doesn&apos;t exist or isn&apos;t public yet.</p>
       </div>
     );
   }
+
+  const accent = store.store_accent_color ?? "#a855f7";
 
   // Derive style tags: prefer specific styles over broad genre
   const styleOptions = [...new Set(
@@ -203,23 +231,26 @@ export default function StorePage() {
   )].sort();
   const formats = [...new Set(store.records.map((r) => r.format).filter(Boolean) as string[])].sort();
 
-  const filtered = store.records.filter((r) => {
-    if (search) {
-      const q = search.toLowerCase();
-      if (!`${r.artist} ${r.title} ${r.label ?? ""}`.toLowerCase().includes(q)) return false;
-    }
-    if (genreFilter) {
-      const recordStyles = r.styles ? r.styles.split(", ").map((s) => s.trim()) : r.genre ? [r.genre] : [];
-      if (!recordStyles.includes(genreFilter)) return false;
-    }
-    if (formatFilter && r.format !== formatFilter) return false;
-    if (condFilter && r.condition !== condFilter) return false;
-    if (maxPrice) {
-      const max = parseFloat(maxPrice);
-      if (!isNaN(max) && (r.asking_price == null || r.asking_price > max)) return false;
-    }
-    return true;
-  });
+  const filtered = sortRecords(
+    store.records.filter((r) => {
+      if (search) {
+        const q = search.toLowerCase();
+        if (!`${r.artist} ${r.title} ${r.label ?? ""}`.toLowerCase().includes(q)) return false;
+      }
+      if (genreFilter) {
+        const recordStyles = r.styles ? r.styles.split(", ").map((s) => s.trim()) : r.genre ? [r.genre] : [];
+        if (!recordStyles.includes(genreFilter)) return false;
+      }
+      if (formatFilter && r.format !== formatFilter) return false;
+      if (condFilter && r.condition !== condFilter) return false;
+      if (maxPrice) {
+        const max = parseFloat(maxPrice);
+        if (!isNaN(max) && (r.asking_price == null || r.asking_price > max)) return false;
+      }
+      return true;
+    }),
+    sort
+  );
 
   const cartTotal = cart.reduce((s, r) => s + (r.asking_price ?? 0), 0);
   const hasFilters = genreFilter || formatFilter || condFilter || maxPrice;
@@ -257,25 +288,54 @@ export default function StorePage() {
   );
 
   return (
-    <div className="min-h-screen bg-vs-bg text-vs-text">
+    <div className="min-h-screen bg-vs-bg text-vs-text flex flex-col">
       {/* Header */}
       <header className="border-b border-vs-border bg-vs-card sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-vs-raised border border-vs-border-2 flex items-center justify-center flex-shrink-0">
-              <Disc3 size={16} className="text-vs-accent" />
+            <div
+              className="w-9 h-9 rounded-lg border flex items-center justify-center flex-shrink-0"
+              style={{ background: `${accent}1a`, borderColor: `${accent}33` }}
+            >
+              <Disc3 size={16} style={{ color: accent }} />
             </div>
             <div className="min-w-0">
               <h1 className="text-base font-semibold truncate">{store.store_name ?? "Record Store"}</h1>
-              {store.store_instagram && (
-                <a
-                  href={`https://instagram.com/${store.store_instagram}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-2xs text-vs-muted hover:text-vs-text transition-colors"
-                >
-                  <Instagram size={10} />@{store.store_instagram}
-                </a>
-              )}
+              <div className="flex items-center gap-3 flex-wrap">
+                {store.store_location && (
+                  <span className="flex items-center gap-1 text-2xs text-vs-muted">
+                    <MapPin size={10} />{store.store_location}
+                  </span>
+                )}
+                {store.store_instagram && (
+                  <a
+                    href={`https://instagram.com/${store.store_instagram}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-2xs text-vs-muted hover:text-vs-text transition-colors"
+                  >
+                    <Instagram size={10} />@{store.store_instagram}
+                  </a>
+                )}
+                {store.store_facebook && (
+                  <a
+                    href={`https://facebook.com/${store.store_facebook}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-2xs text-vs-muted hover:text-vs-text transition-colors"
+                  >
+                    <Facebook size={10} />{store.store_facebook}
+                  </a>
+                )}
+                {store.store_website && (
+                  <a
+                    href={store.store_website}
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-2xs text-vs-muted hover:text-vs-text transition-colors"
+                  >
+                    <Globe size={10} />Website
+                    <ExternalLink size={9} />
+                  </a>
+                )}
+              </div>
             </div>
           </div>
 
@@ -292,12 +352,15 @@ export default function StorePage() {
             )}
             <button
               onClick={() => setCartOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-vs-raised border border-vs-border hover:border-vs-accent text-sm transition-colors relative"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-vs-raised border border-vs-border hover:border-vs-border-2 text-sm transition-colors relative"
             >
               <ShoppingCart size={14} />
               <span className="hidden sm:inline text-xs">Cart</span>
               {cart.length > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-vs-accent text-vs-bg text-2xs flex items-center justify-center font-bold">
+                <span
+                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-white text-2xs flex items-center justify-center font-bold"
+                  style={{ background: accent }}
+                >
                   {cart.length}
                 </span>
               )}
@@ -308,7 +371,7 @@ export default function StorePage() {
 
       {/* Info banner */}
       {store.store_info_banner && (
-        <div className="bg-vs-raised border-b border-vs-border px-4 py-2 text-center">
+        <div className="border-b border-vs-border px-4 py-2 text-center" style={{ background: `${accent}0d` }}>
           <p className="text-xs text-vs-text-2">{store.store_info_banner}</p>
         </div>
       )}
@@ -320,7 +383,7 @@ export default function StorePage() {
         </div>
       )}
 
-      {/* Search bar */}
+      {/* Search + sort bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 pb-4">
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -337,13 +400,30 @@ export default function StorePage() {
               </button>
             )}
           </div>
+
+          {/* Sort */}
+          <div className="relative">
+            <ArrowUpDown size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-vs-muted pointer-events-none" />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="input pl-8 pr-2 text-xs appearance-none cursor-pointer"
+            >
+              <option value="newest">Newest</option>
+              <option value="price_asc">Price ↑</option>
+              <option value="price_desc">Price ↓</option>
+              <option value="az">A–Z</option>
+            </select>
+          </div>
+
           {/* Mobile filter toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`sm:hidden px-3 py-2 rounded-lg border text-sm flex items-center gap-1.5 transition-colors ${hasFilters ? "border-vs-accent text-vs-accent" : "border-vs-border text-vs-muted"}`}
+            className={`sm:hidden px-3 py-2 rounded-lg border text-sm flex items-center gap-1.5 transition-colors ${hasFilters ? "text-vs-text" : "border-vs-border text-vs-muted"}`}
+            style={hasFilters ? { borderColor: accent, color: accent } : undefined}
           >
             <SlidersHorizontal size={14} />
-            {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-vs-accent" />}
+            {hasFilters && <span className="w-1.5 h-1.5 rounded-full" style={{ background: accent }} />}
           </button>
         </div>
 
@@ -356,7 +436,7 @@ export default function StorePage() {
       </div>
 
       {/* Body: sidebar + grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-16 flex gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-16 flex gap-6 flex-1">
         {/* Sidebar — desktop only */}
         <aside className="hidden sm:block w-44 flex-shrink-0 sticky top-24 self-start">
           {sidebar}
@@ -378,7 +458,8 @@ export default function StorePage() {
               {hasFilters && (
                 <button
                   onClick={() => { setGenreFilter(""); setFormatFilter(""); setCondFilter(""); setMaxPrice(""); setSearch(""); }}
-                  className="text-xs text-vs-accent hover:underline"
+                  className="text-xs hover:underline"
+                  style={{ color: accent }}
                 >
                   Clear filters
                 </button>
@@ -392,12 +473,31 @@ export default function StorePage() {
                   record={r}
                   inCart={!!cart.find((c) => c.id === r.id)}
                   onToggle={() => toggleCart(r)}
+                  accent={accent}
                 />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-vs-border py-4 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-center gap-2">
+          <Disc3 size={13} className="text-vs-muted" />
+          <p className="text-xs text-vs-muted">
+            Powered by{" "}
+            <a
+              href="https://vinylscan.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium hover:text-vs-text transition-colors"
+            >
+              VinylScan
+            </a>
+          </p>
+        </div>
+      </footer>
 
       {/* Cart drawer */}
       {cartOpen && (
@@ -452,11 +552,10 @@ export default function StorePage() {
                     href={buildShareLink(store.store_contact, cart, store.store_name)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors ${
-                      isPhone(store.store_contact)
-                        ? "bg-[#25D366] hover:bg-[#1ebe5c] text-white"
-                        : "btn-primary"
+                    className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors text-white ${
+                      isPhone(store.store_contact) ? "bg-[#25D366] hover:bg-[#1ebe5c]" : ""
                     }`}
+                    style={!isPhone(store.store_contact) ? { background: accent } : undefined}
                   >
                     <MessageCircle size={16} />
                     {isPhone(store.store_contact) ? "Order via WhatsApp" : "Send order via email"}

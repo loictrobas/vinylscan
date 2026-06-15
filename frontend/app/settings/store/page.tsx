@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Store, ExternalLink, Copy, Check, Loader2, Eye, Instagram, QrCode, Share2 } from "lucide-react";
+import { Store, ExternalLink, Copy, Check, Loader2, Eye, Instagram, Share2, MapPin, Globe, Facebook } from "lucide-react";
 import { api, getToken, type StoreSettings } from "@/lib/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -19,6 +19,10 @@ export default function StoreSettingsPage() {
     store_public: false,
     store_info_banner: "",
     store_instagram: "",
+    store_location: "",
+    store_accent_color: "",
+    store_facebook: "",
+    store_website: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,6 +43,10 @@ export default function StoreSettingsPage() {
           store_public: s.store_public,
           store_info_banner: s.store_info_banner ?? "",
           store_instagram: s.store_instagram ?? "",
+          store_location: s.store_location ?? "",
+          store_accent_color: s.store_accent_color ?? "",
+          store_facebook: s.store_facebook ?? "",
+          store_website: s.store_website ?? "",
         });
       })
       .finally(() => setLoading(false));
@@ -55,6 +63,10 @@ export default function StoreSettingsPage() {
         store_public: form.store_public,
         store_info_banner: form.store_info_banner || null,
         store_instagram: form.store_instagram || null,
+        store_location: form.store_location || null,
+        store_accent_color: form.store_accent_color || null,
+        store_facebook: form.store_facebook || null,
+        store_website: form.store_website || null,
       });
       setSettings(updated);
       setForm({
@@ -65,6 +77,10 @@ export default function StoreSettingsPage() {
         store_public: updated.store_public,
         store_info_banner: updated.store_info_banner ?? "",
         store_instagram: updated.store_instagram ?? "",
+        store_location: updated.store_location ?? "",
+        store_accent_color: updated.store_accent_color ?? "",
+        store_facebook: updated.store_facebook ?? "",
+        store_website: updated.store_website ?? "",
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -250,6 +266,78 @@ export default function StoreSettingsPage() {
             />
           </div>
           <p className="text-2xs text-vs-muted mt-1">Shown in your store header.</p>
+        </div>
+
+        <div>
+          <label className="text-xs text-vs-text-2 mb-1 block">Facebook page</label>
+          <div className="flex items-center gap-0">
+            <span className="px-3 py-2 bg-vs-raised border border-r-0 border-vs-border rounded-l-lg text-xs text-vs-muted">fb.com/</span>
+            <input
+              className="input rounded-l-none"
+              value={form.store_facebook}
+              onChange={(e) => setForm((f) => ({ ...f, store_facebook: e.target.value.replace(/^https?:\/\/[^/]*facebook\.com\//, "") }))}
+              placeholder="yourstore"
+            />
+          </div>
+          <p className="text-2xs text-vs-muted mt-1">Optional Facebook link in your store header.</p>
+        </div>
+
+        <div>
+          <label className="text-xs text-vs-text-2 mb-1 block">Website</label>
+          <input
+            className="input"
+            value={form.store_website}
+            onChange={(e) => setForm((f) => ({ ...f, store_website: e.target.value }))}
+            placeholder="https://yourstore.com"
+          />
+          <p className="text-2xs text-vs-muted mt-1">Linked from your store header.</p>
+        </div>
+
+        <div>
+          <label className="text-xs text-vs-text-2 mb-1 block">Location</label>
+          <div className="relative">
+            <MapPin size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-vs-muted" />
+            <input
+              className="input pl-8"
+              value={form.store_location}
+              onChange={(e) => setForm((f) => ({ ...f, store_location: e.target.value }))}
+              placeholder="e.g. Buenos Aires, Argentina"
+            />
+          </div>
+          <p className="text-2xs text-vs-muted mt-1">Shown below your store name.</p>
+        </div>
+
+        <div>
+          <label className="text-xs text-vs-text-2 mb-1 block">Accent color</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={form.store_accent_color || "#a855f7"}
+              onChange={(e) => setForm((f) => ({ ...f, store_accent_color: e.target.value }))}
+              className="w-10 h-9 rounded-lg border border-vs-border cursor-pointer bg-vs-raised p-0.5"
+            />
+            <input
+              className="input font-mono text-xs"
+              value={form.store_accent_color}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "" || /^#[0-9a-fA-F]{0,6}$/.test(v)) {
+                  setForm((f) => ({ ...f, store_accent_color: v }));
+                }
+              }}
+              placeholder="#a855f7"
+              maxLength={7}
+            />
+            {form.store_accent_color && (
+              <button
+                onClick={() => setForm((f) => ({ ...f, store_accent_color: "" }))}
+                className="text-xs text-vs-muted hover:text-vs-text"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+          <p className="text-2xs text-vs-muted mt-1">Buttons and highlights on your public store. Default is purple.</p>
         </div>
 
         {error && <p className="text-xs text-vs-danger">{error}</p>}
