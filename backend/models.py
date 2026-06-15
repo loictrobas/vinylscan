@@ -58,6 +58,10 @@ class User(Base):
     credits: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
     last_free_topup_month: Mapped[str] = mapped_column(String(7), nullable=False, default="")
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    subscription_status: Mapped[str] = mapped_column(String(30), nullable=False, default="free")
+    subscription_current_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     price_markup_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
     last_discogs_sync: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Public store

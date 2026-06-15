@@ -16,6 +16,9 @@ class UserOut(BaseModel):
     is_active: bool = True
     credits: int
     account_type: str = "store"
+    subscription_status: str = "free"
+    subscription_current_period_end: datetime | None = None
+    trial_ends_at: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
