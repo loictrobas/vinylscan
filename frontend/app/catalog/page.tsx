@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Disc3, Search, X, Plus, ExternalLink, ChevronDown,
-  Trash2, DollarSign, Check, ShoppingCart, Tag, Loader2, Store, Wand2,
+  Trash2, DollarSign, Check, ShoppingCart, Tag, Loader2, Store, Wand2, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, getToken, isStore, isCollector, type CatalogRecord, type Lot, type User } from "@/lib/api";
@@ -502,6 +502,26 @@ function CatalogPageInner() {
               <Wand2 size={13} />Auto-price
             </button>
           )}
+          <button
+            onClick={async () => {
+              const { getToken } = await import("@/lib/api");
+              const token = getToken();
+              const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+              const res = await fetch(`${apiUrl}/catalog/export/csv`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              });
+              if (!res.ok) return;
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url; a.download = `vinylscan-catalog-${new Date().toISOString().slice(0,10)}.csv`;
+              a.click(); URL.revokeObjectURL(url);
+            }}
+            className="btn-secondary flex items-center gap-1.5 text-sm"
+            title="Export catalog to CSV"
+          >
+            <Download size={13} />Export
+          </button>
           <button
             onClick={() => { setEditRecord(undefined); setShowModal(true); }}
             className="btn-primary flex items-center gap-2"

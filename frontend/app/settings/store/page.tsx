@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Store, ExternalLink, Copy, Check, Loader2, Eye, Instagram } from "lucide-react";
+import { Store, ExternalLink, Copy, Check, Loader2, Eye, Instagram, QrCode, Share2 } from "lucide-react";
 import { api, getToken, type StoreSettings } from "@/lib/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -125,25 +125,54 @@ export default function StoreSettingsPage() {
         </button>
       </div>
 
-      {/* Store URL + Preview */}
+      {/* Store URL + QR + Preview */}
       {storeUrl && (
-        <div className="mb-5 flex flex-col gap-2">
-          <div className="p-3 rounded-xl bg-vs-raised border border-vs-border flex items-center gap-2">
-            <p className="text-xs text-vs-text-2 flex-1 truncate">{storeUrl}</p>
-            <button onClick={copyUrl} className="text-vs-muted hover:text-vs-text flex-shrink-0 transition-colors">
-              {copied ? <Check size={14} className="text-vs-success" /> : <Copy size={14} />}
-            </button>
+        <div className="card p-4 mb-5">
+          <p className="text-xs text-vs-muted uppercase tracking-widest font-medium mb-3">Your store link</p>
+          <div className="flex gap-4">
+            {/* QR code */}
+            <div className="flex-shrink-0">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(storeUrl)}&bgcolor=ffffff&color=000000&margin=2`}
+                alt="Store QR code"
+                width={80}
+                height={80}
+                className="rounded-lg border border-vs-border"
+              />
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col gap-2">
+              <div className="p-2.5 rounded-lg bg-vs-raised border border-vs-border flex items-center gap-2">
+                <p className="text-xs text-vs-text-2 flex-1 truncate">{storeUrl}</p>
+                <button onClick={copyUrl} className="text-vs-muted hover:text-vs-text flex-shrink-0 transition-colors" title="Copy link">
+                  {copied ? <Check size={13} className="text-vs-success" /> : <Copy size={13} />}
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <a
+                  href={`/store/${settings!.store_slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-vs-accent/40 text-vs-accent text-xs font-medium hover:bg-vs-accent/10 transition-colors"
+                >
+                  <Eye size={12} />
+                  Preview
+                  <ExternalLink size={11} />
+                </a>
+                {typeof navigator !== "undefined" && navigator.share && (
+                  <button
+                    onClick={() => navigator.share?.({ title: settings?.store_name ?? "My store", url: storeUrl })}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-vs-border text-vs-muted text-xs hover:text-vs-text hover:border-vs-border-2 transition-colors"
+                  >
+                    <Share2 size={12} />
+                    Share
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-          <a
-            href={`/store/${settings!.store_slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-vs-accent/40 text-vs-accent text-sm font-medium hover:bg-vs-accent/10 transition-colors"
-          >
-            <Eye size={14} />
-            Preview as customer
-            <ExternalLink size={12} />
-          </a>
+          <p className="text-xs text-vs-muted mt-3">
+            Send this link to customers or print the QR code for your counter.
+          </p>
         </div>
       )}
 

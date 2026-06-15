@@ -13,6 +13,7 @@ export interface User {
   subscription_current_period_end: string | null;
   trial_ends_at: string | null;
   created_at: string;
+  scans_this_month: number;
 }
 
 export function isSubscribed(user: User | null | undefined): boolean {

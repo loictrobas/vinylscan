@@ -20,6 +20,7 @@ class UserOut(BaseModel):
     subscription_current_period_end: datetime | None = None
     trial_ends_at: datetime | None = None
     created_at: datetime
+    scans_this_month: int = 0
 
     model_config = {"from_attributes": True}
 

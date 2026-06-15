@@ -1,9 +1,12 @@
+import csv
+import io
 import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import and_, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -871,6 +874,46 @@ async def link_discogs_to_record(
     await db.commit()
     await db.refresh(record)
     return RecordOut.from_orm_safe(record)
+
+
+@router.get("/export/csv")
+async def export_csv(
+    status: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    q = select(Record).where(Record.user_id == user.id)
+    if status in ("in_stock", "sold"):
+        q = q.where(Record.status == status)
+    q = q.order_by(Record.created_at.desc())
+    result = await db.execute(q)
+    records = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "id", "artist", "title", "year", "label", "format", "condition",
+        "genre", "styles", "country", "status",
+        "cost_price", "asking_price", "sold_price", "sold_at",
+        "discogs_release_id", "tags", "notes", "created_at",
+    ])
+    for r in records:
+        writer.writerow([
+            str(r.id), r.artist, r.title, r.year, r.label, r.format, r.condition,
+            r.genre, r.styles, r.country, r.status.value if r.status else "",
+            r.cost_price, r.asking_price, r.sold_price,
+            r.sold_at.isoformat() if r.sold_at else "",
+            r.discogs_release_id, r.tags, r.notes,
+            r.created_at.isoformat() if r.created_at else "",
+        ])
+
+    output.seek(0)
+    filename = f"vinylscan-catalog-{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode()),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/{record_id}/history", response_model=list[RecordEventOut])

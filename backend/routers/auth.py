@@ -150,8 +150,22 @@ async def discogs_callback(
 
 
 @router.get("/me", response_model=UserOut)
-async def me(user: User = Depends(get_current_user)):
-    return user
+async def me(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    from models import CreditTransaction, CreditReason
+    from sqlalchemy import func
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    result = await db.execute(
+        select(func.count()).select_from(CreditTransaction).where(
+            CreditTransaction.user_id == user.id,
+            CreditTransaction.reason == CreditReason.scan_used,
+            CreditTransaction.created_at >= month_start,
+        )
+    )
+    scans = result.scalar() or 0
+    out = UserOut.model_validate(user)
+    out.scans_this_month = scans
+    return out
 
 
 @router.post("/logout")

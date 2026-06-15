@@ -7,9 +7,7 @@ import {
   LayoutDashboard,
   Disc3,
   Camera,
-  Package,
   ShoppingCart,
-  Users,
   ClipboardList,
   Settings,
   LogOut,
@@ -18,8 +16,9 @@ import {
   Sun,
   Moon,
   Smartphone,
+  Zap,
 } from "lucide-react";
-import { api, clearToken, clearMeCache, getToken, type User } from "@/lib/api";
+import { api, clearToken, clearMeCache, getToken, isSubscribed, type User } from "@/lib/api";
 
 function isActive(pathname: string, href: string, exact?: boolean): boolean {
   if (exact) return pathname === href;
@@ -49,7 +48,7 @@ export function Sidebar() {
     window.location.href = "/";
   }
 
-  const footerLabel = "Record store";
+  const subscribed = isSubscribed(user);
 
   return (
     <aside className="fixed inset-y-0 left-0 w-56 bg-vs-sidebar border-r border-vs-border flex flex-col z-40">
@@ -63,7 +62,6 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3">
-        {/* Home — always visible */}
         <div>
           <Link
             href="/dashboard"
@@ -76,7 +74,6 @@ export function Sidebar() {
           </Link>
         </div>
 
-        {/* Catalog — always visible */}
         <div>
           <p className="sidebar-section-label">CATALOG</p>
           <Link href="/catalog" className={`sidebar-link ${isActive(pathname, "/catalog") ? "active" : ""}`}>
@@ -87,79 +84,66 @@ export function Sidebar() {
             <span className={isActive(pathname, "/scan") ? "text-vs-accent" : "text-vs-muted"}><Camera size={16} /></span>
             Scan &amp; add
           </Link>
-        </div>
-
-        {/* Inventory */}
-        <div>
-          <p className="sidebar-section-label">INVENTORY</p>
           <Link href="/catalog/lots" className={`sidebar-link ${isActive(pathname, "/catalog/lots") ? "active" : ""}`}>
             <span className={isActive(pathname, "/catalog/lots") ? "text-vs-accent" : "text-vs-muted"}><Layers size={16} /></span>
             Lots
           </Link>
         </div>
 
-        {/* Store */}
-        {(
-          <div>
-            <p className="sidebar-section-label">STORE</p>
-            <Link href="/settings/store" className={`sidebar-link ${isActive(pathname, "/settings/store") ? "active" : ""}`}>
-              <span className={isActive(pathname, "/settings/store") ? "text-vs-accent" : "text-vs-muted"}><Store size={16} /></span>
-              My store
-            </Link>
-          </div>
-        )}
+        <div>
+          <p className="sidebar-section-label">SALES</p>
+          <Link href="/sales" className={`sidebar-link ${isActive(pathname, "/sales", true) ? "active" : ""}`}>
+            <span className={isActive(pathname, "/sales", true) ? "text-vs-accent" : "text-vs-muted"}><ShoppingCart size={16} /></span>
+            Point of sale
+          </Link>
+          <Link href="/sales/history" className={`sidebar-link ${isActive(pathname, "/sales/history") ? "active" : ""}`}>
+            <span className={isActive(pathname, "/sales/history") ? "text-vs-accent" : "text-vs-muted"}><ClipboardList size={16} /></span>
+            Sales history
+          </Link>
+        </div>
 
-        {/* Sales */}
-        {(true) && (
-          <div>
-            <p className="sidebar-section-label">SALES</p>
-            <Link href="/sales" className={`sidebar-link ${isActive(pathname, "/sales") ? "active" : ""}`}>
-              <span className={isActive(pathname, "/sales") ? "text-vs-accent" : "text-vs-muted"}><ShoppingCart size={16} /></span>
-              POS
-            </Link>
-            <Link href="/sales/history" className={`sidebar-link ${isActive(pathname, "/sales/history") ? "active" : ""}`}>
-              <span className={isActive(pathname, "/sales/history") ? "text-vs-accent" : "text-vs-muted"}><ClipboardList size={16} /></span>
-              Sales history
-            </Link>
-            <Link href="/sales/consignments" className={`sidebar-link ${isActive(pathname, "/sales/consignments") ? "active" : ""}`}>
-              <span className={isActive(pathname, "/sales/consignments") ? "text-vs-accent" : "text-vs-muted"}><Package size={16} /></span>
-              Consignments
-            </Link>
-          </div>
-        )}
-
-        {/* Purchases */}
-        {(true) && (
-          <div>
-            <p className="sidebar-section-label">PURCHASES</p>
-            <Link href="/purchases/suppliers" className={`sidebar-link ${isActive(pathname, "/purchases/suppliers") ? "active" : ""}`}>
-              <span className={isActive(pathname, "/purchases/suppliers") ? "text-vs-accent" : "text-vs-muted"}><Users size={16} /></span>
-              Suppliers
-            </Link>
-            <Link href="/purchases" className={`sidebar-link ${isActive(pathname, "/purchases") ? "active" : ""}`}>
-              <span className={isActive(pathname, "/purchases") ? "text-vs-accent" : "text-vs-muted"}><ClipboardList size={16} /></span>
-              Purchase orders
-            </Link>
-          </div>
-        )}
+        <div>
+          <p className="sidebar-section-label">STORE</p>
+          <Link href="/settings/store" className={`sidebar-link ${isActive(pathname, "/settings/store") ? "active" : ""}`}>
+            <span className={isActive(pathname, "/settings/store") ? "text-vs-accent" : "text-vs-muted"}><Store size={16} /></span>
+            My store
+          </Link>
+        </div>
       </nav>
 
-      {/* User / settings footer */}
+      {/* Footer */}
       <div className="border-t border-vs-border px-2 py-3 flex-shrink-0">
+        {/* Upgrade nudge for free users */}
+        {user && !subscribed && (
+          <Link
+            href="/subscription"
+            className="flex items-center gap-2 mx-1 mb-2 px-3 py-2 rounded-lg bg-vs-accent/10 border border-vs-accent/20 hover:bg-vs-accent/15 transition-colors"
+          >
+            <Zap size={13} className="text-vs-accent flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-vs-accent">Upgrade to Pro</p>
+              <p className="text-2xs text-vs-muted">14-day free trial</p>
+            </div>
+          </Link>
+        )}
+
         {user && (
           <div className="px-3 py-2 mb-1">
             <p className="text-xs font-medium text-vs-text truncate">{user.display_name || user.discogs_username || user.email}</p>
-            <p className="text-2xs text-vs-muted">{footerLabel}</p>
+            <p className="text-2xs text-vs-muted">Record store</p>
           </div>
         )}
-        <Link href="/settings" className={`sidebar-link ${isActive(pathname, "/settings") ? "active" : ""}`}>
-          <span className="text-vs-muted"><Settings size={16} /></span>
+        <Link href="/subscription" className={`sidebar-link ${isActive(pathname, "/subscription") ? "active" : ""}`}>
+          <span className={isActive(pathname, "/subscription") ? "text-vs-accent" : "text-vs-muted"}><Zap size={16} /></span>
+          Subscription
+        </Link>
+        <Link href="/settings" className={`sidebar-link ${isActive(pathname, "/settings", true) ? "active" : ""}`}>
+          <span className={isActive(pathname, "/settings", true) ? "text-vs-accent" : "text-vs-muted"}><Settings size={16} /></span>
           Settings
         </Link>
         <button
           onClick={toggleTheme}
           className="sidebar-link w-full text-left"
-          title={dark ? "Switch to light mode" : "Switch to dark mode"}
         >
           <span className="text-vs-muted">{dark ? <Sun size={16} /> : <Moon size={16} />}</span>
           {dark ? "Light mode" : "Dark mode"}
