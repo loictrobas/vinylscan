@@ -175,6 +175,7 @@ export interface StoreSettings {
   store_accent_color: string | null;
   store_facebook: string | null;
   store_website: string | null;
+  store_logo_url: string | null;
 }
 
 export interface PublicRecord {
@@ -201,6 +202,7 @@ export interface PublicStore {
   store_accent_color: string | null;
   store_facebook: string | null;
   store_website: string | null;
+  store_logo_url: string | null;
   records: PublicRecord[];
 }
 
@@ -628,6 +630,23 @@ export const api = {
     apiFetch<StoreSettings>("/store/settings", { method: "PATCH", body: JSON.stringify(body) }),
 
   getPublicStore: (slug: string) => apiFetch<PublicStore>(`/store/${slug}`),
+
+  uploadStoreLogo: async (file: File): Promise<StoreSettings> => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_URL}/store/logo`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { detail?: string }).detail ?? "Upload failed");
+    }
+    return res.json();
+  },
+
+  deleteStoreLogo: () => apiFetch<StoreSettings>("/store/logo", { method: "DELETE" }),
 
   // ── Email/password auth ─────────────────────────────────────────────────
   claimAdmin: () =>

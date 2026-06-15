@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Store, ExternalLink, Copy, Check, Loader2, Eye, Instagram, Share2, MapPin, Globe, Facebook } from "lucide-react";
+import { Store, ExternalLink, Copy, Check, Loader2, Eye, Instagram, Share2, MapPin, Globe, Facebook, Upload, X, Music } from "lucide-react";
 import { api, getToken, type StoreSettings } from "@/lib/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -29,6 +29,9 @@ export default function StoreSettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState("");
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (!getToken()) { router.replace("/"); return; }
@@ -51,6 +54,36 @@ export default function StoreSettingsPage() {
       })
       .finally(() => setLoading(false));
   }, [router]);
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoPreview(URL.createObjectURL(file));
+    setLogoUploading(true);
+    setLogoError("");
+    try {
+      const updated = await api.uploadStoreLogo(file);
+      setSettings(updated);
+      setForm((f) => ({ ...f }));
+      setLogoPreview(null);
+    } catch (err: unknown) {
+      setLogoError(err instanceof Error ? err.message : "Upload failed");
+      setLogoPreview(null);
+    } finally {
+      setLogoUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleLogoRemove() {
+    setLogoUploading(true);
+    try {
+      const updated = await api.deleteStoreLogo();
+      setSettings(updated);
+    } catch { /* ignore */ } finally {
+      setLogoUploading(false);
+    }
+  }
 
   async function save() {
     setSaving(true); setError(""); setSaved(false);
@@ -191,6 +224,50 @@ export default function StoreSettingsPage() {
           </p>
         </div>
       )}
+
+      {/* Logo upload */}
+      <div className="card p-4 mb-5">
+        <p className="text-xs text-vs-text-2 mb-3 font-medium">Store logo</p>
+        <div className="flex items-center gap-4">
+          {/* Preview */}
+          <div className="w-16 h-16 rounded-xl overflow-hidden bg-vs-raised border border-vs-border flex items-center justify-center flex-shrink-0">
+            {logoPreview || settings?.store_logo_url ? (
+              <img
+                src={logoPreview ?? settings!.store_logo_url!}
+                alt="Store logo"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Music size={24} className="text-vs-muted" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex gap-2">
+              <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-vs-border text-xs cursor-pointer transition-colors ${logoUploading ? "opacity-50 pointer-events-none" : "hover:border-vs-border-2 text-vs-text-2"}`}>
+                {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                {settings?.store_logo_url ? "Replace" : "Upload"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoUpload}
+                  disabled={logoUploading}
+                />
+              </label>
+              {settings?.store_logo_url && !logoUploading && (
+                <button
+                  onClick={handleLogoRemove}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-vs-border text-xs text-vs-muted hover:text-vs-danger hover:border-vs-danger/40 transition-colors"
+                >
+                  <X size={12} /> Remove
+                </button>
+              )}
+            </div>
+            <p className="text-2xs text-vs-muted mt-1.5">Shown in your store header. PNG or JPG, under 5 MB.</p>
+            {logoError && <p className="text-2xs text-vs-danger mt-1">{logoError}</p>}
+          </div>
+        </div>
+      </div>
 
       {/* Form */}
       <div className="flex flex-col gap-4">

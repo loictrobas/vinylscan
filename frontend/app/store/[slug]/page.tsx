@@ -294,10 +294,14 @@ export default function StorePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="w-9 h-9 rounded-lg border flex items-center justify-center flex-shrink-0"
+              className="w-9 h-9 rounded-lg border overflow-hidden flex items-center justify-center flex-shrink-0"
               style={{ background: `${accent}1a`, borderColor: `${accent}33` }}
             >
-              <Disc3 size={16} style={{ color: accent }} />
+              {store.store_logo_url ? (
+                <img src={store.store_logo_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <Disc3 size={16} style={{ color: accent }} />
+              )}
             </div>
             <div className="min-w-0">
               <h1 className="text-base font-semibold truncate">{store.store_name ?? "Record Store"}</h1>

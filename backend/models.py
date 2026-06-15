@@ -76,6 +76,7 @@ class User(Base):
     store_accent_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
     store_facebook: Mapped[str | None] = mapped_column(String(100), nullable=True)
     store_website: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    store_logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     account_type: Mapped[str] = mapped_column(String(20), nullable=False, default="store")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
