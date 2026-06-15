@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Disc3, TrendingUp, DollarSign, Package, BarChart3,
-  ShoppingCart, Camera, ArrowRight, Layers, Heart, Plus,
+  ShoppingCart, Camera, ArrowRight, Layers, Zap, Plus, CheckCircle2, Heart,
 } from "lucide-react";
-import { api, setToken, getToken, isStore, isCollector, type CatalogStats, type User } from "@/lib/api";
+import { api, setToken, getToken, isStore, isCollector, isSubscribed, type CatalogStats, type User } from "@/lib/api";
 
 function fmt(n: number) {
   return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -43,6 +43,8 @@ function DashboardPageInner() {
   const [stats, setStats] = useState<CatalogStats | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [upgrading, setUpgrading] = useState(false);
+  const [subscribeSuccess, setSubscribeSuccess] = useState(false);
 
   useEffect(() => {
     const urlToken = searchParams.get("token");
@@ -52,6 +54,11 @@ function DashboardPageInner() {
       return;
     }
     if (!getToken()) { router.replace("/"); return; }
+
+    if (searchParams.get("subscribed") === "1") {
+      setSubscribeSuccess(true);
+      router.replace("/dashboard");
+    }
 
     Promise.all([
       api.catalogStats().catch(() => null),
@@ -80,6 +87,22 @@ function DashboardPageInner() {
   const storeMode = isStore(user);
   const collectorMode = isCollector(user);
   const pureCollector = collectorMode && !storeMode;
+  const subscribed = isSubscribed(user);
+
+  async function handleUpgrade() {
+    setUpgrading(true);
+    try {
+      const { url } = await api.checkoutSubscribe();
+      window.location.href = url;
+    } catch { setUpgrading(false); }
+  }
+
+  async function handlePortal() {
+    try {
+      const { url } = await api.billingPortal();
+      window.location.href = url;
+    } catch {}
+  }
 
   const hasRevenue = s.total_revenue > 0;
   const roi = s.total_cost > 0
@@ -109,6 +132,40 @@ function DashboardPageInner() {
           </Link>
         </div>
       </div>
+
+      {/* Subscription banner */}
+      {subscribeSuccess && (
+        <div className="mb-5 px-4 py-3 rounded-xl bg-vs-success/10 border border-vs-success/30 flex items-center gap-3">
+          <CheckCircle2 size={16} className="text-vs-success flex-shrink-0" />
+          <p className="text-sm text-vs-success font-medium">Subscription activated! Welcome to VinylScan Pro.</p>
+        </div>
+      )}
+      {!subscribed && user && (
+        <div className="mb-5 px-4 py-3.5 rounded-xl bg-vs-accent/8 border border-vs-accent/25 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Zap size={16} className="text-vs-accent flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium">Start your 14-day free trial</p>
+              <p className="text-xs text-vs-muted mt-0.5">$29/month after trial · cancel anytime</p>
+            </div>
+          </div>
+          <button
+            onClick={handleUpgrade}
+            disabled={upgrading}
+            className="btn-primary text-xs px-3 py-1.5 flex-shrink-0 disabled:opacity-60"
+          >
+            {upgrading ? "Loading…" : "Upgrade"}
+          </button>
+        </div>
+      )}
+      {subscribed && user?.subscription_status === "trialing" && user.trial_ends_at && (
+        <div className="mb-5 px-4 py-3 rounded-xl bg-vs-gold/8 border border-vs-gold/25 flex items-center justify-between gap-4">
+          <p className="text-xs text-vs-muted">
+            Trial ends {new Date(user.trial_ends_at).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
+          </p>
+          <button onClick={handlePortal} className="text-xs text-vs-accent hover:underline">Manage billing</button>
+        </div>
+      )}
 
       {/* Store: Revenue section */}
       {storeMode && <>

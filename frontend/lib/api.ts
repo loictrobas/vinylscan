@@ -9,7 +9,14 @@ export interface User {
   is_active: boolean;
   credits: number;
   account_type: "collector" | "store" | "both";
+  subscription_status: "free" | "trialing" | "active" | "past_due" | "canceled";
+  subscription_current_period_end: string | null;
+  trial_ends_at: string | null;
   created_at: string;
+}
+
+export function isSubscribed(user: User | null | undefined): boolean {
+  return user?.subscription_status === "active" || user?.subscription_status === "trialing";
 }
 
 export function isStore(user: User | null | undefined): boolean {
@@ -468,6 +475,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ pack_id: packId }),
     }),
+
+  checkoutSubscribe: () =>
+    apiFetch<{ url: string }>("/billing/checkout/subscribe", { method: "POST" }),
+
+  checkoutCredits: () =>
+    apiFetch<{ url: string }>("/billing/checkout/credits", { method: "POST" }),
+
+  billingPortal: () =>
+    apiFetch<{ url: string }>("/billing/portal", { method: "POST" }),
 
   getPricing: (releaseId: number) =>
     apiFetch<{ release_id: number; pricing: { lowest: number; currency: string; num_for_sale: number } | null }>(
