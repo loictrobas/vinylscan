@@ -79,9 +79,21 @@ export default function SalesHistoryPage() {
             <Disc3 size={24} className="animate-spin text-vs-muted" />
           </div>
         ) : records.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <ClipboardList size={36} className="text-vs-muted" />
-            <p className="text-vs-text-2 text-sm">{search ? "No sold records match." : "No sales yet."}</p>
+          <div className="flex flex-col items-center gap-4 py-20 text-center px-6">
+            <div className="w-14 h-14 rounded-2xl bg-vs-accent/10 flex items-center justify-center">
+              <ClipboardList size={28} className="text-vs-accent" />
+            </div>
+            {search ? (
+              <p className="text-sm text-vs-text-2">No sold records match your search.</p>
+            ) : (
+              <>
+                <div>
+                  <p className="text-sm font-medium text-vs-text">No sales yet</p>
+                  <p className="text-xs text-vs-muted mt-1">Sell your first record from the point of sale</p>
+                </div>
+                <a href="/sales" className="btn-primary text-sm">Open POS</a>
+              </>
+            )}
           </div>
         ) : (
           <table className="data-table">

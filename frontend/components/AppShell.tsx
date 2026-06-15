@@ -2,7 +2,7 @@
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 
-const AUTH_ROUTES = ["/login", "/register", "/reset-password"];
+const AUTH_ROUTES = ["/login", "/register", "/reset-password", "/onboarding"];
 const PUBLIC_ROUTES = ["/store"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

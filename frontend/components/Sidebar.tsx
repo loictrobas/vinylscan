@@ -17,8 +17,10 @@ import {
   Moon,
   Smartphone,
   Zap,
+  Star,
+  Heart,
 } from "lucide-react";
-import { api, clearToken, clearMeCache, getToken, isSubscribed, type User } from "@/lib/api";
+import { api, clearToken, clearMeCache, getToken, isSubscribed, isStore, isCollector, type User } from "@/lib/api";
 
 function isActive(pathname: string, href: string, exact?: boolean): boolean {
   if (exact) return pathname === href;
@@ -49,6 +51,8 @@ export function Sidebar() {
   }
 
   const subscribed = isSubscribed(user);
+  const storeMode = isStore(user);
+  const collectorMode = isCollector(user);
 
   return (
     <aside className="fixed inset-y-0 left-0 w-56 bg-vs-sidebar border-r border-vs-border flex flex-col z-40">
@@ -75,7 +79,7 @@ export function Sidebar() {
         </div>
 
         <div>
-          <p className="sidebar-section-label">CATALOG</p>
+          <p className="sidebar-section-label">{collectorMode && !storeMode ? "COLLECTION" : "CATALOG"}</p>
           <Link href="/catalog" className={`sidebar-link ${isActive(pathname, "/catalog") ? "active" : ""}`}>
             <span className={isActive(pathname, "/catalog") ? "text-vs-accent" : "text-vs-muted"}><Disc3 size={16} /></span>
             Records
@@ -86,29 +90,39 @@ export function Sidebar() {
           </Link>
           <Link href="/catalog/lots" className={`sidebar-link ${isActive(pathname, "/catalog/lots") ? "active" : ""}`}>
             <span className={isActive(pathname, "/catalog/lots") ? "text-vs-accent" : "text-vs-muted"}><Layers size={16} /></span>
-            Lots
+            {collectorMode && !storeMode ? "Hauls" : "Lots"}
           </Link>
+          {collectorMode && (
+            <Link href="/wantlist" className={`sidebar-link ${isActive(pathname, "/wantlist") ? "active" : ""}`}>
+              <span className={isActive(pathname, "/wantlist") ? "text-vs-accent" : "text-vs-muted"}><Heart size={16} /></span>
+              Wantlist
+            </Link>
+          )}
         </div>
 
-        <div>
-          <p className="sidebar-section-label">SALES</p>
-          <Link href="/sales" className={`sidebar-link ${isActive(pathname, "/sales", true) ? "active" : ""}`}>
-            <span className={isActive(pathname, "/sales", true) ? "text-vs-accent" : "text-vs-muted"}><ShoppingCart size={16} /></span>
-            Point of sale
-          </Link>
-          <Link href="/sales/history" className={`sidebar-link ${isActive(pathname, "/sales/history") ? "active" : ""}`}>
-            <span className={isActive(pathname, "/sales/history") ? "text-vs-accent" : "text-vs-muted"}><ClipboardList size={16} /></span>
-            Sales history
-          </Link>
-        </div>
+        {storeMode && (
+          <div>
+            <p className="sidebar-section-label">SALES</p>
+            <Link href="/sales" className={`sidebar-link ${isActive(pathname, "/sales", true) ? "active" : ""}`}>
+              <span className={isActive(pathname, "/sales", true) ? "text-vs-accent" : "text-vs-muted"}><ShoppingCart size={16} /></span>
+              Point of sale
+            </Link>
+            <Link href="/sales/history" className={`sidebar-link ${isActive(pathname, "/sales/history") ? "active" : ""}`}>
+              <span className={isActive(pathname, "/sales/history") ? "text-vs-accent" : "text-vs-muted"}><ClipboardList size={16} /></span>
+              Sales history
+            </Link>
+          </div>
+        )}
 
-        <div>
-          <p className="sidebar-section-label">STORE</p>
-          <Link href="/settings/store" className={`sidebar-link ${isActive(pathname, "/settings/store") ? "active" : ""}`}>
-            <span className={isActive(pathname, "/settings/store") ? "text-vs-accent" : "text-vs-muted"}><Store size={16} /></span>
-            My store
-          </Link>
-        </div>
+        {storeMode && (
+          <div>
+            <p className="sidebar-section-label">STORE</p>
+            <Link href="/settings/store" className={`sidebar-link ${isActive(pathname, "/settings/store") ? "active" : ""}`}>
+              <span className={isActive(pathname, "/settings/store") ? "text-vs-accent" : "text-vs-muted"}><Store size={16} /></span>
+              My store
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* Footer */}
@@ -130,12 +144,18 @@ export function Sidebar() {
         {user && (
           <div className="px-3 py-2 mb-1">
             <p className="text-xs font-medium text-vs-text truncate">{user.display_name || user.discogs_username || user.email}</p>
-            <p className="text-2xs text-vs-muted">Record store</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-2xs text-vs-muted">{user.credits} scan credit{user.credits !== 1 ? "s" : ""}</p>
+            </div>
           </div>
         )}
         <Link href="/subscription" className={`sidebar-link ${isActive(pathname, "/subscription") ? "active" : ""}`}>
           <span className={isActive(pathname, "/subscription") ? "text-vs-accent" : "text-vs-muted"}><Zap size={16} /></span>
           Subscription
+        </Link>
+        <Link href="/credits" className={`sidebar-link ${isActive(pathname, "/credits") ? "active" : ""}`}>
+          <span className={isActive(pathname, "/credits") ? "text-vs-accent" : "text-vs-muted"}><Star size={16} /></span>
+          Credits
         </Link>
         <Link href="/settings" className={`sidebar-link ${isActive(pathname, "/settings", true) ? "active" : ""}`}>
           <span className={isActive(pathname, "/settings", true) ? "text-vs-accent" : "text-vs-muted"}><Settings size={16} /></span>

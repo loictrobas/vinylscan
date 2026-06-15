@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Disc3, Search, X, Plus, ExternalLink, ChevronDown,
+  Disc3, Search, X, Plus, ExternalLink, ChevronDown, Camera,
   Trash2, DollarSign, Check, ShoppingCart, Tag, Loader2, Store, Wand2, Download,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -612,11 +612,29 @@ function CatalogPageInner() {
           )}
           </>
         ) : records.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center px-4">
-            <Disc3 size={36} className="text-vs-muted" />
-            <p className="text-vs-text-2 text-sm">{search || lotFilter ? "No records match your filters." : "No records yet."}</p>
-            {!search && !lotFilter && (
-              <button onClick={() => { setEditRecord(undefined); setShowModal(true); }} className="btn-primary text-sm">Add first record</button>
+          <div className="flex flex-col items-center gap-4 py-20 text-center px-6">
+            <div className="w-14 h-14 rounded-2xl bg-vs-accent/10 flex items-center justify-center">
+              <Disc3 size={28} className="text-vs-accent" />
+            </div>
+            {search || lotFilter ? (
+              <>
+                <div>
+                  <p className="text-sm font-medium text-vs-text">No records match</p>
+                  <p className="text-xs text-vs-muted mt-1">Try clearing the search or filter</p>
+                </div>
+                <button onClick={() => { setSearch(""); setSearchInput(""); setLotFilter(""); }} className="btn-secondary text-sm">Clear filters</button>
+              </>
+            ) : (
+              <>
+                <div>
+                  <p className="text-sm font-medium text-vs-text">Your catalog is empty</p>
+                  <p className="text-xs text-vs-muted mt-1">Scan a record or add one manually to get started</p>
+                </div>
+                <div className="flex gap-2">
+                  <a href="/scan" className="btn-primary text-sm flex items-center gap-1.5"><Camera size={13} />Scan record</a>
+                  <button onClick={() => { setEditRecord(undefined); setShowModal(true); }} className="btn-secondary text-sm">Add manually</button>
+                </div>
+              </>
             )}
           </div>
         ) : (

@@ -415,6 +415,24 @@ async def catalog_stats(
         .limit(5)
     )).all()
 
+    # Daily revenue last 7 days
+    seven_days_ago = today - timedelta(days=6)
+    daily_rows = (await db.execute(
+        select(cast(Record.sold_at, SADate).label("day"), func.sum(Record.sold_price).label("rev"))
+        .where(
+            Record.user_id == user.id,
+            Record.status == RecordStatus.sold,
+            cast(Record.sold_at, SADate) >= seven_days_ago,
+            Record.sold_price.isnot(None),
+        )
+        .group_by(cast(Record.sold_at, SADate))
+    )).all()
+    daily_map = {str(r.day): float(r.rev) for r in daily_rows}
+    daily_revenue_7d = [
+        {"date": str(today - timedelta(days=i)), "revenue": daily_map.get(str(today - timedelta(days=i)), 0.0)}
+        for i in range(6, -1, -1)
+    ]
+
     _set_credit_header(response, user)
     return {
         "total_in_stock": total_in_stock,
@@ -427,6 +445,7 @@ async def catalog_stats(
         "total_cost": float(total_cost),
         "avg_margin_pct": round(avg_margin, 1) if avg_margin is not None else None,
         "added_this_month": added_this_month,
+        "daily_revenue_7d": daily_revenue_7d,
         "recent_sales_today": [
             {
                 "artist": r.artist,

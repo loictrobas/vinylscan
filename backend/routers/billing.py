@@ -1,3 +1,4 @@
+import asyncio
 import os
 import uuid as _uuid
 from datetime import datetime, timezone
@@ -12,6 +13,7 @@ from routers.auth import get_current_user
 from routers.scan import _set_credit_header
 from schemas import CreditPack, PaymentIntentRequest, PaymentIntentResponse
 from services import stripe_service
+from services import email_service
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
@@ -126,6 +128,17 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
                 user.trial_ends_at = datetime.fromtimestamp(trial_end, tz=timezone.utc)
             await db.commit()
 
+    elif etype == "customer.subscription.trial_will_end":
+        sub = data
+        user = await _find_user_by_customer(db, sub.get("customer"), sub.get("metadata", {}).get("user_id"))
+        if user and user.email:
+            trial_end_ts = sub.get("trial_end")
+            if trial_end_ts:
+                trial_end_dt = datetime.fromtimestamp(trial_end_ts, tz=timezone.utc)
+                days_left = max(0, (trial_end_dt.date() - datetime.now(timezone.utc).date()).days)
+                trial_end_str = trial_end_dt.strftime("%B %d, %Y")
+                asyncio.create_task(email_service.send_trial_ending(user.email, user.display_name or "", days_left, trial_end_str))
+
     elif etype == "customer.subscription.deleted":
         sub = data
         user = await _find_user_by_customer(db, sub.get("customer"), None)
@@ -133,6 +146,14 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
             user.subscription_status = "canceled"
             user.stripe_subscription_id = None
             await db.commit()
+            if user.email:
+                asyncio.create_task(email_service.send_subscription_canceled(user.email, user.display_name or ""))
+
+    elif etype == "invoice.payment_failed":
+        invoice = data
+        user = await _find_user_by_customer(db, invoice.get("customer"), None)
+        if user and user.email:
+            asyncio.create_task(email_service.send_payment_failed(user.email, user.display_name or ""))
 
     # ── One-time payment (credits) ──
     elif etype == "checkout.session.completed":

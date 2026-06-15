@@ -81,7 +81,7 @@ function DashboardPageInner() {
     total_in_stock: 0, total_sold: 0, total_revenue: 0,
     revenue_today: 0, revenue_this_week: 0, revenue_this_month: 0,
     inventory_value: 0, total_cost: 0, avg_margin_pct: null,
-    added_this_month: 0, recent_sales_today: [],
+    added_this_month: 0, daily_revenue_7d: [], recent_sales_today: [],
   };
 
   const storeMode = isStore(user);
@@ -192,6 +192,34 @@ function DashboardPageInner() {
         <MetricCard label="Added this month" value={String(s.added_this_month ?? 0)} sub="records" icon={<BarChart3 size={14} />} />
       </div>
       </>}
+
+      {/* Store: 7-day revenue chart */}
+      {storeMode && s.daily_revenue_7d.length > 0 && (() => {
+        const max = Math.max(...s.daily_revenue_7d.map(d => d.revenue), 0.01);
+        return (
+          <div className="card p-5 mb-6">
+            <p className="text-xs text-vs-muted uppercase tracking-widest font-medium mb-4">Last 7 days</p>
+            <div className="flex items-end gap-2 h-20">
+              {s.daily_revenue_7d.map((d) => {
+                const pct = (d.revenue / max) * 100;
+                const label = new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" });
+                return (
+                  <div key={d.date} className="flex-1 flex flex-col items-center gap-1.5 group">
+                    <div className="w-full flex items-end" style={{ height: "60px" }}>
+                      <div
+                        className="w-full rounded-t bg-vs-accent/30 group-hover:bg-vs-accent transition-colors"
+                        style={{ height: `${Math.max(pct, 3)}%` }}
+                        title={`$${d.revenue.toFixed(2)}`}
+                      />
+                    </div>
+                    <p className="text-2xs text-vs-muted">{label}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Store: Inventory section */}
       {storeMode && <>

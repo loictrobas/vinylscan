@@ -183,6 +183,42 @@ export default function SettingsPage() {
         <p className="text-sm text-vs-text-2 mt-0.5">Account &amp; integrations</p>
       </div>
 
+      {/* Account mode */}
+      <div className="card p-5 mb-4">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-sm font-medium">Account mode</p>
+            <p className="text-xs text-vs-muted mt-0.5">Controls which features are visible</p>
+          </div>
+          {accountTypeSaving && <Loader2 size={14} className="animate-spin text-vs-muted mt-1" />}
+        </div>
+        <div className="flex flex-col gap-2">
+          {([
+            { type: "collector", label: "Collector", desc: "Personal collection, wantlist, hauls — no store tools" },
+            { type: "store",     label: "Record Store", desc: "POS, pricing, sales history, public storefront" },
+            { type: "both",      label: "Both",         desc: "Full UI — everything above combined" },
+          ] as const).map(({ type, label, desc }) => (
+            <button
+              key={type}
+              onClick={() => switchAccountType(type)}
+              disabled={accountTypeSaving}
+              className={`text-left p-3 rounded-lg border transition-colors disabled:opacity-50 ${
+                user?.account_type === type
+                  ? "border-vs-accent bg-vs-accent/8"
+                  : "border-vs-border hover:border-vs-border-2"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <p className={`text-sm font-medium ${user?.account_type === type ? "text-vs-accent" : "text-vs-text"}`}>{label}</p>
+                {user?.account_type === type && <CheckCircle2 size={14} className="text-vs-accent" />}
+              </div>
+              <p className="text-xs text-vs-muted mt-0.5">{desc}</p>
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-vs-muted mt-3">Your records are shared across all modes.</p>
+      </div>
+
       {/* Discogs connection */}
       <div className="card p-5 mb-4">
         <div className="flex items-start justify-between mb-4">

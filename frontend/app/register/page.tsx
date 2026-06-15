@@ -31,7 +31,7 @@ function RegisterForm() {
       const res = await api.registerViaInvite(token, password, displayName || undefined, accountType);
       setToken(res.token);
       setDone(true);
-      setTimeout(() => router.push("/dashboard"), 1500);
+      setTimeout(() => router.push("/onboarding"), 1500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Registration failed";
       setError(msg);

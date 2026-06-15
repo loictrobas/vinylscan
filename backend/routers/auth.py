@@ -321,6 +321,10 @@ async def register_via_invite(
     await db.commit()
     await db.refresh(user)
 
+    import asyncio
+    from services import email_service
+    asyncio.create_task(email_service.send_welcome(user.email, user.display_name or ""))
+
     token = create_access_token(str(user.id))
     response.set_cookie(
         "access_token", token,

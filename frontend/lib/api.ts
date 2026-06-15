@@ -207,6 +207,7 @@ export interface CatalogStats {
   total_cost: number;
   avg_margin_pct: number | null;
   added_this_month: number;
+  daily_revenue_7d: { date: string; revenue: number }[];
   recent_sales_today: { artist: string | null; title: string | null; sold_price: number | null; sold_at: string | null }[];
 }
 
