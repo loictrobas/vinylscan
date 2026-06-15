@@ -91,13 +91,12 @@ async def _seed_admin():
 
 app = FastAPI(title="VinylScan API", version="1.0.0", lifespan=lifespan, redirect_slashes=False)
 
-# In dev mode allow any local-network origin (credentials + "*" is invalid per spec,
-# so we use allow_origin_regex to match 192.168.x.x and 10.x.x.x ranges)
+# Allow production frontend + all Vercel preview deployments + local dev
 _cors_origins = [FRONTEND_URL, "http://localhost:3000"]
 _cors_origin_regex = (
     r"http://(192\.168|10\.\d+|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+(:\d+)?"
     if DEV_MODE
-    else None
+    else r"https://[a-zA-Z0-9-]+-vinylapp\.vercel\.app"
 )
 
 app.add_middleware(
