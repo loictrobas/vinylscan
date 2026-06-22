@@ -122,6 +122,14 @@ _STRUCTURAL_STRATEGIES = {
     "artist+title+country",
 }
 
+# Near-unique identifiers — when present, reliable enough to try alone before paying
+# for the full ~20-strategy fan-out (search_releases only; debug/outcome-logging
+# keep running everything so strategy-effectiveness data stays complete).
+_FAST_STRATEGIES = {
+    "matrix_code", "matrix+label", "barcode",
+    "catno+label", "catno", "catno+country",
+}
+
 # Label suffixes to strip before fuzzy comparison
 _LABEL_SUFFIX_RE = re.compile(
     r"\b(records?|music|label|entertainment|recordings?|productions?|releasing|group)\b",
@@ -472,15 +480,30 @@ async def search_releases(
 
     loop = asyncio.get_running_loop()
 
-    strategy_names = [name for name, _ in all_strategies]
-    strategy_params = [params for _, params in all_strategies]
-
-    raw_per_strategy: list[tuple[list[dict], str | None]] = await asyncio.gather(
-        *[
+    async def _run_batch(batch: list[tuple[str, dict]]) -> tuple[list[str], list[tuple[list[dict], str | None]]]:
+        names = [name for name, _ in batch]
+        raw = await asyncio.gather(*[
             loop.run_in_executor(None, _sync_search, p, name in _WIDE_STRATEGIES)
-            for name, p in zip(strategy_names, strategy_params)
-        ]
-    )
+            for name, p in batch
+        ])
+        return names, raw
+
+    # Try the near-unique identifier strategies (catalog #, barcode, matrix code) alone
+    # first — they're cheap (1-6 calls instead of ~24) and, when present, reliable enough
+    # on their own. Only fall back to the full strategy fan-out when none of them hit
+    # anything, so accuracy on harder/ambiguous scans is unaffected.
+    fast = [(n, p) for n, p in all_strategies if n in _FAST_STRATEGIES]
+    rest = [(n, p) for n, p in all_strategies if n not in _FAST_STRATEGIES]
+
+    if fast:
+        strategy_names, raw_per_strategy = await _run_batch(fast)
+        if rest and not any(r for r, _ in raw_per_strategy):
+            rest_names, rest_raw = await _run_batch(rest)
+            strategy_names += rest_names
+            raw_per_strategy += rest_raw
+    else:
+        strategy_names, raw_per_strategy = await _run_batch(all_strategies)
+
     results_per_strategy = [r for r, _ in raw_per_strategy]
     errors_per_strategy = [e for _, e in raw_per_strategy]
 
