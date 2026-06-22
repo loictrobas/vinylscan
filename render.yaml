@@ -1,5 +1,4 @@
 services:
-  # touch: retrigger blueprint sync to wire DATABASE_URL via fromDatabase
   - type: web
     name: vinylscan-api
     runtime: docker
@@ -23,32 +22,16 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: STRIPE_PRICE_SMALL
-        sync: false
-      - key: STRIPE_PRICE_MEDIUM
-        sync: false
-      - key: STRIPE_PRICE_LARGE
-        sync: false
       - key: FRONTEND_URL
         sync: false
       - key: BACKEND_URL
         sync: false
-      - key: R2_ACCOUNT_ID
-        sync: false
-      - key: R2_ACCESS_KEY_ID
-        sync: false
-      - key: R2_SECRET_ACCESS_KEY
-        sync: false
-      - key: R2_BUCKET_NAME
-        value: vinylscan-images
-      - key: R2_PUBLIC_URL
-        sync: false
       - key: DEV_MODE
         value: "false"
+      # Stripe billing and R2 image storage are optional integrations the code
+      # already falls back gracefully without (Stripe routes just won't work;
+      # images save to local disk). Dropped from the blueprint so sync doesn't
+      # block on inputs that don't apply to this deploy.
 
 databases:
   - name: vinylscan-db
