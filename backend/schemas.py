@@ -20,6 +20,7 @@ class UserOut(BaseModel):
     trial_ends_at: datetime | None = None
     created_at: datetime
     scans_this_month: int = 0
+    price_step: float = 0.5
 
     model_config = {"from_attributes": True}
 

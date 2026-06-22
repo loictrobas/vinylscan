@@ -275,6 +275,7 @@ class RegisterRequest(_BM):
 
 class UpdateMeRequest(_BM):
     display_name: str | None = None
+    price_step: float | None = None
 
 
 @router.patch("/me", response_model=UserOut)
@@ -285,6 +286,10 @@ async def update_me(
 ):
     if body.display_name is not None:
         user.display_name = body.display_name
+    if body.price_step is not None:
+        if body.price_step <= 0:
+            raise HTTPException(status_code=400, detail="price_step must be positive")
+        user.price_step = body.price_step
     await db.commit()
     await db.refresh(user)
     return user

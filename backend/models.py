@@ -63,6 +63,7 @@ class User(Base):
     subscription_current_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     price_markup_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    price_step: Mapped[float] = mapped_column(Float, nullable=False, default=0.5)
     last_discogs_sync: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Public store
     store_slug: Mapped[str | None] = mapped_column(String(80), unique=True, nullable=True)
