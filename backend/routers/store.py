@@ -91,6 +91,7 @@ class PublicRecord(BaseModel):
     title: str | None
     year: int | None
     label: str | None
+    catalog_number: str | None
     format: str | None
     genre: str | None
     styles: str | None
@@ -99,6 +100,7 @@ class PublicRecord(BaseModel):
     cover_image_url: str | None
     discogs_synced: bool
     record_section: str
+    tracklist: list[dict] | None
     created_at: str
 
 
@@ -387,6 +389,7 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
                 title=r.title,
                 year=r.year,
                 label=r.label,
+                catalog_number=getattr(r, "catalog_number", None),
                 format=r.format,
                 genre=getattr(r, "genre", None),
                 styles=getattr(r, "styles", None),
@@ -395,6 +398,7 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
                 cover_image_url=getattr(r, "cover_image_url", None),
                 discogs_synced=getattr(r, "discogs_synced", False) or False,
                 record_section=getattr(r, "record_section", "vinyl") or "vinyl",
+                tracklist=getattr(r, "tracklist", None),
                 created_at=r.created_at.isoformat(),
             )
             for r in records
