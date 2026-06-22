@@ -806,7 +806,7 @@ async def research_scan(
     original_tracklist = raw_claude.get("tracklist") or []
 
     try:
-        raw_results, _ = await discogs_svc.search_releases(
+        raw_results, internal_confidence = await discogs_svc.search_releases(
             artist or "",
             title or "",
             access_token,
@@ -816,11 +816,23 @@ async def research_scan(
             year=year,
             tracklist=original_tracklist,
         )
-    except Exception:
-        raw_results = []
+    except Exception as e:
+        logger.warning("Discogs research search failed for scan %s: %s", scan_id, e, exc_info=True)
+        raw_results, internal_confidence = [], 0
 
     matches_data = discogs_svc.parse_search_results(raw_results)
     matches = [DiscogsMatch(**m) for m in matches_data]
+
+    # Persist the correction + fresh results — without this, a reload reverts to
+    # whatever the original (possibly rate-limited/empty) search found, and using
+    # "Edit search" again re-spends Discogs calls for no reason.
+    scan.artist = artist
+    scan.title = title
+    scan.label = label
+    scan.catalog_number = catalog_number
+    scan.matches = matches_data
+    scan.internal_confidence = internal_confidence
+    await db.commit()
 
     _set_credit_header(response, user)
     return ResearchResponse(
