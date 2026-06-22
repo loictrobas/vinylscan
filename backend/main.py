@@ -9,8 +9,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from routers import admin, auth, billing, catalog, dashboard, discogs, scan, store
-from routers import wantlist
+from routers import admin, auth, billing, benchmark, catalog, consignments, dashboard, discogs, scan, store
+from routers import eval_router
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 IMAGES_DIR = os.getenv("IMAGES_DIR", "/tmp/vinylscan_images")
@@ -92,7 +92,7 @@ async def _seed_admin():
 app = FastAPI(title="VinylScan API", version="1.0.0", lifespan=lifespan, redirect_slashes=False)
 
 # Allow production frontend + all Vercel preview deployments + local dev
-_cors_origins = [FRONTEND_URL, "http://localhost:3000"]
+_cors_origins = [FRONTEND_URL, "http://localhost:3000", "capacitor://localhost", "ionic://localhost"]
 _cors_origin_regex = (
     r"http://(192\.168|10\.\d+|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+(:\d+)?"
     if DEV_MODE
@@ -110,6 +110,7 @@ app.add_middleware(
 )
 
 app.include_router(admin.router)
+app.include_router(benchmark.router)
 app.include_router(auth.router)
 app.include_router(scan.router)
 app.include_router(catalog.router)
@@ -117,7 +118,8 @@ app.include_router(dashboard.router)
 app.include_router(billing.router)
 app.include_router(discogs.router)
 app.include_router(store.router)
-app.include_router(wantlist.router)
+app.include_router(consignments.router)
+app.include_router(eval_router.router)
 
 
 @app.api_route("/health", methods=["GET", "HEAD"])

@@ -15,7 +15,6 @@ class UserOut(BaseModel):
     is_admin: bool = False
     is_active: bool = True
     credits: int
-    account_type: str = "store"
     subscription_status: str = "free"
     subscription_current_period_end: datetime | None = None
     trial_ends_at: datetime | None = None
@@ -53,6 +52,14 @@ class DiscogsMatch(BaseModel):
     label: str | None
     cover_image: str | None
     resource_url: str | None
+    catno: str | None = None
+    match_reason: str | None = None
+
+
+class MobileUploadAck(BaseModel):
+    """Fast-ack response for the mobile app's fire-and-forget upload — full result follows via SSE."""
+    scan_id: uuid.UUID
+    status: str
 
 
 class ScanUploadResponse(BaseModel):
@@ -64,12 +71,15 @@ class ScanUploadResponse(BaseModel):
     label: str | None
     catalog_number: str | None
     confidence: int
+    internal_confidence: int = 0
     auto_added: bool
     discogs_release_id: int | None
     matches: list[DiscogsMatch]
     error: str | None = None
     artist_alt: str | None = None
     title_alt: str | None = None
+    low_information: bool = False
+    barcode: str | None = None
 
 
 class ResearchRequest(BaseModel):
@@ -78,6 +88,23 @@ class ResearchRequest(BaseModel):
     title: str | None = None
     label: str | None = None
     catalog_number: str | None = None
+    year: int | None = None
+
+
+class VisualMatchCandidate(BaseModel):
+    release_id: int
+    cover_image_url: str
+
+
+class VisualMatchRequest(BaseModel):
+    candidates: list[VisualMatchCandidate]
+
+
+class VisualMatchResponse(BaseModel):
+    best_match_index: int | None
+    best_match_release_id: int | None
+    confidence: str
+    reasoning: str
 
 
 class ResearchResponse(BaseModel):
@@ -91,8 +118,11 @@ class ResearchResponse(BaseModel):
 class ConfirmRequest(BaseModel):
     release_id: int
     condition: str = "VG+"
+    disc_condition: str | None = None
+    cover_condition: str | None = None
     lot_id: uuid.UUID | None = None
     cover_image: str | None = None
+    match_index: int | None = None  # which result the user selected (0=first) — for ranking analytics
 
 
 class CreditTransactionOut(BaseModel):

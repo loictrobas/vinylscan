@@ -1,0 +1,3830 @@
+{
+  "version": "1",
+  "created_at": "2026-06-19T21:26:54.873326+00:00",
+  "hash": "f0a806b10f9438ffa85f5e22b7020d7f552cfeead9d42bc940450a8ae8f7487d",
+  "count": 200,
+  "records": [
+    {
+      "release_id": 36346984,
+      "image_url": "https://i.discogs.com/_4TDKhZSS93v2Q69ZtpTWryGBIDruJsoZkBjoWVQqTI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2MzQ2/OTg0LTE3NzA2NTA5/OTEtNjMwNC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Vicio Crew",
+        "title": "El Comienzo",
+        "year": null,
+        "label": "Vicio Fantasia Records",
+        "catalog_number": "VF001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 36660883,
+      "image_url": "https://i.discogs.com/q-b_sC42o3Vxp9sUGKm9blqUvU3gNV0HJFkZw99wjp0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NjYw/ODgzLTE3NzI0Nzgz/NDEtOTI4Ni5wbmc.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "Various Blend",
+        "year": 2026,
+        "label": "Gin Sonic Records",
+        "catalog_number": "GSRV001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Electro",
+        "Deep House",
+        "House",
+        "Funk"
+      ]
+    },
+    {
+      "release_id": 155187,
+      "image_url": "https://i.discogs.com/94aZs2cxJy9hafZwT9y65UhqDPleTNoYWBdmQY-q7dk/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1NTE4/Ny0xNjEwODE5MDc3/LTg5NTkuanBlZw.jpeg",
+      "truth": {
+        "artist": "Alexkid",
+        "title": "Bienvenida",
+        "year": 2001,
+        "label": "F Communications",
+        "catalog_number": "F 142 DLP"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 2820,
+      "image_url": "https://i.discogs.com/h-nu1jDMUrd-7uaR8qJ2UrN3vDp2vpFDFzeeN7feGE4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4MjAt/MTQwNDA1NjkwMy04/MDgxLmpwZWc.jpeg",
+      "truth": {
+        "artist": "St Germain",
+        "title": "Tourist",
+        "year": 2000,
+        "label": "EMI",
+        "catalog_number": "7243 5 25114 1 9"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "styles": [
+        "Deep House",
+        "Future Jazz",
+        "Downtempo"
+      ]
+    },
+    {
+      "release_id": 108546,
+      "image_url": "https://i.discogs.com/nNA7BdReFCezI_HXfjH8DBuke4akF1V6gsURTD7cSOA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwODU0/Ni0xNTE1MDc5NDc5/LTg3NTEuanBlZw.jpeg",
+      "truth": {
+        "artist": "Blake Baxter",
+        "title": "Sexual Deviant",
+        "year": 1993,
+        "label": "Logic Records",
+        "catalog_number": "LUK 013"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno",
+        "Acid"
+      ]
+    },
+    {
+      "release_id": 37221927,
+      "image_url": "https://i.discogs.com/rHIyjwbC6MBnJ1a4bj2JMiOKWVO-R2BSOF3kRU-QzqA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MjIx/OTI3LTE3Nzc2MzE2/MTctOTYzOC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "007 Episode 1",
+        "year": 2026,
+        "label": "AirFunk",
+        "catalog_number": "AF007"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Tech House",
+        "Electro House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 210874,
+      "image_url": "https://i.discogs.com/oOhD5MqHXvsY_SXkmkKUB7VmKaigEmygwKNxclgFw9Y/rs:fit/g:sm/q:90/h:377/w:390/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIxMDg3/NC0xNDM0MTM3MjAx/LTk2ODMuanBlZw.jpeg",
+      "truth": {
+        "artist": "Mohikana",
+        "title": "I Will Find You",
+        "year": 1993,
+        "label": "Urban",
+        "catalog_number": "861 527-1"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Pop"
+      ],
+      "styles": [
+        "Trance",
+        "Vocal"
+      ]
+    },
+    {
+      "release_id": 767686,
+      "image_url": "https://i.discogs.com/YjQS-0lHtmvjsAPSR6geBlZJV_AcQU5yZ5ept8rx0_Y/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc2NzY4/Ni0xMTg4NDU0MTkw/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Cobblestone Jazz",
+        "title": "India In Me",
+        "year": 2006,
+        "label": "Wagon Repair",
+        "catalog_number": "WAG018"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno",
+        "Minimal",
+        "Acid"
+      ]
+    },
+    {
+      "release_id": 9885220,
+      "image_url": "https://i.discogs.com/ifYaqnZpc7XfBatWVjdMHCNWLZ1BQOeCUDzK126RYI4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTk4ODUy/MjAtMTY4NzUxNTEw/Ny04NDAxLmpwZWc.jpeg",
+      "truth": {
+        "artist": "KC Flightt",
+        "title": "She's Sexxxy",
+        "year": 2004,
+        "label": "Coco Machete Records",
+        "catalog_number": "CCM013"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Tech House"
+      ]
+    },
+    {
+      "release_id": 1953233,
+      "image_url": "https://i.discogs.com/lzVjRXxddWRonF8LpOyYAreTmKVJBq13pWkTvyOo2_c/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE5NTMy/MzMtMTU2Nzc3MjA2/MS0zNDY3LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Blake Baxter",
+        "title": "Sexual Deviant",
+        "year": 1993,
+        "label": "RCA",
+        "catalog_number": "07863-62516-1"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Techno",
+        "Acid"
+      ]
+    },
+    {
+      "release_id": 26083,
+      "image_url": "https://i.discogs.com/qd9lpVm6t7ZaH8fycmJn3YN5l5mX9BuGXjiOSOwDd2E/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2MDgz/LTExNDY5NTc1MTYu/anBlZw.jpeg",
+      "truth": {
+        "artist": "Digital Justice",
+        "title": "Theme From: Its All Gone Pearshaped",
+        "year": 1996,
+        "label": "Fragile Records",
+        "catalog_number": "FRG-14"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno",
+        "Ambient"
+      ]
+    },
+    {
+      "release_id": 2938,
+      "image_url": "https://i.discogs.com/hU77mmeOVcCXgiLcyzb3Wi9uVdgWHS7h19Z6cXWY3Lo/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5Mzgt/MTE2NDIwNTg3My5q/cGVn.jpeg",
+      "truth": {
+        "artist": "Kevin Yost",
+        "title": "The Sticks And Stones EP",
+        "year": 1997,
+        "label": "i! Records",
+        "catalog_number": "IR-138"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 129019,
+      "image_url": "https://i.discogs.com/w72P9edlVcfl4_Kt8qbG3FKkzn1VqyrueOcGloyM5Ys/rs:fit/g:sm/q:90/h:600/w:590/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyOTAx/OS0xMDk4ODA4NzY3/LmpwZw.jpeg",
+      "truth": {
+        "artist": "Kevin Yost",
+        "title": "If She Only Knew",
+        "year": 1998,
+        "label": "i! Records",
+        "catalog_number": "IR-158"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 36884503,
+      "image_url": "https://i.discogs.com/4PCRgpDndNuYM1C9YPqOgnXqxeXpzCwQk_a8M46ieHk/rs:fit/g:sm/q:90/h:600/w:592/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2ODg0/NTAzLTE3NzQ3MTA2/NjYtNjMyNi5qcGVn.jpeg",
+      "truth": {
+        "artist": "Opal Sunn",
+        "title": "Liquid",
+        "year": 2026,
+        "label": "Test Pressing Recordings",
+        "catalog_number": "TPR009"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Dub",
+        "Electro",
+        "Balearic"
+      ]
+    },
+    {
+      "release_id": 313218,
+      "image_url": "https://i.discogs.com/YQ6aJcjIT90H3z4uWYRrTDM3h89sVvn5Met2cOKLg1A/rs:fit/g:sm/q:90/h:600/w:594/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMzIx/OC0xNzA0Mjg0MzAx/LTM0MzYuanBlZw.jpeg",
+      "truth": {
+        "artist": "Martin Solveig",
+        "title": "I'm A Good Man (Part 2)",
+        "year": 2004,
+        "label": "D:vision Records",
+        "catalog_number": "DV 384"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 33795987,
+      "image_url": "https://i.discogs.com/euwCBKAuqDtJWTQWdrhUhYMu3Xrwjhaxvc6ANoMVXOE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzNzk1/OTg3LTE3NzI0MDAw/NjEtMzc2NS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "Stay At Home فهو أكثر أمانًا في الداخل",
+        "year": 2025,
+        "label": "Stay At Home",
+        "catalog_number": "SAH007"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Progressive House",
+        "Electro House"
+      ]
+    },
+    {
+      "release_id": 117119,
+      "image_url": "https://i.discogs.com/pZEhqrKszqLDBSaZ7LUNvFeMl7w9YK_f3eC64HSDjX8/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNzEx/OS0xNTEwNjAyMDI3/LTM1MzAuanBlZw.jpeg",
+      "truth": {
+        "artist": "Crazy Penis",
+        "title": "A Nice Hot Bath With",
+        "year": 1999,
+        "label": "Paper Recordings",
+        "catalog_number": "PAPLP004"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Jazz",
+        "Funk / Soul"
+      ],
+      "styles": [
+        "Deep House",
+        "Downtempo",
+        "Funk",
+        "Disco",
+        "Acid Jazz"
+      ]
+    },
+    {
+      "release_id": 683342,
+      "image_url": "https://i.discogs.com/amqgdVhM5SP9zXlyBUPCgPUdANXvQJdSi03iQQSFr5o/rs:fit/g:sm/q:90/h:575/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTY4MzM0/Mi0xMTg4NDc3ODMx/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "The Grid",
+        "title": "Figure Of Eight",
+        "year": 1992,
+        "label": "Virgin",
+        "catalog_number": "VSTG 1421"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Progressive House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 101602,
+      "image_url": "https://i.discogs.com/CrmCxEfVdTsn7al142p9skWGmHZno2aoDTAwDgjIHZs/rs:fit/g:sm/q:90/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwMTYw/Mi0wMDEuZ2lm.jpeg",
+      "truth": {
+        "artist": "Ralf GUM",
+        "title": "Nobody Can Touch Me",
+        "year": 2002,
+        "label": "Gogo Music",
+        "catalog_number": "GOGO 005"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 35196787,
+      "image_url": "https://i.discogs.com/NN_aPjq0PTPAEslVny7OudYV0qCzIMGNnOE4JAaetXY/rs:fit/g:sm/q:90/h:240/w:240/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1MTk2/Nzg3LTE3NTkxNzY4/NjMtNzg2OS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Cesar De Melero",
+        "title": "Pro-Zak Issues",
+        "year": 2025,
+        "label": "Island Issues",
+        "catalog_number": "ISSUES-ONIS-001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 171750,
+      "image_url": "https://i.discogs.com/4qq_AtBcdOPif5QxjIW0co2SIGQtqJAqYtRVLiM8i0s/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3MTc1/MC0xNzY2NjQwNzU4/LTMyNDcuanBlZw.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "Lost On Arrival (Part 1 Of 2)",
+        "year": 2003,
+        "label": "Naked Music Recordings",
+        "catalog_number": "NMS023 / NAK23"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Nu-Disco"
+      ]
+    },
+    {
+      "release_id": 177333,
+      "image_url": "https://i.discogs.com/yn_O94boSEOzNnT3Q70v0E_3dn4E2XYcWxjCTCo2YyE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3NzMz/My0xNDMyMDcwMzI1/LTk5MDYuanBlZw.jpeg",
+      "truth": {
+        "artist": "Child",
+        "title": "My Rhythm",
+        "year": 1995,
+        "label": "D:vision Records",
+        "catalog_number": "DV 098"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 34459669,
+      "image_url": "https://i.discogs.com/UFOtc7WwDtccqnEz91jN9J6TOzyEYHeG5STGemAh5gA/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NDU5/NjY5LTE3NTE3NTUw/MzgtNDM2Ny5wbmc.jpeg",
+      "truth": {
+        "artist": "Marco Passarani",
+        "title": "Flare Rider EP",
+        "year": 2025,
+        "label": "Studiomaster (3)",
+        "catalog_number": "STUDIOMST003"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep Techno"
+      ]
+    },
+    {
+      "release_id": 384537,
+      "image_url": "https://i.discogs.com/9SBkow1VsEivcARwPCsRo3lfbrGi_3sAAdeZ8J-9jns/rs:fit/g:sm/q:90/h:570/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM4NDUz/Ny0xMTEyMDQwMzUx/LmpwZw.jpeg",
+      "truth": {
+        "artist": "Thelma Houston",
+        "title": "You Used To Hold Me So Tight (Liquid People Y2K Re-Groove)",
+        "year": 2000,
+        "label": "Deep Liquid Soul",
+        "catalog_number": "DLS 02"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 79903,
+      "image_url": "https://i.discogs.com/RBSHCPMY-rA9TWKooshqLBgFT6y2yBk7krY6PQ5Dq00/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc5OTAz/LTEzODMzODU3Nzkt/OTkwOS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Barbara Mason",
+        "title": "Another Man",
+        "year": 1983,
+        "label": "West End Records",
+        "catalog_number": "WES 22164"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Funk / Soul"
+      ],
+      "styles": [
+        "Disco",
+        "Electro",
+        "Soul"
+      ]
+    },
+    {
+      "release_id": 34757492,
+      "image_url": "https://i.discogs.com/0tbFDaDq9EjCewOoJjkrKUqOqqzwgAr4Iec0b6sYB54/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NzU3/NDkyLTE3NTQ1NzE2/NTgtNjA4Mi5qcGVn.jpeg",
+      "truth": {
+        "artist": "Aman Umber",
+        "title": "TELU 002",
+        "year": 2025,
+        "label": "Telluric Village",
+        "catalog_number": "TELU002"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Electro"
+      ]
+    },
+    {
+      "release_id": 34632718,
+      "image_url": "https://i.discogs.com/k66ofwMlSMXGWz8mgew-Ty0T-7Jyj17pKN9wVXJvTTs/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NjMy/NzE4LTE3NTMzOTAz/MDctOTkzNC5wbmc.jpeg",
+      "truth": {
+        "artist": "Garrett David",
+        "title": "Nu Relix EP",
+        "year": 2025,
+        "label": "Butter Side Up",
+        "catalog_number": "BSU013"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Tech House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 30570313,
+      "image_url": "https://i.discogs.com/ydoCbToI08fi5kMbU9ZTgFXWRcTq1_nlePcFZaZDE1E/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwNTcw/MzEzLTE3MTQ3Mjkw/MTQtOTA1MC5wbmc.jpeg",
+      "truth": {
+        "artist": "mattrogg",
+        "title": "Roggtrax ep",
+        "year": 2024,
+        "label": "Consortium Records",
+        "catalog_number": "cr-10"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Electro House",
+        "Nu-Disco"
+      ]
+    },
+    {
+      "release_id": 118533,
+      "image_url": "https://i.discogs.com/haWXWaEFtvlDX2XYmuwIwd6s9pd42u1D6JjKAMUp96o/rs:fit/g:sm/q:90/h:392/w:388/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExODUz/My0xMjIwMjgyODQz/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Wet Dreams",
+        "title": "Sunrise",
+        "year": 1998,
+        "label": "Twisted America Records",
+        "catalog_number": "TW24-55492"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Hard House"
+      ]
+    },
+    {
+      "release_id": 34125502,
+      "image_url": "https://i.discogs.com/hB1XyljwqwC6LKnbM0RcHbbZnOAdtz8rv7XHaUGK_nQ/rs:fit/g:sm/q:90/h:585/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0MTI1/NTAyLTE3NDg1OTM2/MjUtODg0Ni5qcGVn.jpeg",
+      "truth": {
+        "artist": "T. Jacques",
+        "title": "Fingertrips",
+        "year": 2025,
+        "label": "Limousine Dream",
+        "catalog_number": "TSOL 017"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Tech House"
+      ]
+    },
+    {
+      "release_id": 31996853,
+      "image_url": "https://i.discogs.com/vioAoXP1Tn3RmraD6qW_hVLy8hlruvSy3PK1RYxFqoQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxOTk2/ODUzLTE3Mjg5ODcy/NzgtNzMyNC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Quench",
+        "title": "Dreams",
+        "year": 2024,
+        "label": "Dance On The Beat",
+        "catalog_number": "DOTB-21"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Trance"
+      ]
+    },
+    {
+      "release_id": 33977520,
+      "image_url": "https://i.discogs.com/iP0ccYXT16UEz0dCFv3fy-v_enorJPy6rlgkuHpDK0E/rs:fit/g:sm/q:90/h:450/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzOTc3/NTIwLTE3NDcyMjky/MzYtODA3NS5qcGVn.jpeg",
+      "truth": {
+        "artist": "The Revenge",
+        "title": "Roar Groove Meets Dirt Crew Vol. 5",
+        "year": 2025,
+        "label": "Dirt Crew Recordings",
+        "catalog_number": "DIRT156"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 17122458,
+      "image_url": "https://i.discogs.com/ixsOwZRaxkd7mzC8_Kx2HMT6fmlmHUaUaIrXxJz7T-c/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3MTIy/NDU4LTE2MTQyNTQw/OTctMTQ5Mi5qcGVn.jpeg",
+      "truth": {
+        "artist": "Parisian Soul",
+        "title": "The Caribbean Hot Sauces",
+        "year": 2021,
+        "label": "Hot Sauces Records",
+        "catalog_number": "HOTSAUCES001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Funk / Soul"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Acid House",
+        "Afrobeat"
+      ]
+    },
+    {
+      "release_id": 28905952,
+      "image_url": "https://i.discogs.com/gp02u4TXpxrIMSlVqdYdbePCmIk45C6bazTnepivH1s/rs:fit/g:sm/q:90/h:590/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4OTA1/OTUyLTE3MDE5NDQx/NTEtNjcxMC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "Heist Classics Vol. 02",
+        "year": 2023,
+        "label": "Heist (2)",
+        "catalog_number": "HEIST 078"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 32473968,
+      "image_url": "https://i.discogs.com/xLaE7DjUBh0Rv2UZjntmJP_Ti97lyBsAzrPT2m9cvfk/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMyNDcz/OTY4LTE3MzMzMjY3/NjAtOTUwMy5qcGVn.jpeg",
+      "truth": {
+        "artist": "DJ Gamba",
+        "title": "Stay At Home Ebi",
+        "year": 2024,
+        "label": "Stay At Home",
+        "catalog_number": "SAH006"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Electro House"
+      ]
+    },
+    {
+      "release_id": 152448,
+      "image_url": "https://i.discogs.com/fqNLsTyuG6tVa5akF4Kg7EyPg54F5v4kxhSxouQTI38/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1MjQ0/OC0xMTc0NTA3NDc0/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Merimaid",
+        "title": "Luv Is",
+        "year": 1997,
+        "label": "Club U Nite Records",
+        "catalog_number": "CUNT 003"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 659334,
+      "image_url": "https://i.discogs.com/pVTNKwwsvaG7lE-t4QklzQH7aBxhZhZ2qstX1tVFAT8/rs:fit/g:sm/q:90/h:597/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTY1OTMz/NC0xMTU2NDM1NDI4/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Limos",
+        "title": "The Night (Goes On)",
+        "year": 2000,
+        "label": "Undiscovered",
+        "catalog_number": "UND 031"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 293016,
+      "image_url": "https://i.discogs.com/uYxtCG2i8SMLhwPAwTLYvWBEifKdoJDTMq_WzV09l3I/rs:fit/g:sm/q:90/h:300/w:300/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5MzAx/Ni0xNDU5OTcxODkz/LTM1NjAuanBlZw.jpeg",
+      "truth": {
+        "artist": "Wackside",
+        "title": "Doggy Bag",
+        "year": 2003,
+        "label": "Zeitgeist",
+        "catalog_number": "586 550-7"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 43918,
+      "image_url": "https://i.discogs.com/me626RrSySdDWvCOht7dXxo5XDKpoSg0t6ihn38uP2g/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQzOTE4/LTE2OTU3MTg4NDct/MTU3OC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Pro-Gress",
+        "title": "The House Of Pain",
+        "year": 1995,
+        "label": "Club Tools",
+        "catalog_number": "edel 0062020CLU"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno",
+        "Tech House"
+      ]
+    },
+    {
+      "release_id": 348415,
+      "image_url": "https://i.discogs.com/I_CaZ4INhHR5I-mVe3GO_SooKKjJlBtD37jJCJtFGfs/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0ODQx/NS0xNDU2OTI5NDI1/LTM3MjkuanBlZw.jpeg",
+      "truth": {
+        "artist": "Igloo",
+        "title": "Line Chant",
+        "year": 2004,
+        "label": "Ragbull",
+        "catalog_number": "RB 011"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 15421800,
+      "image_url": "https://i.discogs.com/TeDKxwcX8FpJTi7PDJaN61EVLHgtUmirZSOZw2LhXYs/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1NDIx/ODAwLTE1OTEyODQz/ODMtNzY2Ny5qcGVn.jpeg",
+      "truth": {
+        "artist": "Osunlade",
+        "title": "Momma's Groove",
+        "year": 2020,
+        "label": "Groovin Recordings",
+        "catalog_number": "GR-1267"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 1231554,
+      "image_url": "https://i.discogs.com/w1l6glDHWCqEQdbWz1UFb37dxdSz6Vx3uePT1ya35d8/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMzE1/NTQtMTYzMTgwMTQy/MC03MDgxLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Jimpster",
+        "title": "Dangly Panther",
+        "year": 2008,
+        "label": "Freerange Records",
+        "catalog_number": "FR099"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Tech House"
+      ]
+    },
+    {
+      "release_id": 29068819,
+      "image_url": "https://i.discogs.com/8-gm7HjJjPkAlTTE-ohuHe4RvKFm_Ot5_1J1qYWjWr8/rs:fit/g:sm/q:90/h:591/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5MDY4/ODE5LTE3MDEzNTY3/NzktNjkzMy5qcGVn.jpeg",
+      "truth": {
+        "artist": "Unknown Artist",
+        "title": "Unknown Musik 001",
+        "year": 2023,
+        "label": "Unknown Musik Records",
+        "catalog_number": "UNK001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Tech House"
+      ]
+    },
+    {
+      "release_id": 34980224,
+      "image_url": "https://i.discogs.com/1Osn040HisQuEMvz9TyadRqRUCgEYcskM-wSAzwx0NA/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0OTgw/MjI0LTE3NTc3NTU1/NzMtODg3Mi5qcGVn.jpeg",
+      "truth": {
+        "artist": "Ralph Session",
+        "title": "NYC Boot Tapes",
+        "year": 2025,
+        "label": "Not On Label (Ralph Session Self-released)",
+        "catalog_number": "NYCBT01"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 663811,
+      "image_url": "https://i.discogs.com/xuuK6iNoW6-X7MvpTBmVa2NvT9tJPTA-ETTHEIhqvOM/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTY2Mzgx/MS0xMTczMTAzNzAw/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Larosa",
+        "title": "Loved Up Girl",
+        "year": 1995,
+        "label": "Calypso Records",
+        "catalog_number": "CPS 065"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 160482,
+      "image_url": "https://i.discogs.com/u2x4DJ0YyS-bdlqspV_A8gwa-I-l3g-_37xB07thgZw/rs:fit/g:sm/q:90/h:582/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2MDQ4/Mi0xMTM5Nzc4NzQ2/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Kym Sims",
+        "title": "Take My Advice",
+        "year": 1992,
+        "label": "ATCO Records",
+        "catalog_number": "B 8591 T"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 294547,
+      "image_url": "https://i.discogs.com/7iw8Jk8ppuQJRnzQglcKmVdr8LW_9KdkWxLfoRRHsxk/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5NDU0/Ny0xMTg4NDU2NDE2/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "David Penn",
+        "title": "Stuck In (The Middle)",
+        "year": 2004,
+        "label": "Jamayka Recordings",
+        "catalog_number": "JMK 017"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 6225370,
+      "image_url": "https://i.discogs.com/Z8q3KvbSv4yni4og26oE5tBF9Cbd7mdRD3p8uuVJaps/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYyMjUz/NzAtMTQ5MTQ4NDIx/Mi0yMDcxLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Four Walls",
+        "title": "Another Night In Grodno",
+        "year": 2014,
+        "label": "Kolour LTD",
+        "catalog_number": "KLRLTD017"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 25318792,
+      "image_url": "https://i.discogs.com/MINJSWAeLIWC-HLgBLtC2c7Mr1rso_Eiai4zhQqF8cU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1MzE4/NzkyLTE2Njk3Mjg4/NjEtMzI3OC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Jesse Maas",
+        "title": "Les Yeux EP",
+        "year": 2022,
+        "label": "PIV Records",
+        "catalog_number": "PIV053"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Tech House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 193909,
+      "image_url": "https://i.discogs.com/zICGB6lIQsbloBylQEU7Y2jYQ1G08Day8Ly0MlmPIv8/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE5Mzkw/OS0xNTU1NTgyNjYw/LTIxNjQuanBlZw.jpeg",
+      "truth": {
+        "artist": "Sueño Latino",
+        "title": "Sueño Latino",
+        "year": 1997,
+        "label": "Vendetta Records",
+        "catalog_number": "VENMX 108"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 12246070,
+      "image_url": "https://i.discogs.com/TuXzIjlJaVk0rWuiARQKo5Rq3g8PZpURx0VyfwT2v0Q/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMjQ2/MDcwLTE1MzEzMjY5/MjUtODI5NS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Firefly",
+        "title": "Supernatural",
+        "year": null,
+        "label": "Slip 'n' Slide",
+        "catalog_number": "SLIP 20"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Acid House"
+      ]
+    },
+    {
+      "release_id": 201082,
+      "image_url": "https://i.discogs.com/GeYvCYiKiM2YhmRMRAE-ia9bV2ZsazkDGk0Wpq6XxgU/rs:fit/g:sm/q:90/h:296/w:300/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwMTA4/Mi0xMTEzNDcwNjIz/LmdpZg.jpeg",
+      "truth": {
+        "artist": "Presslaboys",
+        "title": "Electronicize (Part Two)",
+        "year": 2003,
+        "label": "Stella Records",
+        "catalog_number": "stl006"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Progressive House",
+        "Breakbeat"
+      ]
+    },
+    {
+      "release_id": 1765,
+      "image_url": "https://i.discogs.com/rYpH65IJ5uYvG9ZwVzwQGq4H2iYZJeia07HWWivV0AY/rs:fit/g:sm/q:90/h:480/w:482/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3NjUt/MTM5MDE1NDMzMy0z/NjMxLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Markus Nikolai",
+        "title": "Passion / Bushes",
+        "year": 1999,
+        "label": "Perlon",
+        "catalog_number": "PERL 12"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Minimal"
+      ]
+    },
+    {
+      "release_id": 897749,
+      "image_url": "https://i.discogs.com/bsoS9yRoPi2RF1Xgmz8IIi_-09G3Ere_EcVGKaYzbBw/rs:fit/g:sm/q:90/h:599/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg5Nzc0/OS0xMTcwNTM2MDU5/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Pastaboys",
+        "title": "Tribute",
+        "year": 2007,
+        "label": "Re»»Vox",
+        "catalog_number": "RX 037 BIS"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 63153,
+      "image_url": "https://i.discogs.com/4G38B2LACA_jaypyjblyciswt_ejXDTZLrBs4StmmWA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYzMTUz/LTE0NTA1NDAzNTIt/Nzc3Mi5qcGVn.jpeg",
+      "truth": {
+        "artist": "Joey Negro",
+        "title": "Can't Get High Without U",
+        "year": 1998,
+        "label": "Subliminal",
+        "catalog_number": "SUB 7"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 153235,
+      "image_url": "https://i.discogs.com/xqilOkQpA7ZOjYe3RF8HRM56G0Hqcl6VKofwO0DQP5s/rs:fit/g:sm/q:90/h:407/w:440/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1MzIz/NS0xMTAyMzU5ODcw/LmpwZw.jpeg",
+      "truth": {
+        "artist": "Big Moses",
+        "title": "Brighter Days",
+        "year": 1997,
+        "label": "S3",
+        "catalog_number": "S3 665441 6"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 7289403,
+      "image_url": "https://i.discogs.com/n1p2JIjNiXf0gGqpK5myf_h6TCuQs5koDERm1TcmKMY/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTcyODk0/MDMtMTUzNzM2MjIz/OC05NTgzLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Pet Shop Boys",
+        "title": "West End Girls (Dance Mix)",
+        "year": 1985,
+        "label": "Parlophone",
+        "catalog_number": "12R6115"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Pop"
+      ],
+      "styles": [
+        "Synth-pop"
+      ]
+    },
+    {
+      "release_id": 17230354,
+      "image_url": "https://i.discogs.com/-FbGyni1IJLnUFYzhQfjbGKzvIVtmoQFXlFaef3wDqI/rs:fit/g:sm/q:90/h:600/w:591/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3MjMw/MzU0LTE2MTIzMDM3/OTAtNTE4My5qcGVn.jpeg",
+      "truth": {
+        "artist": "Sub-Sonic Posse",
+        "title": "Sotterranea E.P.",
+        "year": 1992,
+        "label": "Calypso Records",
+        "catalog_number": "CPS 031"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 99532,
+      "image_url": "https://i.discogs.com/UEkNM5WZeHvhjKseqK2aZiJT-0rNYXsXC7nQ0GwFOeQ/rs:fit/g:sm/q:90/h:600/w:591/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTk5NTMy/LTEzMjU4NzEwNDYu/anBlZw.jpeg",
+      "truth": {
+        "artist": "RuPaul",
+        "title": "A Shade Shady (Now Prance)",
+        "year": 1993,
+        "label": "Tommy Boy",
+        "catalog_number": "TB 578"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Acid House",
+        "Ballroom"
+      ]
+    },
+    {
+      "release_id": 12041464,
+      "image_url": "https://i.discogs.com/Flw6imiU5mxl5Ons1djcuqYJG08w_w2tsDjcvX2lqz4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMDQx/NDY0LTE1Mjc4NTgz/OTEtNjk2Ni5qcGVn.jpeg",
+      "truth": {
+        "artist": "X-Coast",
+        "title": "XTC EP",
+        "year": 2018,
+        "label": "Hot Haus Recs",
+        "catalog_number": "HOTSHIT040"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Euro House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 9631152,
+      "image_url": "https://i.discogs.com/4R_ZmEEwEdEgRy9BgoCAdLJqfpijnJu4WF_Tyf_Gw3Y/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTk2MzEx/NTItMTQ4MzkwNjY5/Mi00MDIxLnBuZw.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "Habemus Paname Vol. II",
+        "year": 2017,
+        "label": "Pont Neuf Records",
+        "catalog_number": "PNC002"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 24883163,
+      "image_url": "https://i.discogs.com/ALCzXHlCTgixhWPJESo9sgBt4wJ0oz44JEXY7l-2ZjY/rs:fit/g:sm/q:90/h:600/w:583/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0ODgz/MTYzLTE2NjYyNjEz/MTctOTcwMC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Snap!",
+        "title": "The Madman's Return",
+        "year": 2022,
+        "label": "BMG",
+        "catalog_number": "538806110"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Downtempo",
+        "Euro House"
+      ]
+    },
+    {
+      "release_id": 26441345,
+      "image_url": "https://i.discogs.com/IjVLie99j4GM7vYcU7EfauGuwBlc0H2mkFNFyMEyxsI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2NDQx/MzQ1LTE2Nzg5ODQ4/MTEtNzg5NS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Jex Opolis",
+        "title": "Bad Timin' Vol. 3",
+        "year": 2023,
+        "label": "Bad Timin'",
+        "catalog_number": "BDTIMIN003"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Tech House",
+        "Progressive House"
+      ]
+    },
+    {
+      "release_id": 1473600,
+      "image_url": "https://i.discogs.com/ImXkU99Gy4foVQlPSCoei2Sid0Fri0Vwuhfxrlou4Og/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0NzM2/MDAtMTM4MTM5MjM0/NS0yMzEwLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Ray Day",
+        "title": "United / The Beat Goes On",
+        "year": 1992,
+        "label": "Ebony & Ivory Records",
+        "catalog_number": "EI 551"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Hip-House",
+        "Deep House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 384233,
+      "image_url": "https://i.discogs.com/c-pd9jgsvz6-spG_Ecxay2wso9hmib0c7ancglwGM_U/rs:fit/g:sm/q:90/h:563/w:572/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM4NDIz/My0xMTc3ODY1MTMw/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Ralphi Rosario",
+        "title": "Take Me Up (Gotta Get Up)",
+        "year": 1998,
+        "label": "Rise",
+        "catalog_number": "RISE 002"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "UK Garage"
+      ]
+    },
+    {
+      "release_id": 3324216,
+      "image_url": "https://i.discogs.com/BTRQmD4uuckAMb2uG6QqrZ5kvFpOKctWBh_fVnDWYQU/rs:fit/g:sm/q:90/h:595/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzMjQy/MTYtMTMyNjAyODA5/MS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Todd Terje",
+        "title": "It's The Arps EP",
+        "year": 2012,
+        "label": "Smalltown Supersound",
+        "catalog_number": "STS 21912"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Nu-Disco"
+      ]
+    },
+    {
+      "release_id": 5726711,
+      "image_url": "https://i.discogs.com/4ZDN1VFKMWzKgsgZRfgzpBQbUr2k1S4xAicTy93PY2I/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTU3MjY3/MTEtMTQwMjIxNjI1/MC0xNjgzLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Guru",
+        "title": "Jazzmatazz (Volume 1)",
+        "year": 2014,
+        "label": "Cooltempo",
+        "catalog_number": "MOVLP1111"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Hip Hop",
+        "Jazz"
+      ],
+      "styles": [
+        "Jazzy Hip-Hop",
+        "Acid Jazz"
+      ]
+    },
+    {
+      "release_id": 31019386,
+      "image_url": "https://i.discogs.com/RODIoc-YKgLB-CGFnAmnS11jDa_m9QuU8pfx9i3ms6Y/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMDE5/Mzg2LTE3NDM3NTY1/NDYtMTk2MC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Sade",
+        "title": "Stronger Than Pride",
+        "year": 2024,
+        "label": "Epic",
+        "catalog_number": "19658784821"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Jazz",
+        "Funk / Soul"
+      ],
+      "styles": [
+        "Downtempo",
+        "Soul-Jazz"
+      ]
+    },
+    {
+      "release_id": 1835720,
+      "image_url": "https://i.discogs.com/8_Lcnr5hb0NIat5jsn5E62zZSNghSKScc4FiPmhEpNc/rs:fit/g:sm/q:90/h:600/w:450/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE4MzU3/MjAtMTM2MjcwNDkw/Ny02ODYxLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Michael Jackson",
+        "title": "Billie Jean (Bushwacka!)",
+        "year": 2001,
+        "label": "Not On Label (Michael Jackson)",
+        "catalog_number": null
+      },
+      "difficulty": "medium",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Tech House"
+      ]
+    },
+    {
+      "release_id": 177970,
+      "image_url": "https://i.discogs.com/TXv_EatIAHSmWerqHF_xW0QqJ_dJOrMaLaaPRnRQUIk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3Nzk3/MC0xMzYxNDY3NTA1/LTk5MjkuanBlZw.jpeg",
+      "truth": {
+        "artist": "LaTour",
+        "title": "People Are Still Having Sex",
+        "year": 1991,
+        "label": "Smash Records",
+        "catalog_number": "879 667-1"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 199135,
+      "image_url": "https://i.discogs.com/qkNd3UFtnST4rZWVJZD6q40etrlAsGRsORlRETMdF_E/rs:fit/g:sm/q:90/h:568/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE5OTEz/NS0xMTU5MDM0NTg3/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Gala",
+        "title": "Freed From Desire",
+        "year": 1997,
+        "label": "Big Life",
+        "catalog_number": "BLRT 135"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 170430,
+      "image_url": "https://i.discogs.com/Le4i2W1kOrPqW0Ym6CNUusIPgIVGVjVrdtGzJAOkang/rs:fit/g:sm/q:90/h:574/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3MDQz/MC0xMTg4OTgzNDgy/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "LaTour",
+        "title": "Latour",
+        "year": 1991,
+        "label": "Polydor",
+        "catalog_number": "849 387-1"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Techno",
+        "Synth-pop"
+      ]
+    },
+    {
+      "release_id": 30873480,
+      "image_url": "https://i.discogs.com/4EvM5e4dCwdIQHv4wIaYyW3bEOAPWjJEaaTfJNIgg0s/rs:fit/g:sm/q:90/h:600/w:594/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwODcz/NDgwLTE3MTgzMTM0/NjUtODk0MS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Folamour",
+        "title": "Ya Just Need To Believe in Yaself",
+        "year": 2024,
+        "label": "FHUO Records",
+        "catalog_number": "FHUO015"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 12148541,
+      "image_url": "https://i.discogs.com/Fe3JiSrEGtNqRgpk0AWu0xvtJQDhp4wUj48sziJA_1w/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMTQ4/NTQxLTE1MjkyNzEy/OTgtMTE2My5qcGVn.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "Rhythm From Toulouse",
+        "year": 2018,
+        "label": "RHYTHM FROM",
+        "catalog_number": "RF 001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Disco",
+        "Nu-Disco",
+        "House"
+      ]
+    },
+    {
+      "release_id": 13149410,
+      "image_url": "https://i.discogs.com/G09UxGV48-Lw6JwUgaUBF_TnLs9J-fXwjB1Z5u5nqCs/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzMTQ5/NDEwLTE1NDg5MjI1/NzctNTA0MC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Groove Boys Project",
+        "title": "Feel The Groove EP",
+        "year": 2019,
+        "label": "Groove Boys Project Records",
+        "catalog_number": "GBP 002"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 31348468,
+      "image_url": "https://i.discogs.com/onGTHOYkGpI601EBoB0p_nyBbp8Zvc6Ui-wo9_AKT1Q/rs:fit/g:sm/q:90/h:600/w:577/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMzQ4/NDY4LTE3NjU1Njg5/MjAtNDk2Ny5qcGVn.jpeg",
+      "truth": {
+        "artist": "Swin",
+        "title": "Stay At Home EP",
+        "year": 2024,
+        "label": "Magic Carpet (6)",
+        "catalog_number": "RIDE15"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 23282678,
+      "image_url": "https://i.discogs.com/n9f7OD832QuM4s5veVbD4Q5ChI0h1yNhMIPK1tlvF6A/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzMjgy/Njc4LTE2NTgxNDA5/NTUtMjc4My5qcGVn.jpeg",
+      "truth": {
+        "artist": "DJ Fary",
+        "title": "Flux / Punjabi Fantasy",
+        "year": 2022,
+        "label": "Magic Carpet (6)",
+        "catalog_number": "RIDE08"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Breakbeat",
+        "House"
+      ]
+    },
+    {
+      "release_id": 229157,
+      "image_url": "https://i.discogs.com/vFom9NZNN1SCM-Z82Pu67yIeuoNfDAERugf-f5Dttqk/rs:fit/g:sm/q:90/h:600/w:590/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIyOTE1/Ny0xMzc2ODQ5NzQx/LTgyNzguanBlZw.jpeg",
+      "truth": {
+        "artist": "Kojak",
+        "title": "Suspekt Delay",
+        "year": 1998,
+        "label": "Pro-Zak Trax",
+        "catalog_number": "19813"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 8122079,
+      "image_url": "https://i.discogs.com/77TzUcCsLmPlgL3OG2RcQGjGsQw13zBxLLI1neaGYYY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTgxMjIw/NzktMTQ2MDExMzQ2/Ni0zNzk3LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Varhat",
+        "title": "Quattro",
+        "year": 2016,
+        "label": "Howl Records (2)",
+        "catalog_number": "HOWL 004"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 7647268,
+      "image_url": null,
+      "truth": {
+        "artist": "Nudge",
+        "title": "Ravin' Into A Range",
+        "year": 2015,
+        "label": "Edizioni Classiche Rec.",
+        "catalog_number": "No. 6819"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 3936007,
+      "image_url": "https://i.discogs.com/um_aZneNWG1fHxnl92HYNAJa1pjI2VWrZ0u_CL9Jntk/rs:fit/g:sm/q:90/h:592/w:590/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM5MzYw/MDctMTM0OTc5Mjc0/MC00OTU1LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Hercules & Love Affair",
+        "title": "My House",
+        "year": 2011,
+        "label": "Moshi Moshi Records",
+        "catalog_number": "MOSHI117"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid House",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 31904212,
+      "image_url": "https://i.discogs.com/xxJdpZFOTwYnBn_JNOzjbqfDMI_B0tndnq6R3Ly0isg/rs:fit/g:sm/q:90/h:600/w:589/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxOTA0/MjEyLTE3MzI3OTA0/NjYtOTQ5NC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Terrence Parker",
+        "title": "Sounds Of Love EP",
+        "year": 2024,
+        "label": "Intangible Records & Soundworks",
+        "catalog_number": "INT-7005"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 2445503,
+      "image_url": "https://i.discogs.com/nIO3iyPzziTrevAptUbp5MlvV19oDvy9BGDE9jJloSA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0NDU1/MDMtMTU0MTM3ODQw/OC03MzA2LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Chris Nazuka",
+        "title": "Experience",
+        "year": 1997,
+        "label": "Classic",
+        "catalog_number": "CMC 95"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Tech House"
+      ]
+    },
+    {
+      "release_id": 101070,
+      "image_url": "https://i.discogs.com/jWjkfAqCENq2JbKnBN-WPn7O-RmYctJ7i3z4TvehqlY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwMTA3/MC0xNTAwMzI0NDcx/LTg0NDQuanBlZw.jpeg",
+      "truth": {
+        "artist": "Private Funk",
+        "title": "Tales Of Insecurity",
+        "year": 1997,
+        "label": "Cross Section Records",
+        "catalog_number": "C.S. 121"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 8204601,
+      "image_url": "https://i.discogs.com/MSMcZC4liPpBOfLkdotFsckPKCOOMgsHWgRSU310g6o/rs:fit/g:sm/q:90/h:289/w:300/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTgyMDQ2/MDEtMTQ1NzQzMDc3/My03ODcxLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Red Rack'Em",
+        "title": "Wonky Bassline Disco Banger",
+        "year": 2016,
+        "label": "Bergerac",
+        "catalog_number": "BERG 005"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Disco",
+        "Deep House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 12327618,
+      "image_url": "https://i.discogs.com/grTBSUIm7biLtyoFmkT633eh_JquXn7lPGzVDbvetjo/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMzI3/NjE4LTE1NTEzMDU3/MTEtOTA3NC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Jon Sable",
+        "title": "Alishan Forest Railway / Housework ",
+        "year": 2018,
+        "label": "In Dust We Trust",
+        "catalog_number": "IDWT-004"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Tribal House"
+      ]
+    },
+    {
+      "release_id": 91,
+      "image_url": "https://i.discogs.com/wPETBW1X0FOzPqkLeNZ1u12AXhBmdDjYVOdOiK0lDBE/rs:fit/g:sm/q:90/h:600/w:594/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTkxLTEx/NDkwNjM0ODMuanBl/Zw.jpeg",
+      "truth": {
+        "artist": "Solar House",
+        "title": "Universal",
+        "year": 1999,
+        "label": "Large Records",
+        "catalog_number": "LAR-046"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 29781271,
+      "image_url": "https://i.discogs.com/2fcqQII2KKGeRgkxuBKbuxV2V8j7dYPJocYREqTSgE0/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5Nzgx/MjcxLTE3MDc3NTUy/NDYtODk0NC5qcGVn.jpeg",
+      "truth": {
+        "artist": "French Kisz",
+        "title": "Pink Machine EP",
+        "year": 2024,
+        "label": "Arpanet",
+        "catalog_number": "ARPA005"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Tech House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 17486365,
+      "image_url": "https://i.discogs.com/oV5NxXhy1JfvaWojcj28i17y415Ns3RJAjLpptEhP3w/rs:fit/g:sm/q:90/h:576/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3NDg2/MzY1LTE2MTM3MzA0/NDEtNjQ3OC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Move D",
+        "title": "House Grooves Vol. 1",
+        "year": 2021,
+        "label": "All That Jelly",
+        "catalog_number": "ATJ 008, #8"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 30962389,
+      "image_url": "https://i.discogs.com/TWdvq5qCByCsERc7PnHwGEr7PFr7zW_LsfGbXlFczrk/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwOTYy/Mzg5LTE3MTg2MjAz/MTctMjg5NS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Fresh & Low",
+        "title": "Fresh & Low EP",
+        "year": 2024,
+        "label": "Rawax",
+        "catalog_number": "RXT-03"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 30490048,
+      "image_url": "https://i.discogs.com/1XeUviwfAEDv3ZogBvOgQYgGvwdFVNVMCIDp_u2a8e0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwNDkw/MDQ4LTE3NzM3MDE3/MDYtMjIyMi5qcGVn.jpeg",
+      "truth": {
+        "artist": "Pistaccio",
+        "title": "Sunday Songs EP",
+        "year": 2024,
+        "label": "Magic Carpet (6)",
+        "catalog_number": "RIDE14"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 988425,
+      "image_url": "https://i.discogs.com/F3op776Qcj7gy2I8Gm567kfmsBh16IdM7IP77gFYLmo/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTk4ODQy/NS0xMTk3MzIxMzgy/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Voom:Voom",
+        "title": "Remixes Part 2",
+        "year": 2007,
+        "label": "G-Stone Recordings",
+        "catalog_number": "GSMX2 033"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 26279684,
+      "image_url": "https://i.discogs.com/sLVZSqVjB_lgA6P2m3rnrkJw1vs_tvYYxfStsfMAttg/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2Mjc5/Njg0LTE2ODA4MTE3/MDUtNzA1OS5qcGVn.jpeg",
+      "truth": {
+        "artist": "St. David",
+        "title": "Timeless EP",
+        "year": 2023,
+        "label": "Groovin Recordings",
+        "catalog_number": "GR-N05"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 394,
+      "image_url": "https://i.discogs.com/DAv8bvEYE_hXYIiLUPufTo2dN0FiBPZdDKKHb6OeaXs/rs:fit/g:sm/q:90/h:600/w:582/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM5NC0x/MTk5MDQ0NDc2Lmpw/ZWc.jpeg",
+      "truth": {
+        "artist": "Nightsource",
+        "title": "The Rise Above EP",
+        "year": 2000,
+        "label": "Naked Music Recordings",
+        "catalog_number": "nm 006"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Trip Hop"
+      ]
+    },
+    {
+      "release_id": 61802,
+      "image_url": "https://i.discogs.com/cTKG24nG5-rJJuB7E8VgogmPW-X7eq3HI9LaXwv4h2Q/rs:fit/g:sm/q:90/h:159/w:159/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYxODAy/LTAwMi5qcGc.jpeg",
+      "truth": {
+        "artist": "Metro Area",
+        "title": "Metro Area",
+        "year": 2002,
+        "label": "Environ",
+        "catalog_number": "ENVLP002"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Disco",
+        "Electro"
+      ]
+    },
+    {
+      "release_id": 13568476,
+      "image_url": "https://i.discogs.com/ItT7etU-H6D-qVTu63hAaQd_oaxgs6Wq01NWgzf8AD4/rs:fit/g:sm/q:90/h:240/w:240/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNTY4/NDc2LTE1NTY2NzE2/OTUtNTkzMC5qcGVn.jpeg",
+      "truth": {
+        "artist": "COEO",
+        "title": "COEO Edits",
+        "year": 2019,
+        "label": "Razor-N-Tape",
+        "catalog_number": "RNT047"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Disco",
+        "Nu-Disco",
+        "House"
+      ]
+    },
+    {
+      "release_id": 29101369,
+      "image_url": "https://i.discogs.com/_Weur4Bpc-lz-XSDtWu5Crm-b_f_oBu7bW_143OdJCA/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5MTAx/MzY5LTE3MDIzNzI2/MTMtNzQ4Mi5qcGVn.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "Hot & Spicy Volume 6",
+        "year": 2023,
+        "label": "Hot'n'Spicy",
+        "catalog_number": "HNS006"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Funk / Soul"
+      ],
+      "styles": [
+        "Disco",
+        "Funk"
+      ]
+    },
+    {
+      "release_id": 38540,
+      "image_url": "https://i.discogs.com/djQDhNKhxyY_xpOoQ8GgMmHln8xVASlXLMzOd-yKGBY/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM4NTQw/LTEzMzc1MDQ1NzUt/MzQ2NS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Etienne De Crécy",
+        "title": "Super Discount",
+        "year": 1997,
+        "label": "Different",
+        "catalog_number": "DIF 002 DLP"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "French House"
+      ]
+    },
+    {
+      "release_id": 29949232,
+      "image_url": "https://i.discogs.com/lF31XE2RaGM1SE6yxqORnoMHOu-m-v3N6uV1atD3Kq4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5OTQ5/MjMyLTE3MDkxMjk3/MzUtODI2MC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Unknown Collective",
+        "title": "UNK20",
+        "year": 2024,
+        "label": "Unknown Label (4)",
+        "catalog_number": "UNK20"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Tech House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 12513662,
+      "image_url": "https://i.discogs.com/7IY3yOmkX82gwiCV3wzmr5YKF_2gld8p9SxWORzsQNY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNTEz/NjYyLTE1MzY3NjAw/NjItMzMyMC5qcGVn.jpeg",
+      "truth": {
+        "artist": "DJ Snips",
+        "title": "London Livin' EP",
+        "year": 2018,
+        "label": "Barbershop Records",
+        "catalog_number": "BBSR001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Hip Hop"
+      ],
+      "styles": [
+        "Hip Hop",
+        "House",
+        "Nu-Disco"
+      ]
+    },
+    {
+      "release_id": 408,
+      "image_url": "https://i.discogs.com/8s1U75jMQOvZtjxk6_vfcdtXPy6xPl3Q9tfWGAp8hEY/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQwOC0x/MTY0MDQ3NzI0Lmpw/ZWc.jpeg",
+      "truth": {
+        "artist": "Abacus",
+        "title": "Analog Trks Vol One",
+        "year": 1997,
+        "label": "Guidance Recordings",
+        "catalog_number": "gdr_012"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 85011,
+      "image_url": "https://i.discogs.com/Wliq7weMDVgopb5oephUczfNHC1DXs9cXYxbyv7g65Y/rs:fit/g:sm/q:90/h:567/w:567/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg1MDEx/LTEzMDgyMTEzOTAu/anBlZw.jpeg",
+      "truth": {
+        "artist": "Stephane Malca",
+        "title": "Next To You",
+        "year": 1999,
+        "label": "Pro-Zak Trax",
+        "catalog_number": "19904"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 26426,
+      "image_url": "https://i.discogs.com/5eQeq7mSJ219GWOc7r0qbhGn4a3Yw8ysru6t8ceqPaw/rs:fit/g:sm/q:90/h:596/w:575/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2NDI2/LTEzOTA2NTc1ODQt/NTU3MC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Juliet Roberts",
+        "title": "Caught In The Middle",
+        "year": 1993,
+        "label": "Cooltempo",
+        "catalog_number": "12cool 272"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Garage House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 9468688,
+      "image_url": "https://i.discogs.com/XKMt5cEOut3wwDWdbq1naRVm2UnLcItqgHdDvu-6QQM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTk0Njg2/ODgtMTU0NTA5MzE0/Ny0yMTU3LmpwZWc.jpeg",
+      "truth": {
+        "artist": "COEO",
+        "title": "Disco Volante EP",
+        "year": 2016,
+        "label": "Razor-N-Tape Reserve",
+        "catalog_number": "RNTR015"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Disco",
+        "House"
+      ]
+    },
+    {
+      "release_id": 3020,
+      "image_url": "https://i.discogs.com/4Zj6ejIuahPeztLZWA4Fw7pBlSLSBMAeVDNjDri52JE/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwMjAt/MTE2OTA2MzE5NS5q/cGVn.jpeg",
+      "truth": {
+        "artist": "Blak Beat Niks",
+        "title": "Celebration",
+        "year": 1999,
+        "label": "Large Records",
+        "catalog_number": "LAR-044"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 17145301,
+      "image_url": "https://i.discogs.com/c8GzRTagHPzcql2W7vEFwPomYyblIhRu_F2ZTpi0X44/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3MTQ1/MzAxLTE2MTY4NTEz/NDgtMzQ5MC5qcGVn.jpeg",
+      "truth": {
+        "artist": "St Germain",
+        "title": "Tourist Travel Versions",
+        "year": 2021,
+        "label": "Primary Society",
+        "catalog_number": "0190295177966"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Amapiano"
+      ]
+    },
+    {
+      "release_id": 8008457,
+      "image_url": "https://i.discogs.com/lVHFSW22dEEsmxYcWvjygKBq-OQwWSs9w3lqVZ7KmHU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTgwMDg0/NTctMTQ1MzY3MjEw/NS04Mzk2LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Conga Fever",
+        "title": "Conga Fever EP",
+        "year": 2016,
+        "label": "Mireia",
+        "catalog_number": "MIR 04"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Techno"
+      ]
+    },
+    {
+      "release_id": 244798,
+      "image_url": "https://i.discogs.com/4-93gQQw9u4c4dFm-T3kVyoEdA6dhDQ0CQlxXjYWpsk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0NDc5/OC0xMzc1MDIxOTY3/LTkyOTcuanBlZw.jpeg",
+      "truth": {
+        "artist": "Les Diamantaires",
+        "title": "I'm Dynamite",
+        "year": 1999,
+        "label": "Le Chic Records",
+        "catalog_number": "CHIC 03"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 7541432,
+      "image_url": "https://i.discogs.com/hvZTMfFVjWMaJDf4picgGCXXqAHVMsraHqjR9JAG92E/rs:fit/g:sm/q:90/h:240/w:239/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc1NDE0/MzItMTQ0MzcwNDI5/My0yMDk5LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "Back To The Future EP3",
+        "year": 2015,
+        "label": "Rebirth",
+        "catalog_number": "REBLTD013"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 9868968,
+      "image_url": "https://i.discogs.com/DcSVLSqcqyfKaQulsMV2C3liOVyg7UtRx5-gqUoJglY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTk4Njg5/NjgtMTQ4NzgwMTI0/My04NzI5LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Ethyène",
+        "title": "Clubs, Dubs, & Rubs",
+        "year": 2017,
+        "label": "Kolour LTD",
+        "catalog_number": "KLRLTD027"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Hip Hop"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Hip Hop",
+        "Nu-Disco"
+      ]
+    },
+    {
+      "release_id": 11463219,
+      "image_url": "https://i.discogs.com/GdL6QpeZ1KuUxub54Tzk77QoTQ3nh5EUJENQmh9IFTg/rs:fit/g:sm/q:90/h:535/w:526/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNDYz/MjE5LTE1MTY3NzA3/OTMtNjc1NS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Unknown Artist",
+        "title": "Eastern Edits Vol. 1",
+        "year": 2018,
+        "label": "Orange Tree Edits",
+        "catalog_number": "OTE004"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Nu-Disco",
+        "House"
+      ]
+    },
+    {
+      "release_id": 10128598,
+      "image_url": "https://i.discogs.com/MoMlW3mcqV9XPQvL4N2bZzkZsIrfFnGyx781I53VC0c/rs:fit/g:sm/q:90/h:512/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwMTI4/NTk4LTE0OTc1NzE3/MTYtNjUxNC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "Diggin' Disco Deep #5",
+        "year": 2017,
+        "label": "Diggin' Disco Deep",
+        "catalog_number": "DDD005RSD"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Disco",
+        "House"
+      ]
+    },
+    {
+      "release_id": 445784,
+      "image_url": "https://i.discogs.com/_T2Pfm9i3kwMgjqjhtCycMXgwyxsUFZVjau57DupHn0/rs:fit/g:sm/q:90/h:491/w:492/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ0NTc4/NC0xMzY1NTI5MDI4/LTMwMDUuanBlZw.jpeg",
+      "truth": {
+        "artist": "Rosabel",
+        "title": "Soul Chu Cha",
+        "year": 1996,
+        "label": "Groovilicious",
+        "catalog_number": "GM 010"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Latin"
+      ],
+      "styles": [
+        "Tribal House"
+      ]
+    },
+    {
+      "release_id": 129471,
+      "image_url": "https://i.discogs.com/ONixi-fIrVOF0PcCz9X0ke7Z7jIWbjdyWWFOmBBlLvg/rs:fit/g:sm/q:90/h:581/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyOTQ3/MS0xMTE3MDY3OTIw/LmpwZw.jpeg",
+      "truth": {
+        "artist": "Negrocan",
+        "title": "Aquela Esquina",
+        "year": 2001,
+        "label": "Pimento",
+        "catalog_number": "PMO 017T"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Latin"
+      ]
+    },
+    {
+      "release_id": 25865,
+      "image_url": "https://i.discogs.com/U-7wDwoo9433GT_gjoGQEByEhRADa5XHXfAO1G2VI8M/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1ODY1/LTE0NDczMDI3ODct/Nzk2Ny5qcGVn.jpeg",
+      "truth": {
+        "artist": "Class Action",
+        "title": "Weekend",
+        "year": 1983,
+        "label": "Sleeping Bag Records",
+        "catalog_number": "SLX-1"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Funk / Soul"
+      ],
+      "styles": [
+        "Disco",
+        "Boogie"
+      ]
+    },
+    {
+      "release_id": 22052920,
+      "image_url": "https://i.discogs.com/-0tFrRGTp1mpjDJ5GqNU_4bEdqj2UnzuRUj5j20O-dY/rs:fit/g:sm/q:90/h:450/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIyMDUy/OTIwLTE2NDQxNzAz/MjItODI3OS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Geraldine Hunt",
+        "title": "Can't Fake The Feeling",
+        "year": 1980,
+        "label": "Prism",
+        "catalog_number": "PDS-405"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Funk / Soul"
+      ],
+      "styles": [
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 4800665,
+      "image_url": "https://i.discogs.com/ibhsNDLwgjh3JG4lp17dgLxj-nZ52o2t3Kh0Hz3sQuU/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ4MDA2/NjUtMTU4OTgwMzQy/OC0xNDY3LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Geraldine Hunt",
+        "title": "Can't Fake The Feeling",
+        "year": 2006,
+        "label": "Prism (2)",
+        "catalog_number": "PDS-405"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Funk / Soul"
+      ],
+      "styles": [
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 142856,
+      "image_url": "https://i.discogs.com/xdBiNgvIiQpW2_V8MEcQ09iUhNKiDhAqvdecxSvnuAc/rs:fit/g:sm/q:90/h:524/w:509/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0Mjg1/Ni0xMjk3NjY1NjA0/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Soul Solution",
+        "title": "Find A Way",
+        "year": 1995,
+        "label": "Jellybean Recordings",
+        "catalog_number": "JEL 2504"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Garage House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 116533,
+      "image_url": "https://i.discogs.com/FcM8wyZExAwCiBwKcuLgdgEbF1nSvinIVRdtLggz2RU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNjUz/My0xMjg5NDgyMjU0/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Los Amigos Invisibles",
+        "title": "Ease Your Mind",
+        "year": 2002,
+        "label": "MAW Records",
+        "catalog_number": "MAW-083"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 13970095,
+      "image_url": "https://i.discogs.com/X6oe82eZyIoRN5lJVHSJFk1ItbUYEjIUzr61yRwNSDY/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzOTcw/MDk1LTE3MDAwNzg5/NzUtOTc3OC5wbmc.jpeg",
+      "truth": {
+        "artist": "Pete Heller's Big Love",
+        "title": "Big Love",
+        "year": 2019,
+        "label": "Defected",
+        "catalog_number": "DFTD581"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 18813139,
+      "image_url": "https://i.discogs.com/ip3nDhrtR5LbArW_6y1eXZlt-a-ycN0VXVFdg6O9gJM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE4ODEz/MTM5LTE2MjE1NTUw/MjItMTY5Ni5qcGVn.jpeg",
+      "truth": {
+        "artist": "Jovonn",
+        "title": "Back In The Dark",
+        "year": 2021,
+        "label": "Clone Club Series",
+        "catalog_number": "CCS03"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 23244467,
+      "image_url": "https://i.discogs.com/T8lwraKvk9nL7-8mw1qWBgEA6BDUVS64BlsjjutEaso/rs:fit/g:sm/q:90/h:577/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzMjQ0/NDY3LTE2NTI2ODc1/NjEtMjk4NS5wbmc.jpeg",
+      "truth": {
+        "artist": "Gome",
+        "title": "Home Skooling EP",
+        "year": 2022,
+        "label": "Toy Tonics",
+        "catalog_number": "toyt130"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Acid House"
+      ]
+    },
+    {
+      "release_id": 25648,
+      "image_url": "https://i.discogs.com/CK5thMPlLjXE9QzvkNpfTJ4jqhRm3WCC9vroqA5VYdI/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1NjQ4/LTE1ODkzODMxNTAt/MzE5Ni5qcGVn.jpeg",
+      "truth": {
+        "artist": "Mood II Swing",
+        "title": "Do It Your Way",
+        "year": 1996,
+        "label": "Groove On",
+        "catalog_number": "GO-42"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 150905,
+      "image_url": "https://i.discogs.com/iukI-iY6edyvlbjCG7AZ8SRTo0J3YAlVMZvbR3V6pKU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1MDkw/NS0xNDAwODU3MDA5/LTIxMDYuanBlZw.jpeg",
+      "truth": {
+        "artist": "Double Dee",
+        "title": "Found Love",
+        "year": 1990,
+        "label": "Epic",
+        "catalog_number": "49 73548"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Italo House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 7005,
+      "image_url": "https://i.discogs.com/0c8OcWuDpahzsaZ2gECXlL3pb9WtRgAM31v8vpHULy4/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTcwMDUt/MTQ0NTczMTEwNC03/NTU1LnBuZw.jpeg",
+      "truth": {
+        "artist": "Gaelle Adisson",
+        "title": "Rain",
+        "year": 2001,
+        "label": "Naked Music Recordings",
+        "catalog_number": "NM016"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 2371760,
+      "image_url": "https://i.discogs.com/EQAkVg6QWwO8d-PC9MVjPYeLlCByNmZfCB9uwxpykqs/rs:fit/g:sm/q:90/h:450/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzNzE3/NjAtMTQ1NzI4Mjgy/OC04MDc5LmpwZWc.jpeg",
+      "truth": {
+        "artist": "B Pressure",
+        "title": "Fly By Night / I Wanna Feel Lovin'",
+        "year": 1993,
+        "label": "JRL Productions",
+        "catalog_number": "JRL 004"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 28427512,
+      "image_url": "https://i.discogs.com/FTa3OjH0ZtPMKzyh4saFsCuH29CUet1qPQ8WL9fUk7E/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4NDI3/NTEyLTE2OTY3NTQ5/NjctNTQ3My5wbmc.jpeg",
+      "truth": {
+        "artist": "Trackmakers",
+        "title": "Refoundation",
+        "year": 2023,
+        "label": "Consortium Records",
+        "catalog_number": "cr-09"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Downtempo"
+      ]
+    },
+    {
+      "release_id": 2518396,
+      "image_url": "https://i.discogs.com/L8fAJutVQ9txk2_P7xwNhtfDSoDqOPDURa8niBOAYKs/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1MTgz/OTYtMTI5NTg3MDEx/MC5qcGVn.jpeg",
+      "truth": {
+        "artist": "The Nathaniel X Project",
+        "title": "The Resurrxion E.P.",
+        "year": 2010,
+        "label": "My Love Is Underground",
+        "catalog_number": "MLIU001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 130217,
+      "image_url": "https://i.discogs.com/X3VF2YDsL4QjgNnmqbgHnTpek4aR8dXSzVGzIpoFEag/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzMDIx/Ny0xMTY5NDI0NzUw/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Solar House",
+        "title": "Magic Of The City",
+        "year": 2003,
+        "label": "Large Records",
+        "catalog_number": "LAR-080"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 7151,
+      "image_url": "https://i.discogs.com/K9k6AR9S9niamuzI2P8CJnIpBIRbJnsB1F5DShYexqg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTcxNTEt/MTU1NDY2ODMyMS01/MDk4LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Mateo & Matos",
+        "title": "Have A Good Time",
+        "year": 2000,
+        "label": "United Underground House Sounds",
+        "catalog_number": "UU-005"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 170618,
+      "image_url": "https://i.discogs.com/DyKHDSW5kQAUGoe0h2s09MkcRUaJT_dyuF3mvtSqSz0/rs:fit/g:sm/q:90/h:424/w:565/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3MDYx/OC0xMzc5MDI0MzQz/LTc2NzcuanBlZw.jpeg",
+      "truth": {
+        "artist": "Daddy's Favourite",
+        "title": "Good Times / (I Feel) Good Things (For You)",
+        "year": 1997,
+        "label": "Discosole",
+        "catalog_number": "DS7901"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 211902,
+      "image_url": "https://i.discogs.com/1iwLANZBp99NiTA76Uu3WeMFcenB9XWMjiyIVH61huY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIxMTkw/Mi0xNDI0NjI0MDY2/LTEyNjEuanBlZw.jpeg",
+      "truth": {
+        "artist": "Groove Collective",
+        "title": "Some People",
+        "year": 2000,
+        "label": "Liquid Sound Lounge",
+        "catalog_number": "LSL224"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 215118,
+      "image_url": "https://i.discogs.com/ntYGXDPWUTkfK1msR1mzkpFrhLj9szOOZHoncJEuqDY/rs:fit/g:sm/q:90/h:580/w:577/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIxNTEx/OC0xMTcxNjcxMTI0/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "L.U.P.O.",
+        "title": "Hell Or Heaven",
+        "year": 1990,
+        "label": "Low Spirit Recordings",
+        "catalog_number": "EFA 04007-02 MS"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno",
+        "Ambient"
+      ]
+    },
+    {
+      "release_id": 80493,
+      "image_url": "https://i.discogs.com/bXmt6rULvqGVP11kSce_6JA6WqsXoSE7UJMRUTrF0rY/rs:fit/g:sm/q:90/h:296/w:300/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTgwNDkz/LTEwOTY0MDExMzQu/anBn.jpeg",
+      "truth": {
+        "artist": "SoulFranciscins",
+        "title": "Give It Up (For Love)",
+        "year": 2001,
+        "label": "Chez Music",
+        "catalog_number": "CHEZ015"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 460366,
+      "image_url": "https://i.discogs.com/ogvOkqr4g4SyDHxTaxVLxnB2_GR5654ejkpR3hHl4Uc/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ2MDM2/Ni0xNzY1NzI3OTM5/LTE3NzcucG5n.jpeg",
+      "truth": {
+        "artist": "François Feldman",
+        "title": "Joue Pas",
+        "year": 1989,
+        "label": "Big Bang",
+        "catalog_number": "874 307-1"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Pop"
+      ],
+      "styles": [
+        "Chanson",
+        "Synth-pop"
+      ]
+    },
+    {
+      "release_id": 31124417,
+      "image_url": "https://i.discogs.com/BkbnMNsM4d4u1TB3jy75frmaDIbLgXgtoaJExK1Sow0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMTI0/NDE3LTE3MjAwMTMx/MDctODkzNS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Felipe Gordon",
+        "title": "Phasing The Shit",
+        "year": 2024,
+        "label": "Phonogramme",
+        "catalog_number": "PHONOGRAMME45"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Hip Hop",
+        "Jazz",
+        "Funk / Soul"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Future Jazz"
+      ]
+    },
+    {
+      "release_id": 15959091,
+      "image_url": "https://i.discogs.com/cf2rRbyKeEZAfBp_6UZVBYd7SsvKOtICTrvQQJ7yMfg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1OTU5/MDkxLTE2MDA5Mzc3/OTEtMzQ4OC5wbmc.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "Perfect Duality Series",
+        "year": 2020,
+        "label": "Deeppa Records",
+        "catalog_number": "DEEPPA01"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Nu-Disco"
+      ]
+    },
+    {
+      "release_id": 5371,
+      "image_url": "https://i.discogs.com/hCTocXovRLPkh-Kyxd2x_Vymj77_MiEGG5GjmsseuNk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTUzNzEt/MTI5ODU2ODM3NS5q/cGVn.jpeg",
+      "truth": {
+        "artist": "Zombie Nation",
+        "title": "Kernkraft 400",
+        "year": 2000,
+        "label": "Data Records",
+        "catalog_number": "DATA11T"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Electro",
+        "Techno",
+        "Trance"
+      ]
+    },
+    {
+      "release_id": 987627,
+      "image_url": "https://i.discogs.com/D1F0KKCpyn4p7p0jGm0BbhYDbZ8f76gG-kqa9k4TJgQ/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTk4NzYy/Ny0xNDE5NDI5Njgz/LTUxMTIuanBlZw.jpeg",
+      "truth": {
+        "artist": "Paul Johnson",
+        "title": "Hot",
+        "year": 2007,
+        "label": "Black Jack",
+        "catalog_number": "BLACKJACK 34"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Electro",
+        "Tech House",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 21985,
+      "image_url": "https://i.discogs.com/6-ftfG2zlol9q5s0FtUKZGDtsRP897PFG9417uihvwM/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIxOTg1/LTE0MjY5MDAzOTYt/NDc4NS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Shazz",
+        "title": "Back In Manhattan EP",
+        "year": 1996,
+        "label": "F Communications",
+        "catalog_number": "F042"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House",
+        "Trip Hop"
+      ]
+    },
+    {
+      "release_id": 11489430,
+      "image_url": "https://i.discogs.com/Xw7_kMj0wzm2CfMYT9ofLoWovsNgF_ErezQ0gO9THuk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNDg5/NDMwLTE1MTcyMzgy/NDUtNDU4OS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Boom!",
+        "title": "The Aalsmeer Tapes Vol. 1",
+        "year": 2018,
+        "label": "Boom! (3)",
+        "catalog_number": "BOOM001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 27543903,
+      "image_url": null,
+      "truth": {
+        "artist": "Floorfillers",
+        "title": "Sting The Floor",
+        "year": 2023,
+        "label": "Skylax",
+        "catalog_number": "LAXSE 4"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 27923235,
+      "image_url": "https://i.discogs.com/QYgpVfAPinsIsUDYP7SG2fh0lJO8Ka2779MlEUsESbE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3OTIz/MjM1LTE3MDI5ODk5/ODgtMzcwMy5qcGVn.jpeg",
+      "truth": {
+        "artist": "Lex Wolf",
+        "title": "Lextended Vol.1",
+        "year": 2023,
+        "label": "M.A.D EDITS",
+        "catalog_number": "MADE004"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 28848091,
+      "image_url": "https://i.discogs.com/3WC9YTSKt5oc5u21dZa8s_we1CfAFP-6jQzzHBOpqlQ/rs:fit/g:sm/q:90/h:600/w:450/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4ODQ4/MDkxLTE2OTk2MjQx/MjktMjYyNi5qcGVn.jpeg",
+      "truth": {
+        "artist": "Wolfram",
+        "title": "Yo Yo Disco",
+        "year": 2023,
+        "label": "Public Possession",
+        "catalog_number": "PP095"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Electro House"
+      ]
+    },
+    {
+      "release_id": 10991718,
+      "image_url": "https://i.discogs.com/ORYm79i2WSL9Epp8-N0Xh57NHDapbWBeXl5rV72_PJg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwOTkx/NzE4LTE1MDc4MDk3/NTQtNDk5NS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Kerri Chandler",
+        "title": "Checkmate",
+        "year": 2017,
+        "label": "Watergate Records",
+        "catalog_number": "WGVINYL041"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Techno"
+      ]
+    },
+    {
+      "release_id": 17448808,
+      "image_url": "https://i.discogs.com/jNjYyyU3YPIh98UW_GA0UMdFhONT_PsecuGHkT2t66k/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3NDQ4/ODA4LTE3MjI1MzAz/MDctNTE3Mi5qcGVn.jpeg",
+      "truth": {
+        "artist": "Cody Currie",
+        "title": "Moves EP",
+        "year": 2021,
+        "label": "Toy Tonics",
+        "catalog_number": "TOYT113"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "styles": [
+        "House",
+        "Future Jazz"
+      ]
+    },
+    {
+      "release_id": 28767604,
+      "image_url": "https://i.discogs.com/J6dgCstmMR4ygZBRwtGhDoSKAbFbeIGRVl8ThEMhToI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4NzY3/NjA0LTE2OTg5MzMz/MDgtMTY2OC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Dam Swindle",
+        "title": "Minor Fools EP",
+        "year": 2023,
+        "label": "Heist (2)",
+        "catalog_number": "Heist 077"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 8833505,
+      "image_url": "https://i.discogs.com/ctt16I5i4krPOzSUkFGHgHZw6oWJLc3S4BcKwkqqWaE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg4MzM1/MDUtMTQ2OTc1NDE0/NC00MDYzLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Valerio Delphi",
+        "title": "Unleashed Tapes Vol 1 EP",
+        "year": 2016,
+        "label": "T&W Records",
+        "catalog_number": "RBTW-4"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Disco",
+        "Nu-Disco",
+        "House"
+      ]
+    },
+    {
+      "release_id": 26417846,
+      "image_url": "https://i.discogs.com/YbIyePKv8FLqJlF_LYyFdQ1533Yp7NFKq-8zEkSYUIw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2NDE3/ODQ2LTE2Nzg4MDE4/NDYtMTA2Ni5qcGVn.jpeg",
+      "truth": {
+        "artist": "Felipe Gordon",
+        "title": "For Martha",
+        "year": 2023,
+        "label": "Royal Oak",
+        "catalog_number": "ROYAL052"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 12736949,
+      "image_url": "https://i.discogs.com/2dos9NNA3XLJopNG18007waQYe-EbcBWgXdwW4L-OEU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNzM2/OTQ5LTE1NDEwMDgz/NTUtMTE0MC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Marlena Shaw",
+        "title": "Touch Me In The Morning",
+        "year": 2018,
+        "label": "Columbia",
+        "catalog_number": "AS 678"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Funk / Soul"
+      ],
+      "styles": [
+        "Soul",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 1624,
+      "image_url": "https://i.discogs.com/bVQinZ59LAzvgNs0BcTIxWh5QOFXj3yiUeQpgc4uTLE/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2MjQt/MTU1ODUyNjQ0My04/MTM2LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Boo Williams",
+        "title": "Big Fat Woman",
+        "year": 2000,
+        "label": "Nite Life Collective",
+        "catalog_number": "NLC016"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 6059142,
+      "image_url": "https://i.discogs.com/6w6y4U9c3q_Q0kCpTsmowhgU5fE79oKAFXkYdhRavjI/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYwNTkx/NDItMTQ3MDQ4MjE2/NC0yODQxLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Tedd Patterson",
+        "title": "Magnifique",
+        "year": 2002,
+        "label": "Fluential",
+        "catalog_number": "fluent 39 dj"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Progressive House",
+        "House",
+        "Tribal"
+      ]
+    },
+    {
+      "release_id": 27389178,
+      "image_url": "https://i.discogs.com/bhihYTzzCKAHdwxW6z2iPbW0QA-Kp6bPQhrtzy_P6j0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3Mzg5/MTc4LTE2OTgxNjY0/ODAtMjQ2Ny5qcGVn.jpeg",
+      "truth": {
+        "artist": "Toolate Groove",
+        "title": "Passion Rhythms",
+        "year": 2023,
+        "label": "Plastik People Limited",
+        "catalog_number": "PPLTD09"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Garage House",
+        "Italo House",
+        "Jazzdance"
+      ]
+    },
+    {
+      "release_id": 23177678,
+      "image_url": "https://i.discogs.com/UMY_LqIAKeZfEZe29c_BMhASLf_KZ3aeTjKJrwJMLZM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzMTc3/Njc4LTE2NjM4Nzk0/NDQtMTQwOS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Toolate Groove",
+        "title": "Atlantic Journey",
+        "year": 2022,
+        "label": "Cosmic Breeze Records",
+        "catalog_number": "CBR 001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 102608,
+      "image_url": "https://i.discogs.com/A0_gyLcd4sqFbht-jTZCWjsKHuC2p9f3b32VujE2lRA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwMjYw/OC0xMjgwNTkxOTcx/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Ralphi Rosario",
+        "title": "Brinca",
+        "year": 1995,
+        "label": "Nite Stuff",
+        "catalog_number": "NST 005"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 6545834,
+      "image_url": "https://i.discogs.com/dkDhNMdZkYJZQUo5nuPHWXfq0hrdKxgwvu00F44W-_U/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTY1NDU4/MzQtMTU4NDMwMjAy/OS0xNDc0LmpwZWc.jpeg",
+      "truth": {
+        "artist": "The Avener",
+        "title": "The Wanderings Of The Avener",
+        "year": 2015,
+        "label": "Capitol Records",
+        "catalog_number": "471 694 6"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Pop"
+      ],
+      "styles": [
+        "Electro House"
+      ]
+    },
+    {
+      "release_id": 441448,
+      "image_url": "https://i.discogs.com/WGptuLAaJfpSJRXE454ksLdKASmNynrnIn4ymQjG_pA/rs:fit/g:sm/q:90/h:600/w:586/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ0MTQ0/OC0xNDk0NzgyNTIx/LTUxMjYuanBlZw.jpeg",
+      "truth": {
+        "artist": "JT Company",
+        "title": "Again (Remix)",
+        "year": 1991,
+        "label": "Beat Club Records",
+        "catalog_number": "BCR RX 001791"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Italo House"
+      ]
+    },
+    {
+      "release_id": 14505897,
+      "image_url": "https://i.discogs.com/E-HTIjWgBpUzg6e4xn6RfCkZZLZbB18O4Nn5fvqivz0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0NTA1/ODk3LTE1Nzc0MzI1/NjYtODY1NC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Jerome Sydenham And Kerri Chandler",
+        "title": "You're In My System (Dennis Quin Remixes)",
+        "year": 2019,
+        "label": "Ibadan",
+        "catalog_number": "IRC143"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 37985,
+      "image_url": "https://i.discogs.com/fz7sbeD9DQMjTRVtOfvzM9bXBUV8GAAsKxKCa8gkyWc/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3OTg1/LTEyNzExNDUwMjQu/anBlZw.jpeg",
+      "truth": {
+        "artist": "Crystal Waters",
+        "title": "Gypsy Woman (She's Homeless)",
+        "year": 1991,
+        "label": "Mercury",
+        "catalog_number": "868 209-1"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 11454190,
+      "image_url": "https://i.discogs.com/gwxQa59c3zUEKW39yDXGuhDX-UziUGR_IdxF4jyoA8Q/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNDU0/MTkwLTE1MTY2MDc4/ODMtMjI1Ni5qcGVn.jpeg",
+      "truth": {
+        "artist": "Bellaire",
+        "title": "Paris City Jazz",
+        "year": 2018,
+        "label": "AOC Records (2)",
+        "catalog_number": "AOC-01"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 519804,
+      "image_url": "https://i.discogs.com/088whrPqHI5FTVDqQFzZlVVfpZT4OpAnAgjEIrDczCw/rs:fit/g:sm/q:90/h:600/w:589/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTUxOTgw/NC0xNzY3MjA5OTU3/LTI3NjkuanBlZw.jpeg",
+      "truth": {
+        "artist": "Balearic Soul",
+        "title": "Da Revolution",
+        "year": 2005,
+        "label": "Almibar Recordings",
+        "catalog_number": "ALMB 004"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 401839,
+      "image_url": "https://i.discogs.com/CIdNCMqTfqqnm3eHkaKe4UfK5cAFMLzdpm-M6M4UTlA/rs:fit/g:sm/q:90/h:600/w:592/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQwMTgz/OS0xMjk1MTEwNTA5/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Moné",
+        "title": "Movin'",
+        "year": 1996,
+        "label": "Feel The Rhythm",
+        "catalog_number": "FTR 3907-6"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 75713,
+      "image_url": "https://i.discogs.com/5SDvWbs3-Tnpw4Lluaf65iDLri9GuUE0zByuyFLaDyg/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc1NzEz/LTEyMDcyOTU5MTMu/anBlZw.jpeg",
+      "truth": {
+        "artist": "Before The Storm",
+        "title": "I've Got The Music",
+        "year": 1987,
+        "label": "Movin' Records",
+        "catalog_number": "MR001"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 89474,
+      "image_url": "https://i.discogs.com/ds1agCABURUiEXEXabTtSuMBPVSUxkKi0GXby1Wbp5E/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg5NDc0/LTEzNzE1NDM3NjYt/NzM3NC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Definition Of Sound",
+        "title": "Pass The Vibes (Sanchez / Todd Terry Remixes)",
+        "year": 1995,
+        "label": "Fontana",
+        "catalog_number": "DOSX 2"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 14791497,
+      "image_url": "https://i.discogs.com/8sfLOBYMecmYK6iY5KaC45u9ppxr6ZxxiBbXD1wLh2c/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0Nzkx/NDk3LTE1ODI5MDUz/MjQtMzk1OC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "SEMID005",
+        "year": 2020,
+        "label": "Semi Delicious",
+        "catalog_number": "SEMID005"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Disco",
+        "Nu-Disco",
+        "UK Garage"
+      ]
+    },
+    {
+      "release_id": 7716383,
+      "image_url": "https://i.discogs.com/UIecDdSx3NpHK1k9KeS0gpYB_hLI57XJmdsN5JNzCBc/rs:fit/g:sm/q:90/h:600/w:590/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc3MTYz/ODMtMTQ1NjMyOTAw/Mi04MDM0LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Boston Bun",
+        "title": "Paris Groove",
+        "year": 2015,
+        "label": "Ed Banger Records",
+        "catalog_number": "ED088"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 13610537,
+      "image_url": "https://i.discogs.com/jSwz-QVpKRUNbmB_Cb016mleUUrtU5LSM2axq3mJ2Gg/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNjEw/NTM3LTE1NTc0ODA0/NzctNDI2MS5qcGVn.jpeg",
+      "truth": {
+        "artist": "The MD X-Spress",
+        "title": "God Made Me Phunky / Shake Dat Booty",
+        "year": 2019,
+        "label": "4 To The Floor (2)",
+        "catalog_number": "FTTFCS002"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 496,
+      "image_url": "https://i.discogs.com/KjV3aFwDwvjeResTntsuufHRCtJEYXglGdS_n9jesKM/rs:fit/g:sm/q:90/h:600/w:430/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ5Ni0x/MTY0MjE0NDY1Lmpw/ZWc.jpeg",
+      "truth": {
+        "artist": "Tim Deluxe",
+        "title": "I Know Remixes",
+        "year": 1999,
+        "label": "Cross Section Records",
+        "catalog_number": "C.S. 129"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 70770,
+      "image_url": "https://i.discogs.com/Sb7JuWxYdfQUQkBzUpuyx1UFuoK5yUg4MHo2Tbx2NaI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTcwNzcw/LTEzNzA4MzczODEt/MTQwMS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Sir James",
+        "title": "Special",
+        "year": 1990,
+        "label": "Strictly Rhythm",
+        "catalog_number": "SR 1203"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 13644705,
+      "image_url": "https://i.discogs.com/HJZ26CZruuSDSZpTCdvetfGO9Sw8NHyx0X1L-TmayAg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNjQ0/NzA1LTE1NTk1NzM0/NDUtMTg0My5qcGVn.jpeg",
+      "truth": {
+        "artist": "Xpansions",
+        "title": "Move Your Body (Elevation) ",
+        "year": 2019,
+        "label": "Food Music",
+        "catalog_number": "YUM501V"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Techno"
+      ]
+    },
+    {
+      "release_id": 63164,
+      "image_url": "https://i.discogs.com/LIWy5eW0LUzDzrtR865-DnX6X32V6H2rJQmqSwMCc_c/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYzMTY0/LTE3MTU0ODg0NTYt/MjQ4Ny5qcGVn.jpeg",
+      "truth": {
+        "artist": "Seduction",
+        "title": "Seduction",
+        "year": 1988,
+        "label": "Vendetta Records (2)",
+        "catalog_number": "VE-7014"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 1751220,
+      "image_url": "https://i.discogs.com/7VKf1SCQIWJLKm1EVWAiMXT2cwgFiE0hamJKaULjths/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3NTEy/MjAtMTU3MDc5ODIx/OS00NzYzLmpwZWc.jpeg",
+      "truth": {
+        "artist": "Concorde Plaza",
+        "title": "Get Away With It",
+        "year": 2004,
+        "label": "Confidential Records",
+        "catalog_number": "CON 026"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 111702,
+      "image_url": "https://i.discogs.com/XB-BYFQP_0vDlp86rcAXNMUJ-8YF_p15uuXx8Habt1o/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExMTcw/Mi0xNDExODYzMzg2/LTQ1NTYuanBlZw.jpeg",
+      "truth": {
+        "artist": "Happy Clappers",
+        "title": "I Believe",
+        "year": 1995,
+        "label": "PWL International",
+        "catalog_number": "PWL 004"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 24228,
+      "image_url": "https://i.discogs.com/33KVh8fn872SyFrwb9cuWnXVtjapY36VvOdblnMXmFM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0MjI4/LTE1NjY3Njg1Mzkt/OTM3MS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Africanism",
+        "title": "Les Enfants Du Bled",
+        "year": 2001,
+        "label": "Yellow Productions",
+        "catalog_number": "YP055"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Tribal House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 16131323,
+      "image_url": "https://i.discogs.com/Hz69jcqMcJhk9KmCFNC9djSj8VOpdbsXYx9SNIhHlwI/rs:fit/g:sm/q:90/h:335/w:342/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2MTMx/MzIzLTE2MDM5NjUw/MDgtNjk2MC5wbmc.jpeg",
+      "truth": {
+        "artist": "Sound Support",
+        "title": "Stab By Stab",
+        "year": 2020,
+        "label": "Internasjonal",
+        "catalog_number": "INT045"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Nu-Disco",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 12872283,
+      "image_url": "https://i.discogs.com/iAqPD-2cEm5hBz4YKIwZVxapzIKm7k-llukq-c2OC3E/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyODcy/MjgzLTE1NDM1ODYy/NTAtODQyNS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Bellaire",
+        "title": "Framework",
+        "year": 2018,
+        "label": "AOC Records (2)",
+        "catalog_number": "AOC 02"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House",
+        "Jazzdance"
+      ]
+    },
+    {
+      "release_id": 21793939,
+      "image_url": "https://i.discogs.com/djyoOgq5pZtRlABtmoQRDtszI1QmF44Ehdw4YNqeUEA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIxNzkz/OTM5LTE2NDI1NDM1/MDctMjI0Ni5qcGVn.jpeg",
+      "truth": {
+        "artist": "Donald's House",
+        "title": "The Final Front Ear",
+        "year": 2022,
+        "label": "Permanent Vacation",
+        "catalog_number": "PERMVAC 232-1"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 10655197,
+      "image_url": "https://i.discogs.com/-f4fjMDbLSk4q1AAhj0BU5x1fueJNCTe7QLYTdVeoqs/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwNjU1/MTk3LTE1MDE3ODAz/MzYtNDA2NC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Detroit Swindle",
+        "title": "Can't Hold It EP",
+        "year": 2017,
+        "label": "Heist (2)",
+        "catalog_number": "HEIST026"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Nu-Disco"
+      ]
+    },
+    {
+      "release_id": 46054,
+      "image_url": "https://i.discogs.com/8vtR_O3gyeFHFhYlzRbHZjk56yVguMj_wBQh-97yA3s/rs:fit/g:sm/q:90/h:410/w:396/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ2MDU0/LTEyMjAyOTQ2MjIu/anBlZw.jpeg",
+      "truth": {
+        "artist": "Liberty City",
+        "title": "If You Really Love Someone (The Dub Mixes)",
+        "year": 1994,
+        "label": "TRIBAL America",
+        "catalog_number": "Y-58207"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 175984,
+      "image_url": "https://i.discogs.com/sdS1juRTdDzhLEPpUWOSP9g-fG_wiQrsMK19Dyie_Zg/rs:fit/g:sm/q:90/h:600/w:530/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3NTk4/NC0xNzAwMzMzOTIx/LTc5NzAuanBlZw.jpeg",
+      "truth": {
+        "artist": "Montego Bay",
+        "title": "Saturday Night E.P",
+        "year": 1995,
+        "label": "Dance 2 Recordings",
+        "catalog_number": "D2R 004"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 85504,
+      "image_url": "https://i.discogs.com/IzfzaAXJxeQUlXADYKOLQ9ssC-uvjjZqz4JnZY344EE/rs:fit/g:sm/q:90/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg1NTA0/LTAwMS5qcGc.jpeg",
+      "truth": {
+        "artist": "Chicken Lips",
+        "title": "He Not In",
+        "year": 2002,
+        "label": "Azuli Records",
+        "catalog_number": "AZNY163"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Electro"
+      ]
+    },
+    {
+      "release_id": 14779700,
+      "image_url": "https://i.discogs.com/a5xxVjtgz4Az3ZJbc3NsLSnZA2iYdYpV7vtmvyp7nMU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0Nzc5/NzAwLTE1ODQ2MDg2/MTctOTI2OC5qcGVn.jpeg",
+      "truth": {
+        "artist": "LOVEHRTZ",
+        "title": "LoveHrtz Vol. 2",
+        "year": 2020,
+        "label": "LoveHrtz",
+        "catalog_number": "LVHRTZ002"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Disco",
+        "House"
+      ]
+    },
+    {
+      "release_id": 46257,
+      "image_url": "https://i.discogs.com/lsrIutpsbHNH5JytO3AzXpJfHjdOSiOBTT4dcg7l2nw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ2MjU3/LTE2NjMwMDE2Mjct/MjM1My5qcGVn.jpeg",
+      "truth": {
+        "artist": "Shindig",
+        "title": "Timeless EP Part 1",
+        "year": 1994,
+        "label": "Bomba Records",
+        "catalog_number": "BOMB 12008"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 25174225,
+      "image_url": "https://i.discogs.com/TzZbYTumbnlR3lp2yHFyiyPKsfGpdRKtmKiOuGiOE6A/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1MTc0/MjI1LTE2Njk2NDUw/NzMtNTU0OS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Tiptoes",
+        "title": "The Akai Samurai Strikes Again EP",
+        "year": 2022,
+        "label": "SlothBoogie",
+        "catalog_number": "SBR005X"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 223819,
+      "image_url": "https://i.discogs.com/Y3RIo0K5LyZLbZe1XPPiOr4TUGdKSldXfA7IZt_55NY/rs:fit/g:sm/q:90/h:574/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIyMzgx/OS0xNzY2MDA2NTM4/LTkyNDEuanBlZw.jpeg",
+      "truth": {
+        "artist": "The Supermen Lovers",
+        "title": "Underground Disco EP",
+        "year": 2001,
+        "label": "Lafessé Records",
+        "catalog_number": "74321 830281"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Disco"
+      ]
+    },
+    {
+      "release_id": 8418,
+      "image_url": "https://i.discogs.com/xY72nmOSdnoDDowo7c-uBPN_ge3i-dLLaars8pqwp2c/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg0MTgt/MTM5Mzc1NDI4My05/MDE4LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Lood",
+        "title": "Shout-N-Out",
+        "year": 1996,
+        "label": "MAW Records",
+        "catalog_number": "MAW 0008"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Garage House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 12558799,
+      "image_url": "https://i.discogs.com/3BvXERt54qkuA5S06_I6hrYCmSQ3XmQzlmGi_dfM76Y/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNTU4/Nzk5LTE1NDY1MTk4/OTctOTAxOC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Alexander Robotnick",
+        "title": "Undicidisco",
+        "year": 2019,
+        "label": "Hell Yeah Recordings",
+        "catalog_number": "HYR 7190"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Italo-Disco",
+        "Disco",
+        "Italo House"
+      ]
+    },
+    {
+      "release_id": 27884,
+      "image_url": "https://i.discogs.com/NrqtDRnG1LDbEUo5MIGeOqebKH0iWDreOjDVfVeGrPk/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3ODg0/LTEyNzkyMDQzNDEu/anBlZw.jpeg",
+      "truth": {
+        "artist": "N-Joi",
+        "title": "Anthem",
+        "year": 1991,
+        "label": "Deconstruction",
+        "catalog_number": "PT 44446"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Techno"
+      ]
+    },
+    {
+      "release_id": 836704,
+      "image_url": "https://i.discogs.com/oT3J9zGzGn8IGr5uQHUeGD50yd65lLoeem1HLLVKKjc/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTgzNjcw/NC0xNjA5MDA0NzYz/LTE5ODEuanBlZw.jpeg",
+      "truth": {
+        "artist": "A-Man",
+        "title": "Boom",
+        "year": 2005,
+        "label": "TIME (2)",
+        "catalog_number": "TIME 434"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno",
+        "Electro",
+        "Tech House"
+      ]
+    },
+    {
+      "release_id": 10934306,
+      "image_url": "https://i.discogs.com/bSfbob9_snQwnCVFqejkepVZCDFtPUJPHx0cYiZf1OI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwOTM0/MzA2LTE1MDcyMTY1/NTMtNDcxNC5qcGVn.jpeg",
+      "truth": {
+        "artist": "Genius Of Time",
+        "title": "Voxshot",
+        "year": 2017,
+        "label": "Aniara Recordings",
+        "catalog_number": "ANIARA 19"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 15618563,
+      "image_url": "https://i.discogs.com/DAHUcQHm8JFoDBry9GZqIaVRZxM1BIAlQxkwvIdaJDo/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1NjE4/NTYzLTE1OTQ2NDg2/MTctODQxOS5qcGVn.jpeg",
+      "truth": {
+        "artist": "Black Loops",
+        "title": "I Know You EP",
+        "year": 2020,
+        "label": "Shall Not Fade",
+        "catalog_number": "SNF044"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 762764,
+      "image_url": "https://i.discogs.com/CWyrxlq4xvQnp4Z8GCNrOS3bJHEBi4upxGGoIWagQAg/rs:fit/g:sm/q:90/h:413/w:413/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc2Mjc2/NC0xMTU2MjU0ODY3/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "J. Velarde",
+        "title": "House Music",
+        "year": 2004,
+        "label": "T.U.S.O.M. Recordings",
+        "catalog_number": "USM011"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Progressive House",
+        "House"
+      ]
+    },
+    {
+      "release_id": 719511,
+      "image_url": "https://i.discogs.com/KFSjqoxANXs2uX8s0Zh6R6oL6LvgVRrQ1gQ7Hczf8K8/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTcxOTUx/MS0xMTU5NzAyMDAy/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "NUfrequency",
+        "title": "808 (Why Oh Why)",
+        "year": 2006,
+        "label": "Vendetta Records",
+        "catalog_number": "VENMX 718 (N)"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Electro"
+      ]
+    },
+    {
+      "release_id": 57278,
+      "image_url": "https://i.discogs.com/XOs_NK3knZWrvjTlQJ2nukJXDpJ5sYVX1qWxGW4ekhw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTU3Mjc4/LTEzODM5MDM2MzUt/NzY5Ni5qcGVn.jpeg",
+      "truth": {
+        "artist": "Jazz-N-Groove",
+        "title": "Jazzy Grooves Volume 1",
+        "year": 1994,
+        "label": "i! Records",
+        "catalog_number": "IR103"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    },
+    {
+      "release_id": 214295,
+      "image_url": "https://i.discogs.com/Gkm08rR-zV1VDgUIAHiVxOCujo8DT6Ce3TAICl0Gu8I/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIxNDI5/NS0xMjIyMTg1NTU4/LmpwZWc.jpeg",
+      "truth": {
+        "artist": "Starbeach",
+        "title": "Get Naked",
+        "year": 2003,
+        "label": "suSU",
+        "catalog_number": "12SUSU07 P"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Latin"
+      ]
+    },
+    {
+      "release_id": 77548,
+      "image_url": "https://i.discogs.com/h7S7LedncITvc1w1xggYi7IsQTYVa0bebDAlOltWAqY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc3NTQ4/LTE1ODM4OTcyNDQt/OTQ5My5qcGVn.jpeg",
+      "truth": {
+        "artist": "Creative Force",
+        "title": "I'm Not The Same",
+        "year": 1994,
+        "label": "Centrestage Records",
+        "catalog_number": "CSTA 009"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Garage House"
+      ]
+    },
+    {
+      "release_id": 733415,
+      "image_url": "https://i.discogs.com/WG7V04GqUH-LrssoNbaVW3IfnZUzd5KSL39988veFsA/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTczMzQx/NS0xNTgyMzAwMjQ2/LTgxMTAuanBlZw.jpeg",
+      "truth": {
+        "artist": "A.K. Soul",
+        "title": "Free",
+        "year": 1997,
+        "label": "Dream Beat",
+        "catalog_number": "DB 066"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ]
+    },
+    {
+      "release_id": 1506245,
+      "image_url": "https://i.discogs.com/OTH_5fnXYUp_uLYqzYc_aZX7o6WFbJEWAA-0Zq0fTFQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1MDYy/NDUtMTc2NDA4NTY1/Ny0zNTQzLnBuZw.jpeg",
+      "truth": {
+        "artist": "El Chico",
+        "title": "Brisa Latina",
+        "year": 1990,
+        "label": "Easy Dance Records",
+        "catalog_number": "ESD 102"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Italo House"
+      ]
+    },
+    {
+      "release_id": 12010601,
+      "image_url": "https://i.discogs.com/3dImsY5tXsqMDjbh_StNeuIvGm5IcI0ivHipQNMB3Xg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMDEw/NjAxLTE1MjY1MDA4/NjAtNzcyNS5qcGVn.jpeg",
+      "truth": {
+        "artist": "DJ Deep",
+        "title": "Cuts The Unreleased Mixes And Dubs",
+        "year": 2018,
+        "label": "Deeply Rooted (3)",
+        "catalog_number": "DRH056"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno",
+        "Minimal"
+      ]
+    },
+    {
+      "release_id": 97998,
+      "image_url": "https://i.discogs.com/bUr7bXSbXFwRNy9NknZq4DdzNdFIdm93T6Xz5B-PSoM/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTk3OTk4/LTE2ODk5MTY5MjQt/NjEwMi5qcGVn.jpeg",
+      "truth": {
+        "artist": "Various",
+        "title": "NRK Unreleased Dubs 1",
+        "year": 2002,
+        "label": "NRK Sound Division",
+        "catalog_number": "NRK076"
+      },
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Deep House"
+      ]
+    }
+  ]
+}

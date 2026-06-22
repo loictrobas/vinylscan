@@ -1,0 +1,26 @@
+[
+  {
+    "id": "v1-original",
+    "name": "Original",
+    "description": "First production prompt. Has duplicate fields listed twice. _analysis buried mid-list. Otherwise solid anatomy + disambiguation rules.",
+    "schema": "flat",
+    "active": false,
+    "created_at": "2026-06-07"
+  },
+  {
+    "id": "v2-clean",
+    "name": "Clean",
+    "description": "Same as v1 but with duplicate fields removed and _analysis moved first. No logic changes.",
+    "schema": "flat",
+    "active": false,
+    "created_at": "2026-06-19"
+  },
+  {
+    "id": "v3-literal",
+    "name": "Literal Transcription",
+    "description": "Focus on exact character-by-character transcription. Per-field confidence objects. catalog_number replaced by ranked candidates array. Adds surface_photographed, occlusion_notes, all_codes_seen. Never fills gaps from memory.",
+    "schema": "v3",
+    "active": true,
+    "created_at": "2026-06-19"
+  }
+]

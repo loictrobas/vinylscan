@@ -44,6 +44,8 @@ class RecordOut(BaseModel):
     styles: str | None
     country: str | None
     condition: str
+    disc_condition: str | None
+    cover_condition: str | None
     discogs_release_id: int | None
     discogs_instance_id: int | None
     discogs_listing_id: int | None
@@ -53,6 +55,7 @@ class RecordOut(BaseModel):
     discogs_num_for_sale: int | None
     discogs_suggested_price: float | None
     cover_image_url: str | None
+    record_section: str
     status: str
     cost_price: float | None
     asking_price: float | None
@@ -62,6 +65,13 @@ class RecordOut(BaseModel):
     notes: str | None
     store_listed: bool
     created_at: str
+    consignor_id: int | None
+    consignor_agreed_price: float | None
+    consignor_commission_pct: float | None
+    consignor_payout_status: str | None
+    consignor_amount_owed: float | None
+    consignor_amount_paid: float | None
+    consigned_at: str | None
 
     model_config = {"from_attributes": True}
 
@@ -81,6 +91,8 @@ class RecordOut(BaseModel):
             styles=getattr(r, "styles", None),
             country=getattr(r, "country", None),
             condition=r.condition,
+            disc_condition=getattr(r, "disc_condition", None),
+            cover_condition=getattr(r, "cover_condition", None),
             discogs_release_id=r.discogs_release_id,
             discogs_instance_id=getattr(r, "discogs_instance_id", None),
             discogs_listing_id=getattr(r, "discogs_listing_id", None),
@@ -97,8 +109,16 @@ class RecordOut(BaseModel):
             sold_at=r.sold_at.isoformat() if r.sold_at else None,
             tags=getattr(r, "tags", None),
             notes=getattr(r, "notes", None),
+            record_section=getattr(r, "record_section", "vinyl") or "vinyl",
             store_listed=getattr(r, "store_listed", False) or False,
             created_at=r.created_at.isoformat(),
+            consignor_id=getattr(r, "consignor_id", None),
+            consignor_agreed_price=float(r.consignor_agreed_price) if getattr(r, "consignor_agreed_price", None) is not None else None,
+            consignor_commission_pct=getattr(r, "consignor_commission_pct", None),
+            consignor_payout_status=getattr(r, "consignor_payout_status", None),
+            consignor_amount_owed=float(r.consignor_amount_owed) if getattr(r, "consignor_amount_owed", None) is not None else None,
+            consignor_amount_paid=float(r.consignor_amount_paid) if getattr(r, "consignor_amount_paid", None) is not None else None,
+            consigned_at=r.consigned_at.isoformat() if getattr(r, "consigned_at", None) else None,
         )
 
 
@@ -301,6 +321,50 @@ async def lot_summary(
     }
 
 
+class ProrateRequest(BaseModel):
+    purchase_price: float | None = None  # override lot.purchase_price if provided
+
+
+@router.post("/lots/{lot_id}/prorate")
+async def prorate_lot_cost(
+    lot_id: uuid.UUID,
+    body: ProrateRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Distribute lot purchase price evenly as cost_price across all records in the lot."""
+    lot_result = await db.execute(select(Lot).where(Lot.id == lot_id, Lot.user_id == user.id))
+    lot = lot_result.scalar_one_or_none()
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot not found")
+
+    price = body.purchase_price if body.purchase_price is not None else lot.purchase_price
+    if price is None:
+        raise HTTPException(status_code=400, detail="No purchase price set on lot. Provide purchase_price in the request body.")
+
+    if body.purchase_price is not None and body.purchase_price != lot.purchase_price:
+        lot.purchase_price = body.purchase_price
+
+    records_result = await db.execute(select(Record).where(Record.lot_id == lot_id))
+    records = records_result.scalars().all()
+    if not records:
+        raise HTTPException(status_code=400, detail="Lot has no records to prorate")
+
+    per_record = round(price / len(records), 2)
+    for r in records:
+        r.cost_price = per_record
+
+    await db.commit()
+    _set_credit_header(response, user)
+    return {
+        "ok": True,
+        "purchase_price": price,
+        "record_count": len(records),
+        "cost_per_record": per_record,
+    }
+
+
 # ── Catalog stats ────────────────────────────────────────────────────────────
 
 @router.get("/stats")
@@ -470,12 +534,15 @@ class CreateRecordRequest(BaseModel):
     genre: str | None = None
     country: str | None = None
     condition: str = "VG+"
+    disc_condition: str | None = None
+    cover_condition: str | None = None
     lot_id: uuid.UUID | None = None
     cost_price: float | None = None
     asking_price: float | None = None
     discogs_release_id: int | None = None
     tags: str | None = None
     notes: str | None = None
+    record_section: str = "vinyl"
 
 
 @router.post("", response_model=RecordOut, status_code=201)
@@ -502,11 +569,14 @@ async def create_record(
         genre=body.genre,
         country=body.country,
         condition=body.condition,
+        disc_condition=body.disc_condition,
+        cover_condition=body.cover_condition,
         cost_price=body.cost_price,
         asking_price=body.asking_price,
         discogs_release_id=body.discogs_release_id,
         tags=body.tags,
         notes=body.notes,
+        record_section=body.record_section or "vinyl",
     )
     db.add(record)
     await db.flush()  # assign record.id before FK reference in _log
@@ -647,12 +717,15 @@ class UpdateRecordRequest(BaseModel):
     genre: str | None = None
     country: str | None = None
     condition: str | None = None
+    disc_condition: str | None = None
+    cover_condition: str | None = None
     lot_id: uuid.UUID | None = None
     cost_price: float | None = None
     asking_price: float | None = None
     tags: str | None = None
     notes: str | None = None
     store_listed: bool | None = None
+    record_section: str | None = None
 
 
 @router.patch("/{record_id}", response_model=RecordOut)
@@ -677,7 +750,8 @@ async def update_record(
     old_store_listed = record.store_listed
 
     simple_fields = ["artist", "title", "year", "label", "catalog_number", "format",
-                     "genre", "styles", "country", "cost_price", "asking_price", "tags", "notes", "store_listed"]
+                     "genre", "styles", "country", "cost_price", "asking_price", "tags", "notes", "store_listed",
+                     "record_section", "disc_condition", "cover_condition"]
     for field in simple_fields:
         if field in body.model_fields_set:
             setattr(record, field, getattr(body, field))
@@ -752,6 +826,12 @@ async def sell_record(
     record.sold_price = body.sold_price
     record.sold_at = datetime.now(timezone.utc)
     record.discogs_listing_id = None
+
+    if getattr(record, "consignor_id", None) and getattr(record, "consignor_commission_pct", None) is not None:
+        owed = body.sold_price * (record.consignor_commission_pct / 100)
+        record.consignor_amount_owed = owed
+        record.consignor_payout_status = "pending"
+
     await _log(db, record.id, "sold", f"Sold for ${body.sold_price:.2f}")
     await db.commit()
     await db.refresh(record)
@@ -769,39 +849,32 @@ async def sell_record(
     return RecordOut.from_orm_safe(record)
 
 
-# ── Collector remove ──────────────────────────────────────────────────────────
+# ── Cancel sale (unsell) ──────────────────────────────────────────────────────
 
-class RemoveRequest(BaseModel):
-    reason: str  # sold|traded|gift|lost|broken|other
-    note: str | None = None
-
-
-VALID_REMOVE_REASONS = {"sold", "traded", "gift", "lost", "broken", "other"}
-
-
-@router.post("/{record_id}/remove", response_model=RecordOut)
-async def remove_record(
+@router.post("/{record_id}/unsell", response_model=RecordOut)
+async def unsell_record(
     record_id: uuid.UUID,
-    body: RemoveRequest,
     response: Response,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    if body.reason not in VALID_REMOVE_REASONS:
-        raise HTTPException(status_code=422, detail=f"reason must be one of {sorted(VALID_REMOVE_REASONS)}")
     result = await db.execute(
         select(Record).where(Record.id == record_id, Record.user_id == user.id)
     )
     record = result.scalar_one_or_none()
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
-    if record.status == RecordStatus.sold:
-        raise HTTPException(status_code=400, detail="Record already removed")
+    if record.status != RecordStatus.sold:
+        raise HTTPException(status_code=400, detail="Record is not sold")
 
-    record.status = RecordStatus.sold
-    record.sold_at = datetime.now(timezone.utc)
-    detail = body.reason if not body.note else f"{body.reason}: {body.note}"
-    await _log(db, record.id, "removed", detail)
+    record.status = RecordStatus.in_stock
+    record.sold_price = None
+    record.sold_at = None
+    if getattr(record, "consignor_payout_status", None) == "pending":
+        record.consignor_amount_owed = None
+        record.consignor_payout_status = None
+
+    await _log(db, record.id, "unsold", "Sale cancelled")
     await db.commit()
     await db.refresh(record)
 
@@ -912,6 +985,7 @@ async def export_csv(
     writer = csv.writer(output)
     writer.writerow([
         "id", "artist", "title", "year", "label", "format", "condition",
+        "disc_condition", "cover_condition",
         "genre", "styles", "country", "status",
         "cost_price", "asking_price", "sold_price", "sold_at",
         "discogs_release_id", "tags", "notes", "created_at",
@@ -919,6 +993,7 @@ async def export_csv(
     for r in records:
         writer.writerow([
             str(r.id), r.artist, r.title, r.year, r.label, r.format, r.condition,
+            getattr(r, "disc_condition", None), getattr(r, "cover_condition", None),
             r.genre, r.styles, r.country, r.status.value if r.status else "",
             r.cost_price, r.asking_price, r.sold_price,
             r.sold_at.isoformat() if r.sold_at else "",

@@ -21,7 +21,9 @@ def encrypt(value: str) -> str:
     return _fernet.encrypt(value.encode()).decode()
 
 
-def decrypt(value: str) -> str:
+def decrypt(value: str | None) -> str | None:
+    if value is None:
+        return None
     return _fernet.decrypt(value.encode()).decode()
 
 

@@ -4,6 +4,8 @@ Public store router.
   PATCH /store/settings         — update store config (auth)
   POST /store/logo              — upload store logo via Cloudinary (auth)
   DELETE /store/logo            — remove store logo (auth)
+  POST /store/banner            — upload store banner via Cloudinary (auth)
+  DELETE /store/banner          — remove store banner (auth)
   GET  /store/{slug}            — public storefront (no auth)
 """
 import asyncio
@@ -53,6 +55,12 @@ class StoreSettings(BaseModel):
     store_facebook: str | None
     store_website: str | None
     store_logo_url: str | None
+    store_banner_url: str | None
+    store_font: str | None
+    store_secondary_color: str | None
+    store_tagline: str | None
+    store_hours: str | None
+    store_theme_config: str | None
 
 
 class UpdateStoreSettings(BaseModel):
@@ -67,6 +75,12 @@ class UpdateStoreSettings(BaseModel):
     store_accent_color: str | None = None
     store_facebook: str | None = None
     store_website: str | None = None
+    store_banner_url: str | None = None
+    store_font: str | None = None
+    store_secondary_color: str | None = None
+    store_tagline: str | None = None
+    store_hours: str | None = None
+    store_theme_config: str | None = None
 
 
 class PublicRecord(BaseModel):
@@ -81,6 +95,9 @@ class PublicRecord(BaseModel):
     condition: str
     asking_price: float | None
     cover_image_url: str | None
+    discogs_synced: bool
+    record_section: str
+    created_at: str
 
 
 class PublicStore(BaseModel):
@@ -94,26 +111,37 @@ class PublicStore(BaseModel):
     store_facebook: str | None
     store_website: str | None
     store_logo_url: str | None
+    store_banner_url: str | None
+    store_font: str | None
+    store_secondary_color: str | None
+    store_tagline: str | None
+    store_hours: str | None
+    store_theme_config: str | None
     records: list[PublicRecord]
 
 
-# ── Auth endpoints ─────────────────────────────────────────────────────────────
+# ── Helpers ────────────────────────────────────────────────────────────────────
 
-@router.get("/settings", response_model=StoreSettings)
-async def get_store_settings(user: User = Depends(get_current_user)):
+def _user_to_store_settings(u: User) -> StoreSettings:
     return StoreSettings(
-        store_slug=user.store_slug,
-        store_name=user.store_name,
-        store_description=user.store_description,
-        store_contact=user.store_contact,
-        store_public=user.store_public,
-        store_info_banner=user.store_info_banner,
-        store_instagram=user.store_instagram,
-        store_location=user.store_location,
-        store_accent_color=user.store_accent_color,
-        store_facebook=user.store_facebook,
-        store_website=user.store_website,
-        store_logo_url=user.store_logo_url,
+        store_slug=u.store_slug,
+        store_name=u.store_name,
+        store_description=u.store_description,
+        store_contact=u.store_contact,
+        store_public=u.store_public,
+        store_info_banner=u.store_info_banner,
+        store_instagram=u.store_instagram,
+        store_location=u.store_location,
+        store_accent_color=u.store_accent_color,
+        store_facebook=u.store_facebook,
+        store_website=u.store_website,
+        store_logo_url=u.store_logo_url,
+        store_banner_url=u.store_banner_url,
+        store_font=u.store_font,
+        store_secondary_color=u.store_secondary_color,
+        store_tagline=u.store_tagline,
+        store_hours=u.store_hours,
+        store_theme_config=u.store_theme_config,
     )
 
 
@@ -121,6 +149,18 @@ def _slugify(s: str) -> str:
     s = s.lower().strip()
     s = re.sub(r"[^a-z0-9]+", "-", s)
     return s.strip("-")[:60]
+
+
+async def _require_cloudinary():
+    if not CLOUDINARY_CLOUD_NAME:
+        raise HTTPException(status_code=503, detail="Image uploads not configured (missing CLOUDINARY_CLOUD_NAME)")
+
+
+# ── Auth endpoints ─────────────────────────────────────────────────────────────
+
+@router.get("/settings", response_model=StoreSettings)
+async def get_store_settings(user: User = Depends(get_current_user)):
+    return _user_to_store_settings(user)
 
 
 @router.patch("/settings", response_model=StoreSettings)
@@ -136,7 +176,6 @@ async def update_store_settings(
         slug = _slugify(body.store_slug)
         if not slug:
             raise HTTPException(status_code=400, detail="Invalid slug")
-        # Check uniqueness
         existing = await db.execute(
             select(User.id).where(User.store_slug == slug, User.id != user.id)
         )
@@ -146,11 +185,16 @@ async def update_store_settings(
     elif "store_slug" in body.model_fields_set and body.store_slug is None:
         db_user.store_slug = None
 
-    for field in ["store_name", "store_description", "store_contact", "store_public", "store_info_banner", "store_instagram", "store_location", "store_accent_color", "store_facebook", "store_website"]:
+    updatable = [
+        "store_name", "store_description", "store_contact", "store_public",
+        "store_info_banner", "store_instagram", "store_location", "store_accent_color",
+        "store_facebook", "store_website", "store_font", "store_secondary_color",
+        "store_tagline", "store_hours", "store_theme_config",
+    ]
+    for field in updatable:
         if field in body.model_fields_set:
             setattr(db_user, field, getattr(body, field))
 
-    # Auto-set slug from display_name or discogs_username if not already set
     if not db_user.store_slug:
         source = db_user.display_name or db_user.discogs_username
         if source:
@@ -163,25 +207,12 @@ async def update_store_settings(
 
     await db.commit()
     await db.refresh(db_user)
-    return StoreSettings(
-        store_slug=db_user.store_slug,
-        store_name=db_user.store_name,
-        store_description=db_user.store_description,
-        store_contact=db_user.store_contact,
-        store_public=db_user.store_public,
-        store_info_banner=db_user.store_info_banner,
-        store_instagram=db_user.store_instagram,
-        store_location=db_user.store_location,
-        store_accent_color=db_user.store_accent_color,
-        store_facebook=db_user.store_facebook,
-        store_website=db_user.store_website,
-        store_logo_url=db_user.store_logo_url,
-    )
+    return _user_to_store_settings(db_user)
 
 
 # ── Logo upload ────────────────────────────────────────────────────────────────
 
-def _cloudinary_upload_sync(data: bytes, public_id: str) -> str:
+def _upload_logo_sync(data: bytes, public_id: str) -> str:
     result = cloudinary.uploader.upload(
         data,
         public_id=public_id,
@@ -199,21 +230,18 @@ async def upload_store_logo(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    if not CLOUDINARY_CLOUD_NAME:
-        raise HTTPException(status_code=503, detail="Image uploads not configured (missing CLOUDINARY_CLOUD_NAME)")
+    await _require_cloudinary()
 
-    content_type = file.content_type or ""
-    if not content_type.startswith("image/"):
+    if not (file.content_type or "").startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
     data = await file.read()
     if len(data) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image must be under 5 MB")
 
-    public_id = f"logo_{user.id}"
     loop = asyncio.get_event_loop()
     try:
-        url = await loop.run_in_executor(None, partial(_cloudinary_upload_sync, data, public_id))
+        url = await loop.run_in_executor(None, partial(_upload_logo_sync, data, f"logo_{user.id}"))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {e}")
 
@@ -222,21 +250,7 @@ async def upload_store_logo(
     db_user.store_logo_url = url
     await db.commit()
     await db.refresh(db_user)
-
-    return StoreSettings(
-        store_slug=db_user.store_slug,
-        store_name=db_user.store_name,
-        store_description=db_user.store_description,
-        store_contact=db_user.store_contact,
-        store_public=db_user.store_public,
-        store_info_banner=db_user.store_info_banner,
-        store_instagram=db_user.store_instagram,
-        store_location=db_user.store_location,
-        store_accent_color=db_user.store_accent_color,
-        store_facebook=db_user.store_facebook,
-        store_website=db_user.store_website,
-        store_logo_url=db_user.store_logo_url,
-    )
+    return _user_to_store_settings(db_user)
 
 
 @router.delete("/logo", response_model=StoreSettings)
@@ -249,28 +263,69 @@ async def delete_store_logo(
     db_user.store_logo_url = None
     await db.commit()
     await db.refresh(db_user)
+    return _user_to_store_settings(db_user)
 
-    return StoreSettings(
-        store_slug=db_user.store_slug,
-        store_name=db_user.store_name,
-        store_description=db_user.store_description,
-        store_contact=db_user.store_contact,
-        store_public=db_user.store_public,
-        store_info_banner=db_user.store_info_banner,
-        store_instagram=db_user.store_instagram,
-        store_location=db_user.store_location,
-        store_accent_color=db_user.store_accent_color,
-        store_facebook=db_user.store_facebook,
-        store_website=db_user.store_website,
-        store_logo_url=None,
+
+# ── Banner upload ──────────────────────────────────────────────────────────────
+
+def _upload_banner_sync(data: bytes, public_id: str) -> str:
+    result = cloudinary.uploader.upload(
+        data,
+        public_id=public_id,
+        folder="vinylscan/store-banners",
+        overwrite=True,
+        resource_type="image",
+        transformation=[{"width": 1600, "height": 500, "crop": "fill", "gravity": "auto", "quality": "auto", "fetch_format": "auto"}],
     )
+    return result["secure_url"]
+
+
+@router.post("/banner", response_model=StoreSettings)
+async def upload_store_banner(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    await _require_cloudinary()
+
+    if not (file.content_type or "").startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    data = await file.read()
+    if len(data) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image must be under 10 MB")
+
+    loop = asyncio.get_event_loop()
+    try:
+        url = await loop.run_in_executor(None, partial(_upload_banner_sync, data, f"banner_{user.id}"))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {e}")
+
+    result = await db.execute(select(User).where(User.id == user.id))
+    db_user = result.scalar_one()
+    db_user.store_banner_url = url
+    await db.commit()
+    await db.refresh(db_user)
+    return _user_to_store_settings(db_user)
+
+
+@router.delete("/banner", response_model=StoreSettings)
+async def delete_store_banner(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    result = await db.execute(select(User).where(User.id == user.id))
+    db_user = result.scalar_one()
+    db_user.store_banner_url = None
+    await db.commit()
+    await db.refresh(db_user)
+    return _user_to_store_settings(db_user)
 
 
 # ── Public endpoint ────────────────────────────────────────────────────────────
 
 @router.get("/{slug}", response_model=PublicStore)
 async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
-    # Try slug first, then fall back to user UUID
     user_result = await db.execute(
         select(User).where(User.store_slug == slug)
     )
@@ -309,6 +364,12 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
         store_facebook=store_user.store_facebook,
         store_website=store_user.store_website,
         store_logo_url=store_user.store_logo_url,
+        store_banner_url=store_user.store_banner_url,
+        store_font=store_user.store_font,
+        store_secondary_color=store_user.store_secondary_color,
+        store_tagline=store_user.store_tagline,
+        store_hours=store_user.store_hours,
+        store_theme_config=store_user.store_theme_config,
         records=[
             PublicRecord(
                 id=str(r.id),
@@ -322,6 +383,9 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
                 condition=r.condition if isinstance(r.condition, str) else r.condition.value,
                 asking_price=float(r.asking_price) if r.asking_price is not None else None,
                 cover_image_url=getattr(r, "cover_image_url", None),
+                discogs_synced=getattr(r, "discogs_synced", False) or False,
+                record_section=getattr(r, "record_section", "vinyl") or "vinyl",
+                created_at=r.created_at.isoformat(),
             )
             for r in records
         ],

@@ -1,0 +1,1337 @@
+{
+  "run_id": "v3-literal_2026-06-19T21-28-49",
+  "prompt_id": "v3-literal",
+  "prompt_schema": "v3",
+  "timestamp": "2026-06-19T21:28:49.901708+00:00",
+  "dataset_hash": "f0a806b10f9438ffa85f5e22b7020d7f552cfeead9d42bc940450a8ae8f7487d",
+  "dataset_version": "1",
+  "summary": {
+    "total": 50,
+    "skipped": 13,
+    "ideal_top1_pct": 2.7,
+    "ideal_top5_pct": 5.4,
+    "ideal_mean_rank": 1.5,
+    "real_top1_pct": 8.1,
+    "real_top5_pct": 8.1,
+    "real_mean_rank": 1.0,
+    "extraction_bottleneck_pct": 0.0,
+    "search_bottleneck_pct": 100.0
+  },
+  "records": [
+    {
+      "release_id": 36346984,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "VICIO CREW",
+          "title": "EL COMIENZO",
+          "year": null,
+          "label": "Vicio",
+          "catalog_number": "VICIO 0036",
+          "confidence": 78
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 36660883,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "Various",
+          "title": "VARIOUS BLEND",
+          "year": null,
+          "label": "Gin Sonic Records",
+          "catalog_number": null,
+          "confidence": 65
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 155187,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "Alexkid",
+          "title": "Bienvenida",
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 45
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 2820,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "St Germain",
+          "title": "TOURIST",
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 50
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 108546,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "blake baxter",
+          "title": "sexual deviant",
+          "year": null,
+          "label": "Logic Records",
+          "catalog_number": "LC 7502",
+          "confidence": 87
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 37221927,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "Various Artists",
+          "title": "Episode 1",
+          "year": null,
+          "label": "AIRFUNK",
+          "catalog_number": null,
+          "confidence": 75
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 210874,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Pop"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "MOHIKANA",
+          "title": null,
+          "year": null,
+          "label": "urvan",
+          "catalog_number": "561 527-1",
+          "confidence": 82
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 767686,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": true,
+        "top5": true,
+        "rank": 1
+      },
+      "real": {
+        "top1": true,
+        "top5": true,
+        "rank": 1,
+        "extracted": {
+          "artist": "COBBLESTONE JAZZ",
+          "title": "INDIA IN ME",
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 65
+        }
+      },
+      "failure_layer": "none",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 9885220,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": true,
+        "rank": 2
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "KC Flightt",
+          "title": "She's Sexxxxy",
+          "year": "2004",
+          "label": "Coco Machete Records",
+          "catalog_number": "CCM013-Promo",
+          "confidence": 88
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 1953233,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "BLAKE BAXTER",
+          "title": "SEXUAL DEVIANT",
+          "year": "1993",
+          "label": "Logic Records",
+          "catalog_number": "07863-62516-1",
+          "confidence": 92
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 26083,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "Digital Justice",
+          "title": "Theme from: Its All Gone Pearshaped",
+          "year": "1996",
+          "label": "Transsoul/Fragile Records",
+          "catalog_number": "FRG-14",
+          "confidence": 87
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 2938,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "Kevin Yost",
+          "title": "theSticksandStonesEP",
+          "year": null,
+          "label": "RECORDS",
+          "catalog_number": "IR-138-A",
+          "confidence": 88
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 129019,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "Kevin Yost",
+          "title": "if she only knew",
+          "year": null,
+          "label": "RECORDS",
+          "catalog_number": "in-158-A",
+          "confidence": 82
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 36884503,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "OVAL",
+          "title": "#WITH",
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 55
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 313218,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "martin solveig",
+          "title": "i m a good man",
+          "year": null,
+          "label": "d vision",
+          "catalog_number": null,
+          "confidence": 75
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 33795987,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "VARIOUS ARTISTS",
+          "title": null,
+          "year": "2025",
+          "label": "STAY AT HOME",
+          "catalog_number": null,
+          "confidence": 85
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 117119,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Jazz",
+        "Funk / Soul"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "FRANZ FERD?",
+          "title": "A NICE HOTPOT WITH",
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 25
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 683342,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "grid",
+          "title": "Figure of Eight",
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 75
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 101602,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "COBBLESTONE JAZZ",
+          "title": "INDIA IN ME",
+          "year": null,
+          "label": "SO SOUND",
+          "catalog_number": "BSU 013",
+          "confidence": 88
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 35196787,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": null,
+          "title": null,
+          "year": "2001-2002",
+          "label": "Pro-Zak",
+          "catalog_number": "PROZAK 002",
+          "confidence": 40
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 171750,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "Various",
+          "title": "Lost On Arrival",
+          "year": null,
+          "label": "Naked Music",
+          "catalog_number": null,
+          "confidence": 75
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 177333,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "Child feat. M. Wonder",
+          "title": "MY RHYTHM",
+          "year": null,
+          "label": "D-vision",
+          "catalog_number": "33.508",
+          "confidence": 88
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 34459669,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": true,
+        "top5": true,
+        "rank": 1,
+        "extracted": {
+          "artist": "PASSARANI PRESENTS M.CHROME",
+          "title": "FLARE RIDER EP",
+          "year": "2025",
+          "label": "Studiomaster",
+          "catalog_number": "STUDIOMST003",
+          "confidence": 91
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 384537,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "Thelma Houston",
+          "title": "(You Used To Hold Me So Tight)",
+          "year": null,
+          "label": "deep liquid soul",
+          "catalog_number": null,
+          "confidence": 75
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 79903,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Funk / Soul"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "BARBARA MASON",
+          "title": "ANOTHER MAN",
+          "year": "1983",
+          "label": "WEST END",
+          "catalog_number": "WES 22164-A",
+          "confidence": 90
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 34757492,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": null,
+          "title": null,
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 0
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 34632718,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "GARRETT DAVID",
+          "title": "Wurz",
+          "year": null,
+          "label": null,
+          "catalog_number": "6SU013",
+          "confidence": 87
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 30570313,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "MATTROGG",
+          "title": "roggtrax ep",
+          "year": "2024",
+          "label": "consortium records",
+          "catalog_number": "10ª",
+          "confidence": 93
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 118533,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "WET DREAMS MID RENARD",
+          "title": "SUNRISE",
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 65
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 34125502,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": null,
+          "title": null,
+          "year": null,
+          "label": "TSOL",
+          "catalog_number": "TSC?",
+          "confidence": 25
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 31996853,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "QUENCH",
+          "title": "DREAMS",
+          "year": "2024",
+          "label": "DANCE ON THE BEAT",
+          "catalog_number": "DOTB-21",
+          "confidence": 88
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 33977520,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": null,
+          "title": null,
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 5
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 17122458,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Funk / Soul"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": null,
+          "title": "THE CARIBBEAN HOT SAUCES",
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 25
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 28905952,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "Various",
+          "title": "Heist Classics Vol. 02",
+          "year": null,
+          "label": "Heist",
+          "catalog_number": null,
+          "confidence": 70
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 32473968,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": null,
+          "title": null,
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 5
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 152448,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": true,
+        "top5": true,
+        "rank": 1,
+        "extracted": {
+          "artist": "Merinmaid",
+          "title": "Luv Is",
+          "year": "1997",
+          "label": "CLUB U NITE RECORDS",
+          "catalog_number": "BUNT 862",
+          "confidence": 87
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 659334,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "LIMOS",
+          "title": "THE NIGHT (GOES ON)",
+          "year": "2000",
+          "label": "undiscovered",
+          "catalog_number": "UND031",
+          "confidence": 90
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 293016,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 43918,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 348415,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 15421800,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 1231554,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 29068819,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 34980224,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 663811,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 160482,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 294547,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 6225370,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 25318792,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    },
+    {
+      "release_id": 193909,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": false,
+        "rank": null
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {}
+      },
+      "failure_layer": "skip",
+      "skipped": true,
+      "skip_reason": "image_download_failed"
+    }
+  ]
+}

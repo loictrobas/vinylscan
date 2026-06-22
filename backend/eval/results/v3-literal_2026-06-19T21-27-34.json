@@ -1,0 +1,163 @@
+{
+  "run_id": "v3-literal_2026-06-19T21-27-34",
+  "prompt_id": "v3-literal",
+  "prompt_schema": "v3",
+  "timestamp": "2026-06-19T21:27:34.813097+00:00",
+  "dataset_hash": "f0a806b10f9438ffa85f5e22b7020d7f552cfeead9d42bc940450a8ae8f7487d",
+  "dataset_version": "1",
+  "summary": {
+    "total": 5,
+    "skipped": 0,
+    "ideal_top1_pct": 80.0,
+    "ideal_top5_pct": 100.0,
+    "ideal_mean_rank": 1.2,
+    "real_top1_pct": 60.0,
+    "real_top5_pct": 60.0,
+    "real_mean_rank": 1.0,
+    "extraction_bottleneck_pct": 50.0,
+    "search_bottleneck_pct": 50.0
+  },
+  "records": [
+    {
+      "release_id": 36346984,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": true,
+        "top5": true,
+        "rank": 1
+      },
+      "real": {
+        "top1": true,
+        "top5": true,
+        "rank": 1,
+        "extracted": {
+          "artist": "VICIO CREW",
+          "title": "EL COMIENZO",
+          "year": null,
+          "label": "Vicio",
+          "catalog_number": "VICIO 0036",
+          "confidence": 82
+        }
+      },
+      "failure_layer": "none",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 36660883,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": true,
+        "top5": true,
+        "rank": 1
+      },
+      "real": {
+        "top1": true,
+        "top5": true,
+        "rank": 1,
+        "extracted": {
+          "artist": "Various",
+          "title": "VARIOUS BLEND",
+          "year": null,
+          "label": "Gin Sonic Records",
+          "catalog_number": null,
+          "confidence": 65
+        }
+      },
+      "failure_layer": "none",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 155187,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": true,
+        "top5": true,
+        "rank": 1
+      },
+      "real": {
+        "top1": true,
+        "top5": true,
+        "rank": 1,
+        "extracted": {
+          "artist": "Alexkid",
+          "title": "Bienvenida",
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 40
+        }
+      },
+      "failure_layer": "none",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 2820,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "ideal": {
+        "top1": false,
+        "top5": true,
+        "rank": 2
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "St Germain",
+          "title": "TOURIST",
+          "year": null,
+          "label": null,
+          "catalog_number": null,
+          "confidence": 45
+        }
+      },
+      "failure_layer": "search",
+      "skipped": false,
+      "skip_reason": null
+    },
+    {
+      "release_id": 108546,
+      "difficulty": "easy",
+      "genres": [
+        "Electronic"
+      ],
+      "ideal": {
+        "top1": true,
+        "top5": true,
+        "rank": 1
+      },
+      "real": {
+        "top1": false,
+        "top5": false,
+        "rank": null,
+        "extracted": {
+          "artist": "blake baxter",
+          "title": "sexual deviant",
+          "year": null,
+          "label": "Logic Records",
+          "catalog_number": "LC 7502",
+          "confidence": 88
+        }
+      },
+      "failure_layer": "extraction",
+      "skipped": false,
+      "skip_reason": null
+    }
+  ]
+}

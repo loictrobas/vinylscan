@@ -21,8 +21,34 @@ DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 DEV_CREDITS = 9999
 FREE_MONTHLY_CREDITS = 5
 
-# Temporary store for request tokens (in-memory; for production use Redis)
-_request_token_store: dict[str, str] = {}
+# Temporary store for Discogs OAuth request tokens (in-memory; for production use Redis).
+# Carries the id of whoever was logged in when the connect flow started (or None if
+# this is an anonymous "sign in with Discogs"), so the callback knows whether to attach
+# the result to that existing account or fall back to the legacy login-via-Discogs path.
+_request_token_store: dict[str, tuple[str, str | None]] = {}
+
+
+async def _resolve_user(
+    request: Request,
+    access_token: str | None,
+    db: AsyncSession,
+) -> User | None:
+    # Accept Bearer token from Authorization header (cross-domain) or cookie (same-domain)
+    token = access_token
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+    if not token:
+        return None
+    user_id_str = decode_access_token(token)
+    if not user_id_str:
+        return None
+    try:
+        user_id = uuid_mod.UUID(user_id_str)
+    except (ValueError, AttributeError):
+        return None
+    result = await db.execute(select(User).where(User.id == user_id))
+    return result.scalar_one_or_none()
 
 
 async def get_current_user(
@@ -30,27 +56,21 @@ async def get_current_user(
     access_token: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    # Accept Bearer token from Authorization header (cross-domain) or cookie (same-domain)
-    token = access_token
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header[7:]
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    user_id_str = decode_access_token(token)
-    if not user_id_str:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    try:
-        user_id = uuid_mod.UUID(user_id_str)
-    except (ValueError, AttributeError):
-        raise HTTPException(status_code=401, detail="Invalid token")
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
+    user = await _resolve_user(request, access_token, db)
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(status_code=401, detail="Not authenticated")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account disabled — contact support")
     return user
+
+
+async def get_current_user_optional(
+    request: Request,
+    access_token: str | None = Cookie(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    user = await _resolve_user(request, access_token, db)
+    return user if (user and user.is_active) else None
 
 
 async def apply_monthly_topup(user: User, db: AsyncSession) -> bool:
@@ -81,14 +101,25 @@ async def apply_monthly_topup(user: User, db: AsyncSession) -> bool:
 
 
 @router.get("/discogs/login")
-async def discogs_login():
+async def discogs_login(current_user: User | None = Depends(get_current_user_optional)):
+    """
+    Two callers hit this:
+    - Logged-out "Sign in with Discogs" (login page / navbar): plain <a href> navigation,
+      no auth header possible — current_user is None, behaves exactly as before
+      (redirect straight to Discogs; callback resolves-or-creates by discogs_username).
+    - Logged-in "Connect Discogs" (settings page): authenticated fetch, current_user is set —
+      we remember which account started this so the callback attaches to THAT account
+      instead of switching the session to a different (possibly pre-existing) one.
+    """
     callback_url = f"{BACKEND_URL}/auth/discogs/callback"
     try:
         request_token, request_token_secret = discogs_svc.get_request_token(callback_url)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Discogs OAuth error: {e}")
-    _request_token_store[request_token] = request_token_secret
+    _request_token_store[request_token] = (request_token_secret, str(current_user.id) if current_user else None)
     authorize_url = f"{discogs_svc.AUTHORIZE_URL}?oauth_token={request_token}"
+    if current_user:
+        return {"authorize_url": authorize_url}
     return RedirectResponse(url=authorize_url)
 
 
@@ -99,9 +130,10 @@ async def discogs_callback(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    token_secret = _request_token_store.pop(oauth_token, None)
-    if not token_secret:
+    entry = _request_token_store.pop(oauth_token, None)
+    if not entry:
         raise HTTPException(status_code=400, detail="Invalid OAuth token")
+    token_secret, linking_user_id = entry
 
     try:
         access_token, access_token_secret = discogs_svc.get_access_token(
@@ -115,12 +147,31 @@ async def discogs_callback(
     if not username:
         raise HTTPException(status_code=502, detail="Could not get Discogs username")
 
-    # upsert user
-    result = await db.execute(select(User).where(User.discogs_username == username))
-    user = result.scalar_one_or_none()
-
     encrypted_token = encrypt(access_token)
     encrypted_secret = encrypt(access_token_secret)
+
+    if linking_user_id:
+        # Connect flow: attach to the account that was already logged in. Never switch
+        # identity and never silently create/jump to a different existing account.
+        result = await db.execute(select(User).where(User.id == uuid_mod.UUID(linking_user_id)))
+        user = result.scalar_one_or_none()
+        if not user:
+            return RedirectResponse(url=f"{FRONTEND_URL}/settings?discogs_error=session_expired")
+
+        other = await db.execute(select(User).where(User.discogs_username == username))
+        other_user = other.scalar_one_or_none()
+        if other_user is not None and other_user.id != user.id:
+            return RedirectResponse(url=f"{FRONTEND_URL}/settings?discogs_error=already_linked")
+
+        user.discogs_username = username
+        user.discogs_oauth_token = encrypted_token
+        user.discogs_oauth_token_secret = encrypted_secret
+        await db.commit()
+        return RedirectResponse(url=f"{FRONTEND_URL}/settings?discogs_connected=1")
+
+    # Legacy login-via-Discogs (no session at the time): resolve-or-create by discogs_username.
+    result = await db.execute(select(User).where(User.discogs_username == username))
+    user = result.scalar_one_or_none()
 
     if user is None:
         from datetime import datetime, timezone
@@ -220,11 +271,9 @@ class RegisterRequest(_BM):
     token: str
     password: str
     display_name: str | None = None
-    account_type: str = "collector"
 
 
 class UpdateMeRequest(_BM):
-    account_type: str | None = None
     display_name: str | None = None
 
 
@@ -234,11 +283,6 @@ async def update_me(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    valid_types = {"collector", "store", "both"}
-    if body.account_type is not None:
-        if body.account_type not in valid_types:
-            raise HTTPException(status_code=422, detail="account_type must be collector, store, or both")
-        user.account_type = body.account_type
     if body.display_name is not None:
         user.display_name = body.display_name
     await db.commit()
@@ -301,8 +345,6 @@ async def register_via_invite(
     if len(body.password) < 8:
         raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
 
-    valid_types = {"collector", "store", "both"}
-    account_type = body.account_type if body.account_type in valid_types else "collector"
     user = User(
         email=invite.email.lower(),
         password_hash=_hash_password(body.password),
@@ -311,7 +353,6 @@ async def register_via_invite(
         is_admin=False,
         credits=5,
         last_free_topup_month="",
-        account_type=account_type,
     )
     db.add(user)
     await db.flush()

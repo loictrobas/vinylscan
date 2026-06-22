@@ -77,7 +77,12 @@ class User(Base):
     store_facebook: Mapped[str | None] = mapped_column(String(100), nullable=True)
     store_website: Mapped[str | None] = mapped_column(String(500), nullable=True)
     store_logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    account_type: Mapped[str] = mapped_column(String(20), nullable=False, default="store")
+    store_banner_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    store_font: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    store_secondary_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
+    store_tagline: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    store_hours: Mapped[str | None] = mapped_column(Text, nullable=True)
+    store_theme_config: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -103,7 +108,9 @@ class Scan(Base):
     catalog_number: Mapped[str | None] = mapped_column(String(255), nullable=True)
     format: Mapped[str | None] = mapped_column(String(50), nullable=True)
     confidence: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    internal_confidence: Mapped[int | None] = mapped_column(Integer, nullable=True)
     discogs_release_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    matches: Mapped[list | None] = mapped_column(JSON, nullable=True)
     status: Mapped[ScanStatus] = mapped_column(
         Enum(ScanStatus, name="scan_status"), default=ScanStatus.pending, nullable=False
     )
@@ -167,6 +174,8 @@ class Record(Base):
         Enum(RecordCondition, name="record_condition", values_callable=lambda obj: [e.value for e in obj]),
         default=RecordCondition.VG_PLUS, nullable=False
     )
+    disc_condition: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    cover_condition: Mapped[str | None] = mapped_column(String(10), nullable=True)
     discogs_release_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     discogs_instance_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)  # collection instance_id
     discogs_listing_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)   # marketplace listing_id
@@ -176,7 +185,16 @@ class Record(Base):
     discogs_num_for_sale: Mapped[int | None] = mapped_column(Integer, nullable=True)
     discogs_suggested_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     cover_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    record_section: Mapped[str] = mapped_column(String(20), nullable=False, default="vinyl")
     store_listed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    consignor_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("consignors.id", ondelete="SET NULL"), nullable=True)
+    consignor_agreed_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    consignor_commission_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    consignor_payout_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    consignor_amount_owed: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    consignor_amount_paid: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    consignor_paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    consigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     status: Mapped[RecordStatus] = mapped_column(
         Enum(RecordStatus, name="record_status"), default=RecordStatus.in_stock, nullable=False
@@ -196,6 +214,18 @@ class Record(Base):
         Index("ix_records_discogs_release_id", "discogs_release_id"),
         Index("ix_records_discogs_listing_id", "discogs_listing_id"),
     )
+
+
+class Consignor(Base):
+    __tablename__ = "consignors"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    contact: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    default_commission_pct: Mapped[float] = mapped_column(Float, nullable=False, default=30.0)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class Invite(Base):
@@ -224,18 +254,23 @@ class RecordEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
-class WantlistItem(Base):
-    __tablename__ = "wantlist_items"
+class SearchStrategyOutcome(Base):
+    """Records which Discogs search strategies hit the correct release on each confirm."""
+    __tablename__ = "search_strategy_outcomes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
-    artist: Mapped[str] = mapped_column(String(500), nullable=False)
-    title: Mapped[str] = mapped_column(String(500), nullable=False)
-    year: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    label: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    discogs_release_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    scan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("scans.id", ondelete="CASCADE"), nullable=False, index=True)
+    confirmed_release_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    strategy_name: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    hit: Mapped[bool] = mapped_column(Boolean, nullable=False)        # found correct release
+    was_first: Mapped[bool] = mapped_column(Boolean, nullable=False)  # first strategy to find it
+    rank_in_strategy: Mapped[int | None] = mapped_column(Integer, nullable=True)  # position within strategy results (1-based)
+    error: Mapped[str | None] = mapped_column(String(50), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    __table_args__ = (
+        Index("ix_strategy_outcomes_strategy_hit", "strategy_name", "hit"),
+    )
 
 
 class PasswordResetToken(Base):
