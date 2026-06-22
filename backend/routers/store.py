@@ -44,6 +44,7 @@ router = APIRouter(prefix="/store", tags=["store"])
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class StoreSettings(BaseModel):
+    id: str
     store_slug: str | None
     store_name: str | None
     store_description: str | None
@@ -149,6 +150,7 @@ class PublicStore(BaseModel):
 
 def _user_to_store_settings(u: User) -> StoreSettings:
     return StoreSettings(
+        id=str(u.id),
         store_slug=u.store_slug,
         store_name=u.store_name,
         store_description=u.store_description,
@@ -185,7 +187,21 @@ async def _require_cloudinary():
 # ── Auth endpoints ─────────────────────────────────────────────────────────────
 
 @router.get("/settings", response_model=StoreSettings)
-async def get_store_settings(user: User = Depends(get_current_user)):
+async def get_store_settings(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if not user.store_slug:
+        source = user.display_name or user.discogs_username
+        if source:
+            candidate = _slugify(source)
+            exists = await db.execute(
+                select(User.id).where(User.store_slug == candidate, User.id != user.id)
+            )
+            if not exists.scalar():
+                user.store_slug = candidate
+                await db.commit()
+                await db.refresh(user)
     return _user_to_store_settings(user)
 
 
