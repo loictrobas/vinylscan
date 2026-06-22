@@ -47,6 +47,7 @@ async def _run_sync(user_id: str, username: str, token: str, secret: str) -> Non
     state["status"] = "running"
     state["imported"] = 0
     state["skipped"] = 0
+    state["errors"] = 0
     state["total"] = 0
     state["error"] = None
 
@@ -90,27 +91,36 @@ async def _run_sync(user_id: str, username: str, token: str, secret: str) -> Non
                 styles = ", ".join(styles_list[:5]) if styles_list else None
                 thumb = basic.get("cover_image") or basic.get("thumb")  # cover_image > thumb (higher res, more reliable)
 
-                record = Record(
-                    user_id=user_id,
-                    artist=artist,
-                    title=title,
-                    year=year,
-                    format=fmt,
-                    label=label,
-                    genre=genre,
-                    styles=styles,
-                    discogs_release_id=release_id,
-                    discogs_instance_id=instance_id,
-                    discogs_synced=True,
-                    discogs_url=f"https://www.discogs.com/release/{release_id}",
-                    condition=RecordCondition.VG_PLUS.value,
-                    status=RecordStatus.in_stock,
-                    cover_image_url=thumb or None,
-                )
-                db.add(record)
-                title_str = f"{artist} — {title}" if artist and title else (artist or title or "Unknown")
-                db.add(RecordEvent(record_id=record.id, event_type="added", detail=f"Synced from Discogs collection: {title_str}"))
-                state["imported"] += 1
+                try:
+                    record = Record(
+                        user_id=user_id,
+                        artist=artist,
+                        title=title,
+                        year=year,
+                        format=fmt,
+                        label=label,
+                        genre=genre,
+                        styles=styles,
+                        discogs_release_id=release_id,
+                        discogs_instance_id=instance_id,
+                        discogs_synced=True,
+                        discogs_url=f"https://www.discogs.com/release/{release_id}",
+                        condition=RecordCondition.VG_PLUS.value,
+                        status=RecordStatus.in_stock,
+                        cover_image_url=thumb or None,
+                    )
+                    db.add(record)
+                    await db.flush()  # assign record.id before the FK reference below
+                    title_str = f"{artist} — {title}" if artist and title else (artist or title or "Unknown")
+                    db.add(RecordEvent(record_id=record.id, event_type="added", detail=f"Synced from Discogs collection: {title_str}"))
+                    state["imported"] += 1
+                except Exception as item_exc:
+                    # One bad release shouldn't sink the whole import — log it, roll back
+                    # just this item, and keep going.
+                    logger.warning("Discogs sync: failed to import release %s for user %s: %s", release_id, user_id, item_exc)
+                    await db.rollback()
+                    state["errors"] += 1
+                    continue
 
                 # Commit in batches of 50
                 if state["imported"] % 50 == 0:
@@ -141,6 +151,7 @@ class SyncStatus(BaseModel):
     total: int
     imported: int
     skipped: int
+    errors: int = 0
     error: str | None
     last_sync: str | None
     finished_at: str | None
@@ -190,7 +201,7 @@ async def sync_status(
     state = _sync_state.get(user_id)
     if not state:
         return SyncStatus(
-            status="idle", total=0, imported=0, skipped=0, error=None,
+            status="idle", total=0, imported=0, skipped=0, errors=0, error=None,
             last_sync=user.last_discogs_sync.isoformat() if user.last_discogs_sync else None,
             finished_at=None,
         )
@@ -199,6 +210,7 @@ async def sync_status(
         total=state.get("total", 0),
         imported=state.get("imported", 0),
         skipped=state.get("skipped", 0),
+        errors=state.get("errors", 0),
         error=state.get("error"),
         last_sync=user.last_discogs_sync.isoformat() if user.last_discogs_sync else None,
         finished_at=state.get("finished_at"),
