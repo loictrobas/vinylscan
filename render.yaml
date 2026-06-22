@@ -1,4 +1,5 @@
 services:
+  # touch: retrigger blueprint sync to wire DATABASE_URL via fromDatabase
   - type: web
     name: vinylscan-api
     runtime: docker
