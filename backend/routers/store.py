@@ -61,6 +61,7 @@ class StoreSettings(BaseModel):
     store_tagline: str | None
     store_hours: str | None
     store_theme_config: str | None
+    store_hero_layout: str
 
 
 class UpdateStoreSettings(BaseModel):
@@ -81,6 +82,7 @@ class UpdateStoreSettings(BaseModel):
     store_tagline: str | None = None
     store_hours: str | None = None
     store_theme_config: str | None = None
+    store_hero_layout: str | None = None
 
 
 class PublicRecord(BaseModel):
@@ -117,6 +119,7 @@ class PublicStore(BaseModel):
     store_tagline: str | None
     store_hours: str | None
     store_theme_config: str | None
+    store_hero_layout: str
     records: list[PublicRecord]
 
 
@@ -142,6 +145,7 @@ def _user_to_store_settings(u: User) -> StoreSettings:
         store_tagline=u.store_tagline,
         store_hours=u.store_hours,
         store_theme_config=u.store_theme_config,
+        store_hero_layout=getattr(u, "store_hero_layout", None) or "gallery",
     )
 
 
@@ -185,11 +189,16 @@ async def update_store_settings(
     elif "store_slug" in body.model_fields_set and body.store_slug is None:
         db_user.store_slug = None
 
+    if "store_hero_layout" in body.model_fields_set and body.store_hero_layout is not None:
+        valid_layouts = {"gallery", "index", "poster"}
+        if body.store_hero_layout not in valid_layouts:
+            raise HTTPException(status_code=400, detail=f"Invalid hero layout. Use one of: {sorted(valid_layouts)}")
+
     updatable = [
         "store_name", "store_description", "store_contact", "store_public",
         "store_info_banner", "store_instagram", "store_location", "store_accent_color",
         "store_facebook", "store_website", "store_font", "store_secondary_color",
-        "store_tagline", "store_hours", "store_theme_config",
+        "store_tagline", "store_hours", "store_theme_config", "store_hero_layout",
     ]
     for field in updatable:
         if field in body.model_fields_set:
@@ -370,6 +379,7 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
         store_tagline=store_user.store_tagline,
         store_hours=store_user.store_hours,
         store_theme_config=store_user.store_theme_config,
+        store_hero_layout=getattr(store_user, "store_hero_layout", None) or "gallery",
         records=[
             PublicRecord(
                 id=str(r.id),
