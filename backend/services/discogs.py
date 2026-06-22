@@ -911,11 +911,21 @@ async def get_release_details(
         return None
 
     lp = raw.get("lowest_price")
+    labels = raw.get("labels") or []
+    formats = raw.get("formats") or []
     return {
         "styles": raw.get("styles", []),
         "genres": raw.get("genres", []),
         "lowest_price": float(lp) if lp is not None else None,
         "num_for_sale": raw.get("num_for_sale", 0),
+        # The confirmed release's own data — authoritative, more reliable than the
+        # original Claude Vision guess from the photo.
+        "title": raw.get("title"),
+        "year": raw.get("year"),
+        "country": raw.get("country"),
+        "label": labels[0].get("name") if labels else None,
+        "catno": labels[0].get("catno") if labels else None,
+        "format": ", ".join(f.get("name", "") for f in formats) if formats else None,
     }
 
 

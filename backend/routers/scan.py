@@ -872,6 +872,7 @@ async def _create_catalog_record(
     label: str | None = None,
     catalog_number: str | None = None,
     format: str | None = None,
+    country: str | None = None,
     cover_image_url: str | None = None,
     disc_condition: str | None = None,
     cover_condition: str | None = None,
@@ -891,6 +892,7 @@ async def _create_catalog_record(
         label=label or (scan.label if scan else None),
         catalog_number=catalog_number or (scan.catalog_number if scan else None),
         format=format or (scan.format if scan else None),
+        country=country,
         condition=condition,
         disc_condition=disc_condition,
         cover_condition=cover_condition,
@@ -1053,6 +1055,15 @@ async def confirm_scan(
         user=user,
     )
 
+    # Pull the confirmed release's own data — title/year/country/label/catno from
+    # Claude's photo guess can be wrong or incomplete; the actual Discogs release
+    # the user picked is authoritative. Falls back to the scan's data if this fails.
+    details = None
+    try:
+        details = await discogs_svc.get_release_details(body.release_id, access_token, access_token_secret)
+    except Exception as e:
+        logger.warning("get_release_details failed for release %s: %s", body.release_id, e)
+
     record = await _create_catalog_record(
         db=db,
         user_id=user.id,
@@ -1060,6 +1071,12 @@ async def confirm_scan(
         condition=body.condition,
         lot_id=body.lot_id,
         scan=scan,
+        title=details.get("title") if details else None,
+        year=details.get("year") if details else None,
+        country=details.get("country") if details else None,
+        label=details.get("label") if details else None,
+        catalog_number=details.get("catno") if details else None,
+        format=details.get("format") if details else None,
         cover_image_url=body.cover_image,
         disc_condition=body.disc_condition,
         cover_condition=body.cover_condition,
