@@ -166,3 +166,21 @@ async def send_subscription_canceled(to: str, display_name: str) -> bool:
   Changed your mind? You can resubscribe anytime. Your data is always preserved.
 </p>"""
     return await _send(to, "VinylScan Pro canceled", _base_template(body))
+
+
+async def send_sell_trade_lead(to: str, store_name: str, lead: dict) -> bool:
+    """Sell/Trade form submission from a storefront visitor — not persisted, just emailed."""
+    body = f"""
+<h1 style="font-size:22px;font-weight:700;color:#16162a;margin:0 0 8px 0;">New sell/trade inquiry</h1>
+<p style="font-size:15px;color:#4a4a68;line-height:1.6;margin:0 0 20px 0;">
+  Someone wants to sell or trade records at {store_name}.
+</p>
+<table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px 0;">
+  <tr><td style="padding:4px 0;font-size:14px;color:#8a8a9e;width:140px;">Name</td><td style="padding:4px 0;font-size:14px;color:#16162a;">{lead['name']}</td></tr>
+  <tr><td style="padding:4px 0;font-size:14px;color:#8a8a9e;">Email</td><td style="padding:4px 0;font-size:14px;color:#16162a;">{lead['email']}</td></tr>
+  <tr><td style="padding:4px 0;font-size:14px;color:#8a8a9e;">Approx. records</td><td style="padding:4px 0;font-size:14px;color:#16162a;">{lead['approx_records']}</td></tr>
+  <tr><td style="padding:4px 0;font-size:14px;color:#8a8a9e;">Preferred payout</td><td style="padding:4px 0;font-size:14px;color:#16162a;">{lead['payout_preference']}</td></tr>
+</table>
+<p style="font-size:13px;color:#8a8a9e;margin:0 0 4px 0;">Notes</p>
+<p style="font-size:14px;color:#16162a;line-height:1.6;margin:0;">{lead['notes'] or "—"}</p>"""
+    return await _send(to, f"New sell/trade inquiry from {lead['name']}", _base_template(body))

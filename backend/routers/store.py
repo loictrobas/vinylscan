@@ -22,8 +22,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
-from models import Record, RecordStatus, User
+from models import Accessory, Record, RecordStatus, User
 from routers.auth import get_current_user
+from services import email_service
 
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY", "336544145831256")
@@ -104,6 +105,24 @@ class PublicRecord(BaseModel):
     created_at: str
 
 
+class PublicAccessory(BaseModel):
+    id: str
+    name: str
+    category: str
+    description: str | None
+    price: float | None
+    stock_quantity: int
+    cover_image_url: str | None
+
+
+class SellTradeLeadRequest(BaseModel):
+    name: str
+    email: str
+    approx_records: str
+    payout_preference: str
+    notes: str = ""
+
+
 class PublicStore(BaseModel):
     store_name: str | None
     store_description: str | None
@@ -123,6 +142,7 @@ class PublicStore(BaseModel):
     store_theme_config: str | None
     store_hero_layout: str
     records: list[PublicRecord]
+    accessories: list[PublicAccessory]
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -335,8 +355,7 @@ async def delete_store_banner(
 
 # ── Public endpoint ────────────────────────────────────────────────────────────
 
-@router.get("/{slug}", response_model=PublicStore)
-async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
+async def _get_public_store_user(db: AsyncSession, slug: str) -> User:
     user_result = await db.execute(
         select(User).where(User.store_slug == slug)
     )
@@ -350,10 +369,14 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
         except ValueError:
             pass
 
-    if not store_user:
+    if not store_user or not store_user.store_public:
         raise HTTPException(status_code=404, detail="Store not found")
-    if not store_user.store_public:
-        raise HTTPException(status_code=404, detail="Store not found")
+    return store_user
+
+
+@router.get("/{slug}", response_model=PublicStore)
+async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
+    store_user = await _get_public_store_user(db, slug)
 
     records_result = await db.execute(
         select(Record).where(
@@ -363,6 +386,14 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
         ).order_by(Record.created_at.desc())
     )
     records = records_result.scalars().all()
+
+    accessories_result = await db.execute(
+        select(Accessory).where(
+            Accessory.user_id == store_user.id,
+            Accessory.is_listed == True,  # noqa: E712
+        ).order_by(Accessory.created_at.desc())
+    )
+    accessories = accessories_result.scalars().all()
 
     return PublicStore(
         store_name=store_user.store_name or store_user.display_name or store_user.discogs_username,
@@ -403,4 +434,37 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
             )
             for r in records
         ],
+        accessories=[
+            PublicAccessory(
+                id=str(a.id),
+                name=a.name,
+                category=a.category,
+                description=a.description,
+                price=float(a.price) if a.price is not None else None,
+                stock_quantity=a.stock_quantity,
+                cover_image_url=a.cover_image_url,
+            )
+            for a in accessories
+        ],
     )
+
+
+@router.post("/{slug}/sell-trade")
+async def submit_sell_trade_lead(
+    slug: str,
+    body: SellTradeLeadRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    store_user = await _get_public_store_user(db, slug)
+    store_name = store_user.store_name or store_user.display_name or "the store"
+
+    # Prefer store_contact only if it's actually an email — WhatsApp numbers
+    # can't receive this, fall back to the owner's account email instead.
+    recipient = store_user.store_contact if store_user.store_contact and "@" in store_user.store_contact else store_user.email
+    if recipient:
+        try:
+            await email_service.send_sell_trade_lead(recipient, store_name, body.model_dump())
+        except Exception:
+            pass  # never fail the submission over a delivery problem — prototype-grade, not persisted either way
+
+    return {"ok": True}
