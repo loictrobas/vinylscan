@@ -89,13 +89,8 @@ async def identify_record(image_bytes: bytes, media_type: str = "image/jpeg") ->
                 }
             ],
         )
-        raw_text = response.content[0].text
-        print(f"[claude_vision] image_bytes={len(image_bytes)} b64_len={len(image_b64)} media_type={media_type} "
-              f"stop_reason={response.stop_reason} raw_text_len={len(raw_text)} raw_text={raw_text!r}", flush=True)
-        raw = _extract_json(raw_text)
-        adapted = _adapt(raw)
-        print(f"[claude_vision] adapted={adapted!r}", flush=True)
-        return adapted
+        raw = _extract_json(response.content[0].text)
+        return _adapt(raw)
 
     try:
         return await _call()

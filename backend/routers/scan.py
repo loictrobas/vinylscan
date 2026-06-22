@@ -1269,6 +1269,11 @@ async def list_pending_scans(
         {
             **_scan_to_upload_response(s).model_dump(mode="json"),
             "image_url": _abs_image_url(base, s.image_url),
+            # claude_raw_response is only ever set once the background analysis
+            # finishes — without this flag a still-processing scan (confidence/
+            # matches genuinely empty because nothing's run yet) is indistinguishable
+            # from one Claude truly couldn't read anything on.
+            "processing": s.claude_raw_response is None,
         }
         for s in scans
     ]
