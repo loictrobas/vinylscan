@@ -186,6 +186,7 @@ class Record(Base):
     discogs_num_for_sale: Mapped[int | None] = mapped_column(Integer, nullable=True)
     discogs_suggested_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     cover_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tracklist: Mapped[list | None] = mapped_column(JSON, nullable=True)  # [{position, title, duration}] — from Discogs at confirm time, or typed in manually
     record_section: Mapped[str] = mapped_column(String(20), nullable=False, default="vinyl")
     store_listed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     consignor_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("consignors.id", ondelete="SET NULL"), nullable=True)
@@ -227,6 +228,27 @@ class Consignor(Base):
     default_commission_pct: Mapped[float] = mapped_column(Float, nullable=False, default=30.0)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Accessory(Base):
+    """Non-record sellable items (turntables, sleeves, etc) — kept separate from
+    Record since they don't fit the 1-of-1 unique-item assumption (real stock counts)."""
+    __tablename__ = "accessories"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    category: Mapped[str] = mapped_column(String(20), nullable=False, default="Other")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    stock_quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cover_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_listed: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    __table_args__ = (
+        Index("ix_accessories_user_id_listed", "user_id", "is_listed"),
+    )
 
 
 class Invite(Base):

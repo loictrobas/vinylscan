@@ -55,6 +55,7 @@ class RecordOut(BaseModel):
     discogs_num_for_sale: int | None
     discogs_suggested_price: float | None
     cover_image_url: str | None
+    tracklist: list[dict] | None
     record_section: str
     status: str
     cost_price: float | None
@@ -102,6 +103,7 @@ class RecordOut(BaseModel):
             discogs_num_for_sale=getattr(r, "discogs_num_for_sale", None),
             discogs_suggested_price=float(r.discogs_suggested_price) if getattr(r, "discogs_suggested_price", None) is not None else None,
             cover_image_url=getattr(r, "cover_image_url", None),
+            tracklist=getattr(r, "tracklist", None),
             status=r.status.value if hasattr(r.status, "value") else r.status,
             cost_price=float(r.cost_price) if getattr(r, "cost_price", None) is not None else None,
             asking_price=float(r.asking_price) if r.asking_price is not None else None,
@@ -726,6 +728,7 @@ class UpdateRecordRequest(BaseModel):
     notes: str | None = None
     store_listed: bool | None = None
     record_section: str | None = None
+    tracklist: list[dict] | None = None
 
 
 @router.patch("/{record_id}", response_model=RecordOut)
@@ -751,7 +754,7 @@ async def update_record(
 
     simple_fields = ["artist", "title", "year", "label", "catalog_number", "format",
                      "genre", "styles", "country", "cost_price", "asking_price", "tags", "notes", "store_listed",
-                     "record_section", "disc_condition", "cover_condition"]
+                     "record_section", "disc_condition", "cover_condition", "tracklist"]
     for field in simple_fields:
         if field in body.model_fields_set:
             setattr(record, field, getattr(body, field))

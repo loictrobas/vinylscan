@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from routers import admin, auth, billing, benchmark, catalog, consignments, dashboard, discogs, scan, store
+from routers import accessories, admin, auth, billing, benchmark, catalog, consignments, dashboard, discogs, scan, store
 from routers import eval_router
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
@@ -119,6 +119,7 @@ app.include_router(billing.router)
 app.include_router(discogs.router)
 app.include_router(store.router)
 app.include_router(consignments.router)
+app.include_router(accessories.router)
 app.include_router(eval_router.router)
 
 

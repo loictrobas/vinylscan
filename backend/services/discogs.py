@@ -926,6 +926,11 @@ async def get_release_details(
         "label": labels[0].get("name") if labels else None,
         "catno": labels[0].get("catno") if labels else None,
         "format": ", ".join(f.get("name", "") for f in formats) if formats else None,
+        "tracklist": [
+            {"position": t.get("position", ""), "title": t.get("title", ""), "duration": t.get("duration", "")}
+            for t in (raw.get("tracklist") or [])
+            if t.get("type_", "track") == "track" and t.get("title")
+        ],
     }
 
 
