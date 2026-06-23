@@ -24,7 +24,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
-from models import Accessory, Record, RecordStatus, User
+from models import Accessory, Order, Record, RecordStatus, SellTradeLead, User
 from routers.admin import require_admin
 from routers.auth import get_current_user
 from services import email_service
@@ -218,6 +218,22 @@ async def update_store_settings(
     result = await db.execute(select(User).where(User.id == user.id))
     db_user = result.scalar_one()
 
+    # Snapshot the pre-change state so a settings mistake can be undone.
+    _snapshot_fields = [
+        "store_name", "store_slug", "store_description", "store_contact", "store_public",
+        "store_info_banner", "store_instagram", "store_location", "store_accent_color",
+        "store_facebook", "store_website", "store_font", "store_secondary_color",
+        "store_tagline", "store_hours", "store_theme_config", "store_hero_layout",
+    ]
+    if body.model_fields_set:
+        snapshot = {
+            "settings": {f: getattr(db_user, f) for f in _snapshot_fields},
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        history = list(db_user.settings_history or [])
+        history.insert(0, snapshot)
+        db_user.settings_history = history[:5]
+
     if "store_slug" in body.model_fields_set and body.store_slug is not None:
         slug = _slugify(body.store_slug)
         if not slug:
@@ -259,6 +275,16 @@ async def update_store_settings(
     await db.commit()
     await db.refresh(db_user)
     return _user_to_store_settings(db_user)
+
+
+class SettingsSnapshot(BaseModel):
+    settings: dict
+    created_at: str
+
+
+@router.get("/settings/history", response_model=list[SettingsSnapshot])
+async def get_settings_history(user: User = Depends(get_current_user)):
+    return [SettingsSnapshot(**s) for s in (user.settings_history or [])]
 
 
 # ── Logo upload ────────────────────────────────────────────────────────────────
@@ -469,6 +495,113 @@ async def get_theme_history(user: User = Depends(require_admin)):
     return [ThemeGenerationEntry(**e) for e in (user.theme_history or [])]
 
 
+# ── Sell/Trade leads — owner-facing inbox ───────────────────────────────────────
+# NOTE: registered before the public "/{slug}" catch-all below — "/leads" is a
+# single path segment and would otherwise be swallowed as if slug="leads".
+
+class SellTradeLeadOut(BaseModel):
+    id: str
+    name: str
+    email: str
+    approx_records: str | None
+    payout_preference: str | None
+    notes: str | None
+    status: str
+    created_at: str
+
+
+class UpdateLeadStatusRequest(BaseModel):
+    status: str
+
+
+_VALID_LEAD_STATUSES = {"new", "contacted", "closed"}
+
+
+@router.get("/leads", response_model=list[SellTradeLeadOut])
+async def list_leads(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(SellTradeLead).where(SellTradeLead.user_id == user.id).order_by(SellTradeLead.created_at.desc())
+    )
+    leads = result.scalars().all()
+    return [
+        SellTradeLeadOut(
+            id=str(l.id), name=l.name, email=l.email, approx_records=l.approx_records,
+            payout_preference=l.payout_preference, notes=l.notes, status=l.status,
+            created_at=l.created_at.isoformat(),
+        )
+        for l in leads
+    ]
+
+
+@router.patch("/leads/{lead_id}", response_model=SellTradeLeadOut)
+async def update_lead_status(
+    lead_id: uuid.UUID,
+    body: UpdateLeadStatusRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if body.status not in _VALID_LEAD_STATUSES:
+        raise HTTPException(status_code=400, detail=f"status must be one of: {sorted(_VALID_LEAD_STATUSES)}")
+    result = await db.execute(
+        select(SellTradeLead).where(SellTradeLead.id == lead_id, SellTradeLead.user_id == user.id)
+    )
+    lead = result.scalar_one_or_none()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    lead.status = body.status
+    await db.commit()
+    await db.refresh(lead)
+    return SellTradeLeadOut(
+        id=str(lead.id), name=lead.name, email=lead.email, approx_records=lead.approx_records,
+        payout_preference=lead.payout_preference, notes=lead.notes, status=lead.status,
+        created_at=lead.created_at.isoformat(),
+    )
+
+
+# ── Orders — owner-facing history ───────────────────────────────────────────────
+# NOTE: registered before the public "/{slug}" catch-all below, same reason as leads.
+
+class OrderItemOut(BaseModel):
+    kind: str
+    id: str
+    name: str
+    qty: int
+    price: float | None
+
+
+class OrderOut(BaseModel):
+    id: str
+    order_ref: str
+    customer_name: str
+    customer_contact: str
+    note: str | None
+    items: list[OrderItemOut]
+    total: float
+    created_at: str
+
+
+@router.get("/orders", response_model=list[OrderOut])
+async def list_orders(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Order).where(Order.user_id == user.id).order_by(Order.created_at.desc())
+    )
+    orders = result.scalars().all()
+    return [
+        OrderOut(
+            id=str(o.id), order_ref=o.order_ref, customer_name=o.customer_name,
+            customer_contact=o.customer_contact, note=o.note, items=o.items,
+            total=float(o.total), created_at=o.created_at.isoformat(),
+        )
+        for o in orders
+    ]
+
+
 # ── Public endpoint ────────────────────────────────────────────────────────────
 
 async def _get_public_store_user(db: AsyncSession, slug: str) -> User:
@@ -574,6 +707,16 @@ async def submit_sell_trade_lead(
     store_user = await _get_public_store_user(db, slug)
     store_name = store_user.store_name or store_user.display_name or "the store"
 
+    db.add(SellTradeLead(
+        user_id=store_user.id,
+        name=body.name,
+        email=body.email,
+        approx_records=body.approx_records,
+        payout_preference=body.payout_preference,
+        notes=body.notes or None,
+    ))
+    await db.commit()
+
     # Prefer store_contact only if it's actually an email — WhatsApp numbers
     # can't receive this, fall back to the owner's account email instead.
     recipient = store_user.store_contact if store_user.store_contact and "@" in store_user.store_contact else store_user.email
@@ -581,6 +724,49 @@ async def submit_sell_trade_lead(
         try:
             await email_service.send_sell_trade_lead(recipient, store_name, body.model_dump())
         except Exception:
-            pass  # never fail the submission over a delivery problem — prototype-grade, not persisted either way
+            pass  # never fail the submission over an email delivery problem — the lead is already saved
 
     return {"ok": True}
+
+
+class PlaceOrderItem(BaseModel):
+    kind: str
+    id: str
+    name: str
+    qty: int
+    price: float | None = None
+
+
+class PlaceOrderRequest(BaseModel):
+    customer_name: str
+    customer_contact: str
+    note: str | None = None
+    items: list[PlaceOrderItem]
+    total: float
+
+
+class PlaceOrderResponse(BaseModel):
+    order_ref: str
+
+
+@router.post("/{slug}/order", response_model=PlaceOrderResponse)
+async def place_order(
+    slug: str,
+    body: PlaceOrderRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    store_user = await _get_public_store_user(db, slug)
+    order_ref = "ORD-" + uuid.uuid4().hex[:8].upper()
+
+    db.add(Order(
+        user_id=store_user.id,
+        order_ref=order_ref,
+        customer_name=body.customer_name,
+        customer_contact=body.customer_contact,
+        note=body.note or None,
+        items=[item.model_dump() for item in body.items],
+        total=body.total,
+    ))
+    await db.commit()
+
+    return PlaceOrderResponse(order_ref=order_ref)

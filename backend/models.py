@@ -86,6 +86,7 @@ class User(Base):
     store_theme_config: Mapped[str | None] = mapped_column(Text, nullable=True)
     store_hero_layout: Mapped[str] = mapped_column(String(20), nullable=False, default="gallery")
     theme_history: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    settings_history: Mapped[list | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -250,6 +251,47 @@ class Accessory(Base):
 
     __table_args__ = (
         Index("ix_accessories_user_id_listed", "user_id", "is_listed"),
+    )
+
+
+class SellTradeLead(Base):
+    """Storefront 'sell or trade your records' form submissions, kept around
+    so they don't vanish if the notification email gets missed."""
+    __tablename__ = "sell_trade_leads"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    approx_records: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    payout_preference: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="new")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    __table_args__ = (
+        Index("ix_sell_trade_leads_user_id_created", "user_id", "created_at"),
+    )
+
+
+class Order(Base):
+    """Storefront checkout orders — pickup-only, no payment processing. The
+    backend's only job is to remember the order happened (today: the
+    WhatsApp/email handoff was the only record, nothing was persisted)."""
+    __tablename__ = "orders"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    order_ref: Mapped[str] = mapped_column(String(30), nullable=False)
+    customer_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    customer_contact: Mapped[str] = mapped_column(String(255), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    items: Mapped[list] = mapped_column(JSON, nullable=False)
+    total: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    __table_args__ = (
+        Index("ix_orders_user_id_created", "user_id", "created_at"),
     )
 
 
