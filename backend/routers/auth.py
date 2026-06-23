@@ -387,10 +387,22 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
 ):
     if not user.password_hash or not _verify_password(body.current_password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Current password incorrect")
+        raise HTTPException(status_code=400, detail="Current password incorrect")
     if len(body.new_password) < 8:
         raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
     user.password_hash = _hash_password(body.new_password)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.post("/disconnect-discogs")
+async def disconnect_discogs(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user.discogs_username = None
+    user.discogs_oauth_token = None
+    user.discogs_oauth_token_secret = None
     await db.commit()
     return {"ok": True}
 
