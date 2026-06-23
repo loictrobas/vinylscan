@@ -12,8 +12,10 @@ import asyncio
 import os
 import re
 import uuid
+from datetime import datetime, timezone
 from functools import partial
 
+import anthropic
 import cloudinary
 import cloudinary.uploader
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -23,8 +25,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 from models import Accessory, Record, RecordStatus, User
+from routers.admin import require_admin
 from routers.auth import get_current_user
 from services import email_service
+from services.claude_vision import _extract_json
 
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY", "336544145831256")
@@ -367,6 +371,102 @@ async def delete_store_banner(
     await db.commit()
     await db.refresh(db_user)
     return _user_to_store_settings(db_user)
+
+
+# ── AI theme generation (admin-only — costs us a Claude call per generation) ───
+
+class GenerateThemeRequest(BaseModel):
+    vibe: str
+
+
+class ThemeGenerationEntry(BaseModel):
+    theme: dict
+    vibe: str
+    created_at: str
+
+
+_THEME_SCHEMA_PROMPT = """You are generating a visual theme config for a vinyl record store storefront.
+
+Store name: {store_name}
+{store_desc_line}
+Vibe: {vibe}
+
+Return ONLY a valid JSON object. No explanation, no markdown, no code blocks — just the raw JSON.
+
+Schema:
+{{
+  "accent": string,     // hex color like "#a855f7" — primary brand color (buttons, highlights)
+  "secondary": string,  // hex color like "#ec4899" — gradient & secondary accents
+  "font": "inter" | "syne" | "dm-sans" | "unbounded",
+  "radius": "sharp" | "soft" | "round",
+  "border_weight": "hairline" | "bold" | "none",
+  "shadow_style": "flat" | "soft" | "hard-offset",
+  "density": "compact" | "comfortable" | "spacious",
+  "headline_scale": "modest" | "editorial" | "oversized",
+  "card_texture": "plain" | "swatch" | "grain",
+  "motion": "minimal" | "smooth" | "playful",
+  "button_shape": "block" | "pill" | "underline",
+  "mood": string
+}}
+
+Guide:
+- font: inter = clean modern, syne = editorial angular, dm-sans = friendly geometric, unbounded = bold display
+- radius: sharp = zero rounding, soft = light rounding, round = pill-shaped everything
+- shadow_style: hard-offset only looks right paired with bold border_weight and sharp/soft radius (neo-brutalist)
+- motion: playful adds a slight scale+tilt on hover — fits loud/energetic vibes, not calm/minimal ones
+- mood: max 80 chars, restate the vibe in your own words"""
+
+
+@router.post("/theme/generate", response_model=ThemeGenerationEntry)
+async def generate_store_theme(
+    body: GenerateThemeRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_admin),
+):
+    result = await db.execute(select(User).where(User.id == user.id))
+    db_user = result.scalar_one()
+
+    prompt = _THEME_SCHEMA_PROMPT.format(
+        store_name=db_user.store_name or "my vinyl store",
+        store_desc_line=f"Store description: {db_user.store_description}" if db_user.store_description else "",
+        vibe=body.vibe.strip()[:200] or "a well-run independent record shop",
+    )
+
+    client = anthropic.AsyncAnthropic()
+
+    async def _call() -> dict:
+        response = await client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=512,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return _extract_json(response.content[0].text)
+
+    try:
+        theme = await _call()
+    except Exception:
+        try:
+            theme = await _call()
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Claude theme generation failed: {exc}")
+
+    entry = {
+        "theme": theme,
+        "vibe": body.vibe.strip()[:200],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    history = list(db_user.theme_history or [])
+    history.insert(0, entry)
+    db_user.theme_history = history[:3]
+    await db.commit()
+
+    return ThemeGenerationEntry(**entry)
+
+
+@router.get("/theme/history", response_model=list[ThemeGenerationEntry])
+async def get_theme_history(user: User = Depends(require_admin)):
+    return [ThemeGenerationEntry(**e) for e in (user.theme_history or [])]
 
 
 # ── Public endpoint ────────────────────────────────────────────────────────────

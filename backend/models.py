@@ -85,6 +85,7 @@ class User(Base):
     store_hours: Mapped[str | None] = mapped_column(Text, nullable=True)
     store_theme_config: Mapped[str | None] = mapped_column(Text, nullable=True)
     store_hero_layout: Mapped[str] = mapped_column(String(20), nullable=False, default="gallery")
+    theme_history: Mapped[list | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
