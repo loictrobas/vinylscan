@@ -7,6 +7,7 @@ load_dotenv(override=True)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from routers import accessories, admin, auth, billing, benchmark, catalog, consignments, dashboard, discogs, scan, store
@@ -109,6 +110,9 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Credit-Balance"],
 )
+
+# Storefront/catalog list payloads are large JSON — gzip cuts them ~10x
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 app.include_router(admin.router)
 app.include_router(benchmark.router)

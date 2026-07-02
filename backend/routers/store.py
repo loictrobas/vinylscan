@@ -758,6 +758,45 @@ async def place_order(
     store_user = await _get_public_store_user(db, slug)
     order_ref = "ORD-" + uuid.uuid4().hex[:8].upper()
 
+    # Reserve stock so two customers can't order the same 1-of-1 record:
+    # records get delisted (owner can relist if the pickup falls through),
+    # accessories decrement stock_quantity. Anything already gone → 409 so
+    # the customer knows before showing up at the store.
+    for item in body.items:
+        try:
+            item_uuid = uuid.UUID(item.id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid item id")
+        if item.qty < 1:
+            raise HTTPException(status_code=400, detail="Invalid quantity")
+        if item.kind == "record":
+            result = await db.execute(
+                select(Record).where(
+                    Record.id == item_uuid,
+                    Record.user_id == store_user.id,
+                    Record.status == RecordStatus.in_stock,
+                    Record.store_listed == True,  # noqa: E712
+                ).with_for_update()
+            )
+            record = result.scalar_one_or_none()
+            if not record:
+                await db.rollback()
+                raise HTTPException(status_code=409, detail=f"'{item.name}' is no longer available")
+            record.store_listed = False
+        elif item.kind == "accessory":
+            result = await db.execute(
+                select(Accessory).where(
+                    Accessory.id == item_uuid,
+                    Accessory.user_id == store_user.id,
+                    Accessory.is_listed == True,  # noqa: E712
+                ).with_for_update()
+            )
+            accessory = result.scalar_one_or_none()
+            if not accessory or accessory.stock_quantity < item.qty:
+                await db.rollback()
+                raise HTTPException(status_code=409, detail=f"'{item.name}' is no longer available")
+            accessory.stock_quantity -= item.qty
+
     db.add(Order(
         user_id=store_user.id,
         order_ref=order_ref,

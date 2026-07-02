@@ -48,6 +48,12 @@ R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "vinylscan-images")
 R2_PUBLIC_URL = os.getenv("R2_PUBLIC_URL", "")
 # Fallback to local storage when R2 is not configured (local dev without R2 credentials)
 _USE_LOCAL_STORAGE = not all([R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_URL])
+if _USE_LOCAL_STORAGE and os.getenv("RENDER"):
+    logger.critical(
+        "R2 storage not configured on Render — scan images go to ephemeral local disk "
+        "and WILL be lost on every deploy/restart. Set R2_ACCOUNT_ID/R2_ACCESS_KEY_ID/"
+        "R2_SECRET_ACCESS_KEY/R2_PUBLIC_URL."
+    )
 # Keep in sync with main.py — default under backend/data so images survive reboots
 IMAGES_DIR = os.getenv("IMAGES_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "images"))
 
@@ -168,6 +174,53 @@ def _merge_claude_results(primary: dict, secondary: dict) -> dict:
     return merged
 
 
+def _merge_by_confidence(a: dict, b: dict) -> dict:
+    """Merge two Claude results, the higher-confidence one as primary."""
+    if (b.get("confidence") or 0) > (a.get("confidence") or 0):
+        return _merge_claude_results(b, a)
+    return _merge_claude_results(a, b)
+
+
+def _apply_claude_fields(scan: Scan, result: dict, preserve_existing: bool) -> None:
+    """Copy Claude extraction onto the scan row. preserve_existing keeps prior
+    values when the new result is missing a field (enhance flow)."""
+    def pick(new, old):
+        return (new or old) if preserve_existing else new
+
+    scan.claude_raw_response = result
+    scan.artist = pick(result.get("artist"), scan.artist)
+    scan.title = pick(result.get("title"), scan.title)
+    scan.year = pick(_safe_int(result.get("year")), scan.year)
+    scan.label = pick(result.get("label"), scan.label)
+    scan.catalog_number = pick(result.get("catalog_number"), scan.catalog_number)
+    scan.format = pick(result.get("format"), scan.format)
+    scan.confidence = result.get("confidence")
+
+
+async def _search_and_persist_matches(db: AsyncSession, scan: Scan, user: User, source: dict) -> None:
+    """Run the Discogs multi-strategy search off the scan's fields and persist
+    matches + internal confidence. Discogs failure degrades to empty matches."""
+    access_token = decrypt(user.discogs_oauth_token)
+    access_token_secret = decrypt(user.discogs_oauth_token_secret)
+    try:
+        raw_results, internal_confidence = await discogs_svc.search_releases(
+            scan.artist or "", scan.title or "", access_token, access_token_secret,
+            label=scan.label, catalog_number=scan.catalog_number,
+            artist_alt=source.get("artist_alt"), title_alt=source.get("title_alt"),
+            scan_format=scan.format, year=_safe_int(source.get("year")),
+            tracklist=source.get("tracklist") or [],
+            matrix_code=source.get("matrix_code"), country=source.get("country"),
+            barcode=source.get("barcode"),
+        )
+    except Exception as e:
+        logger.warning("Discogs search failed for scan %s: %s", scan.id, e, exc_info=True)
+        raw_results, internal_confidence = [], 0
+
+    scan.matches = discogs_svc.parse_search_results(raw_results)
+    scan.internal_confidence = internal_confidence
+    await db.commit()
+
+
 @router.get("/stream")
 async def scan_stream(
     token: str,
@@ -284,88 +337,26 @@ async def upload_scan(
             if img2_data and len(img2_data) <= 10 * 1024 * 1024:
                 img2_data, _ = compress_image(img2_data, file2.content_type or "image/jpeg")
                 claude_result2 = await claude_vision.identify_record(img2_data, "image/jpeg")
-                # Merge: use higher-confidence as primary
-                if (claude_result2.get("confidence") or 0) > (claude_result.get("confidence") or 0):
-                    claude_result = _merge_claude_results(claude_result2, claude_result)
-                else:
-                    claude_result = _merge_claude_results(claude_result, claude_result2)
+                claude_result = _merge_by_confidence(claude_result, claude_result2)
         except Exception:
             pass  # second image failure is non-fatal
 
-    scan.claude_raw_response = claude_result
-    scan.artist = claude_result.get("artist")
-    scan.title = claude_result.get("title")
-    scan.year = _safe_int(claude_result.get("year"))
-    scan.label = claude_result.get("label")
-    scan.catalog_number = claude_result.get("catalog_number")
-    scan.format = claude_result.get("format")
-    scan.confidence = claude_result.get("confidence")
+    _apply_claude_fields(scan, claude_result, preserve_existing=False)
     await db.commit()
 
-    # search Discogs — pass all extracted fields
-    access_token = decrypt(user.discogs_oauth_token)
-    access_token_secret = decrypt(user.discogs_oauth_token_secret)
-
-    try:
-        raw_results, internal_confidence = await discogs_svc.search_releases(
-            scan.artist or "",
-            scan.title or "",
-            access_token,
-            access_token_secret,
-            label=scan.label,
-            catalog_number=scan.catalog_number,
-            artist_alt=claude_result.get("artist_alt"),
-            title_alt=claude_result.get("title_alt"),
-            scan_format=scan.format,
-            year=_safe_int(claude_result.get("year")),
-            tracklist=claude_result.get("tracklist") or [],
-            matrix_code=claude_result.get("matrix_code"),
-            country=claude_result.get("country"),
-            barcode=claude_result.get("barcode"),
-        )
-    except Exception as e:
-        logger.warning("Discogs search failed for scan %s: %s", scan.id, e, exc_info=True)
-        raw_results, internal_confidence = [], 0
-
-    matches_data = discogs_svc.parse_search_results(raw_results)
-    matches = [DiscogsMatch(**m) for m in matches_data]
-
-    confidence = scan.confidence or 0
-    auto_added = False
-
-    scan.matches = matches_data
-    scan.internal_confidence = internal_confidence
-    await db.commit()
+    await _search_and_persist_matches(db, scan, user, claude_result)
     await db.refresh(scan)
     await db.refresh(user)
     _set_credit_header(response, user)
 
-    scan_response = ScanUploadResponse(
-        scan_id=scan.id,
-        status=scan.status,
-        artist=scan.artist,
-        title=scan.title,
-        year=scan.year,
-        label=scan.label,
-        catalog_number=scan.catalog_number,
-        confidence=confidence,
-        internal_confidence=internal_confidence,
-        auto_added=auto_added,
-        discogs_release_id=scan.discogs_release_id,
-        matches=matches,
-        artist_alt=claude_result.get("artist_alt"),
-        title_alt=claude_result.get("title_alt"),
-        low_information=bool(claude_result.get("low_information", False)),
-        barcode=claude_result.get("barcode"),
-    )
+    scan_response = _scan_to_upload_response(scan)
 
     # Push to desktop SSE listeners for this user (mobile→desktop real-time)
     listeners = sse_manager.listener_count(str(user.id))
-    print(f"[SSE] user={user.id} listeners={listeners} image={scan.image_url}", flush=True)
+    logger.info("[SSE] user=%s listeners=%d scan=%s", user.id, listeners, scan.id)
     if listeners > 0:
         base = str(request.base_url).rstrip("/")
         abs_image_url = f"{base}{scan.image_url}" if scan.image_url and scan.image_url.startswith("/") else scan.image_url
-        print(f"[SSE] broadcasting scan_result abs_image_url={abs_image_url}", flush=True)
         await sse_manager.broadcast(str(user.id), {
             **scan_response.model_dump(mode="json"),
             "type": "scan_result",
@@ -409,71 +400,14 @@ async def enhance_scan(
         logger.error("Claude vision failed in enhance: %s", e)
         raise HTTPException(status_code=500, detail="Image identification failed.")
 
-    existing = scan.claude_raw_response or {}
-    if (new_claude.get("confidence") or 0) > (existing.get("confidence") or 0):
-        merged = _merge_claude_results(new_claude, existing)
-    else:
-        merged = _merge_claude_results(existing, new_claude)
-
-    scan.claude_raw_response = merged
-    scan.artist = merged.get("artist") or scan.artist
-    scan.title = merged.get("title") or scan.title
-    scan.year = _safe_int(merged.get("year")) or scan.year
-    scan.label = merged.get("label") or scan.label
-    scan.catalog_number = merged.get("catalog_number") or scan.catalog_number
-    scan.format = merged.get("format") or scan.format
-    scan.confidence = merged.get("confidence")
+    merged = _merge_by_confidence(scan.claude_raw_response or {}, new_claude)
+    _apply_claude_fields(scan, merged, preserve_existing=True)
     await db.commit()
 
-    access_token = decrypt(user.discogs_oauth_token)
-    access_token_secret = decrypt(user.discogs_oauth_token_secret)
-    try:
-        raw_results, internal_confidence = await discogs_svc.search_releases(
-            scan.artist or "",
-            scan.title or "",
-            access_token,
-            access_token_secret,
-            label=scan.label,
-            catalog_number=scan.catalog_number,
-            artist_alt=merged.get("artist_alt"),
-            title_alt=merged.get("title_alt"),
-            scan_format=scan.format,
-            year=_safe_int(merged.get("year")),
-            tracklist=merged.get("tracklist") or [],
-            matrix_code=merged.get("matrix_code"),
-            country=merged.get("country"),
-            barcode=merged.get("barcode"),
-        )
-    except Exception as e:
-        logger.warning("Discogs search failed for scan %s: %s", scan.id, e, exc_info=True)
-        raw_results, internal_confidence = [], 0
-
-    matches_data = discogs_svc.parse_search_results(raw_results)
-    matches = [DiscogsMatch(**m) for m in matches_data]
-
-    scan.matches = matches_data
-    scan.internal_confidence = internal_confidence
-    await db.commit()
+    await _search_and_persist_matches(db, scan, user, merged)
     await db.refresh(user)
     _set_credit_header(response, user)
-    enhance_response = ScanUploadResponse(
-        scan_id=scan.id,
-        status=scan.status,
-        artist=scan.artist,
-        title=scan.title,
-        year=scan.year,
-        label=scan.label,
-        catalog_number=scan.catalog_number,
-        confidence=scan.confidence or 0,
-        internal_confidence=internal_confidence,
-        auto_added=False,
-        discogs_release_id=scan.discogs_release_id,
-        matches=matches,
-        artist_alt=merged.get("artist_alt"),
-        title_alt=merged.get("title_alt"),
-        low_information=bool(merged.get("low_information", False)),
-        barcode=merged.get("barcode"),
-    )
+    enhance_response = _scan_to_upload_response(scan)
 
     if sse_manager.listener_count(str(user.id)) > 0:
         base = str(request.base_url).rstrip("/")
@@ -549,55 +483,17 @@ async def _process_scan_async(
                 try:
                     img2_data, _ = compress_image(image2_data, "image/jpeg")
                     claude_result2 = await claude_vision.identify_record(img2_data, "image/jpeg")
-                    if (claude_result2.get("confidence") or 0) > (claude_result.get("confidence") or 0):
-                        claude_result = _merge_claude_results(claude_result2, claude_result)
-                    else:
-                        claude_result = _merge_claude_results(claude_result, claude_result2)
+                    claude_result = _merge_by_confidence(claude_result, claude_result2)
                 except Exception:
                     pass
 
-            scan.claude_raw_response = claude_result
-            scan.artist = claude_result.get("artist")
-            scan.title = claude_result.get("title")
-            scan.year = _safe_int(claude_result.get("year"))
-            scan.label = claude_result.get("label")
-            scan.catalog_number = claude_result.get("catalog_number")
-            scan.format = claude_result.get("format")
-            scan.confidence = claude_result.get("confidence")
+            _apply_claude_fields(scan, claude_result, preserve_existing=False)
             await db.commit()
 
-            access_token = decrypt(user.discogs_oauth_token)
-            access_token_secret = decrypt(user.discogs_oauth_token_secret)
-            try:
-                raw_results, internal_confidence = await discogs_svc.search_releases(
-                    scan.artist or "", scan.title or "", access_token, access_token_secret,
-                    label=scan.label, catalog_number=scan.catalog_number,
-                    artist_alt=claude_result.get("artist_alt"), title_alt=claude_result.get("title_alt"),
-                    scan_format=scan.format, year=_safe_int(claude_result.get("year")),
-                    tracklist=claude_result.get("tracklist") or [],
-                    matrix_code=claude_result.get("matrix_code"), country=claude_result.get("country"),
-                    barcode=claude_result.get("barcode"),
-                )
-            except Exception as e:
-                logger.warning("Discogs search failed for scan %s: %s", scan_id, e, exc_info=True)
-                raw_results, internal_confidence = [], 0
-
-            matches_data = discogs_svc.parse_search_results(raw_results)
-            matches = [DiscogsMatch(**m) for m in matches_data]
-            scan.matches = matches_data
-            scan.internal_confidence = internal_confidence
-            await db.commit()
+            await _search_and_persist_matches(db, scan, user, claude_result)
             await db.refresh(scan)
 
-            scan_response = ScanUploadResponse(
-                scan_id=scan.id, status=scan.status, artist=scan.artist, title=scan.title,
-                year=scan.year, label=scan.label, catalog_number=scan.catalog_number,
-                confidence=scan.confidence or 0, internal_confidence=internal_confidence,
-                auto_added=False, discogs_release_id=scan.discogs_release_id, matches=matches,
-                artist_alt=claude_result.get("artist_alt"), title_alt=claude_result.get("title_alt"),
-                low_information=bool(claude_result.get("low_information", False)),
-                barcode=claude_result.get("barcode"),
-            )
+            scan_response = _scan_to_upload_response(scan)
             await sse_manager.broadcast(str(user_id), {
                 **scan_response.model_dump(mode="json"),
                 "type": "scan_result",
@@ -640,53 +536,13 @@ async def _process_enhance_async(
                 })
                 return
 
-            existing = scan.claude_raw_response or {}
-            if (new_claude.get("confidence") or 0) > (existing.get("confidence") or 0):
-                merged = _merge_claude_results(new_claude, existing)
-            else:
-                merged = _merge_claude_results(existing, new_claude)
-
-            scan.claude_raw_response = merged
-            scan.artist = merged.get("artist") or scan.artist
-            scan.title = merged.get("title") or scan.title
-            scan.year = _safe_int(merged.get("year")) or scan.year
-            scan.label = merged.get("label") or scan.label
-            scan.catalog_number = merged.get("catalog_number") or scan.catalog_number
-            scan.format = merged.get("format") or scan.format
-            scan.confidence = merged.get("confidence")
+            merged = _merge_by_confidence(scan.claude_raw_response or {}, new_claude)
+            _apply_claude_fields(scan, merged, preserve_existing=True)
             await db.commit()
 
-            access_token = decrypt(user.discogs_oauth_token)
-            access_token_secret = decrypt(user.discogs_oauth_token_secret)
-            try:
-                raw_results, internal_confidence = await discogs_svc.search_releases(
-                    scan.artist or "", scan.title or "", access_token, access_token_secret,
-                    label=scan.label, catalog_number=scan.catalog_number,
-                    artist_alt=merged.get("artist_alt"), title_alt=merged.get("title_alt"),
-                    scan_format=scan.format, year=_safe_int(merged.get("year")),
-                    tracklist=merged.get("tracklist") or [],
-                    matrix_code=merged.get("matrix_code"), country=merged.get("country"),
-                    barcode=merged.get("barcode"),
-                )
-            except Exception as e:
-                logger.warning("Discogs search failed for scan %s: %s", scan_id, e, exc_info=True)
-                raw_results, internal_confidence = [], 0
+            await _search_and_persist_matches(db, scan, user, merged)
 
-            matches_data = discogs_svc.parse_search_results(raw_results)
-            matches = [DiscogsMatch(**m) for m in matches_data]
-            scan.matches = matches_data
-            scan.internal_confidence = internal_confidence
-            await db.commit()
-
-            enhance_response = ScanUploadResponse(
-                scan_id=scan.id, status=scan.status, artist=scan.artist, title=scan.title,
-                year=scan.year, label=scan.label, catalog_number=scan.catalog_number,
-                confidence=scan.confidence or 0, internal_confidence=internal_confidence,
-                auto_added=False, discogs_release_id=scan.discogs_release_id, matches=matches,
-                artist_alt=merged.get("artist_alt"), title_alt=merged.get("title_alt"),
-                low_information=bool(merged.get("low_information", False)),
-                barcode=merged.get("barcode"),
-            )
+            enhance_response = _scan_to_upload_response(scan)
             await sse_manager.broadcast(str(user_id), {
                 "type": "scan_enhanced",
                 "image_url": _abs_image_url(base_url, scan.image_url),

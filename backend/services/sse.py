@@ -20,7 +20,9 @@ class SSEManager:
         self._recent: dict[str, list[tuple[float, str]]] = defaultdict(list)
 
     def subscribe(self, user_id: str) -> asyncio.Queue:
-        q: asyncio.Queue = asyncio.Queue()
+        # Bounded: a hung tab that stops consuming drops events (broadcast's
+        # QueueFull handler) instead of growing without limit
+        q: asyncio.Queue = asyncio.Queue(maxsize=200)
         self._queues[user_id].append(q)
         return q
 
