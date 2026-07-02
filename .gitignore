@@ -23,6 +23,15 @@ frontend/out/
 frontend/.env
 frontend/.env.local
 frontend/.env.*.local
+*.tsbuildinfo
+
+# Mobile app (Capacitor)
+mobile-app/node_modules/
+mobile-app/dist/
+mobile-app/ios/App/Pods/
+mobile-app/ios/App/App.xcworkspace/xcuserdata/
+mobile-app/ios/App/App.xcodeproj/xcuserdata/
+mobile-app/ios/DerivedData/
 
 # Images (user uploads — ephemeral on Render)
 /tmp/vinylscan_images/
@@ -37,3 +46,6 @@ Thumbs.db
 *.swp
 *.swo
 .gstack/
+
+# Local image storage (scan photos)
+backend/data/

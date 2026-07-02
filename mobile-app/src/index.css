@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --vs-bg: #0f1117;
+  --vs-card: #161b27;
+  --vs-raised: #1c2233;
+  --vs-border: #2a3145;
+  --vs-text: #e8eaf0;
+  --vs-muted: #7b849a;
+  --vs-accent: #4f6ef7;
+  --vs-accent-dark: #3a56d4;
+  --vs-success: #3ecf8e;
+  --vs-danger: #f05c5c;
+  --vs-gold: #f0a030;
+}
+
+@theme inline {
+  --color-vs-bg: var(--vs-bg);
+  --color-vs-card: var(--vs-card);
+  --color-vs-raised: var(--vs-raised);
+  --color-vs-border: var(--vs-border);
+  --color-vs-text: var(--vs-text);
+  --color-vs-muted: var(--vs-muted);
+  --color-vs-accent: var(--vs-accent);
+  --color-vs-accent-dark: var(--vs-accent-dark);
+  --color-vs-success: var(--vs-success);
+  --color-vs-danger: var(--vs-danger);
+  --color-vs-gold: var(--vs-gold);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--vs-bg);
+  color: var(--vs-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
