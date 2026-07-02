@@ -13,7 +13,8 @@ from routers import accessories, admin, auth, billing, benchmark, catalog, consi
 from routers import eval_router
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
-IMAGES_DIR = os.getenv("IMAGES_DIR", "/tmp/vinylscan_images")
+# Default under backend/data so scan images survive reboots (/tmp gets wiped)
+IMAGES_DIR = os.getenv("IMAGES_DIR", os.path.join(os.path.dirname(__file__), "data", "images"))
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 
 

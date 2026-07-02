@@ -163,9 +163,10 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
             credits = int(metadata.get("credits", 0))
             user_id_meta = metadata.get("user_id")
             customer_id = session.get("customer")
+            payment_intent_id = session.get("payment_intent")
             user = await _find_user_by_customer(db, customer_id, user_id_meta)
-            if user and credits > 0:
-                user.credits += credits
+            if user and credits > 0 and not await _credits_already_granted(db, payment_intent_id):
+                user.credits = User.credits + credits
                 # Store customer id if not saved yet
                 if customer_id and not user.stripe_customer_id:
                     user.stripe_customer_id = customer_id
@@ -173,7 +174,7 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
                     user_id=user.id,
                     amount=credits,
                     reason=CreditReason.purchase,
-                    stripe_payment_intent_id=session.get("payment_intent"),
+                    stripe_payment_intent_id=payment_intent_id,
                 )
                 db.add(txn)
                 await db.commit()
@@ -184,19 +185,33 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
         metadata = intent.get("metadata", {})
         pack_id = metadata.get("pack_id")
         credits = int(metadata.get("credits", 0))
+        payment_intent_id = intent.get("id")
         user = await _find_user_by_customer(db, intent.get("customer"), metadata.get("user_id"))
-        if user and credits > 0 and pack_id:
-            user.credits += credits
+        if user and credits > 0 and pack_id and not await _credits_already_granted(db, payment_intent_id):
+            user.credits = User.credits + credits
             txn = CreditTransaction(
                 user_id=user.id,
                 amount=credits,
                 reason=CreditReason.purchase,
-                stripe_payment_intent_id=intent.get("id"),
+                stripe_payment_intent_id=payment_intent_id,
             )
             db.add(txn)
             await db.commit()
 
     return {"received": True}
+
+
+async def _credits_already_granted(db: AsyncSession, payment_intent_id: str | None) -> bool:
+    """Stripe redelivers webhooks (retries, manual resends) — a transaction row for
+    this payment_intent means the credits were already applied."""
+    if not payment_intent_id:
+        return False
+    result = await db.execute(
+        select(CreditTransaction.id)
+        .where(CreditTransaction.stripe_payment_intent_id == payment_intent_id)
+        .limit(1)
+    )
+    return result.scalar_one_or_none() is not None
 
 
 async def _find_user_by_customer(db: AsyncSession, customer_id: str | None, user_id_meta: str | None) -> User | None:

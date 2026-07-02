@@ -294,7 +294,7 @@ async def lot_summary(
     total_asking = sum(float(r.asking_price) for r in in_stock if r.asking_price is not None)
     total_sold_revenue = sum(float(r.sold_price) for r in sold if r.sold_price is not None)
     total_cost = sum(float(r.cost_price) for r in records if r.cost_price is not None)
-    profit = total_sold_revenue - (lot.purchase_price or 0) if sold else None
+    profit = total_sold_revenue - float(lot.purchase_price or 0) if sold else None
     unpriced_count = sum(1 for r in in_stock if r.asking_price is None)
 
     condition_order = ["M", "NM", "VG+", "VG", "G"]
@@ -931,7 +931,7 @@ async def find_discogs_for_record(
     token = decrypt(user.discogs_oauth_token)
     secret = decrypt(user.discogs_oauth_token_secret)
 
-    matches_data = await discogs_svc.search_releases(
+    raw_results, _internal_confidence = await discogs_svc.search_releases(
         artist=artist,
         title=title,
         access_token=token,
@@ -939,6 +939,7 @@ async def find_discogs_for_record(
         label=body.label or record.label,
         catalog_number=body.catalog_number or record.catalog_number,
     )
+    matches_data = discogs_svc.parse_search_results(raw_results)
     matches = [DiscogsMatch(**m) for m in matches_data]
     return ResearchResponse(
         artist=artist,

@@ -1,3 +1,4 @@
+import asyncio
 import io
 import logging
 import os
@@ -11,7 +12,7 @@ import aioboto3
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import StreamingResponse
 from PIL import Image, ImageFilter, ImageOps, UnidentifiedImageError
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import AsyncSessionLocal, get_db
@@ -27,6 +28,19 @@ router = APIRouter(prefix="/scan", tags=["scan"])
 
 MAX_SIZE = 1500
 
+# asyncio.create_task results must be referenced or the task can be garbage-collected
+# mid-run — the scan would silently never finish. The semaphore caps concurrent
+# Claude+Discogs pipelines so a burst of phone shots doesn't fan out unbounded.
+_background_tasks: set[asyncio.Task] = set()
+_analysis_semaphore = asyncio.Semaphore(4)
+
+
+def _spawn_background(coro) -> asyncio.Task:
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+    return task
+
 R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID", "")
 R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID", "")
 R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY", "")
@@ -34,7 +48,8 @@ R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "vinylscan-images")
 R2_PUBLIC_URL = os.getenv("R2_PUBLIC_URL", "")
 # Fallback to local storage when R2 is not configured (local dev without R2 credentials)
 _USE_LOCAL_STORAGE = not all([R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_URL])
-IMAGES_DIR = os.getenv("IMAGES_DIR", "/tmp/vinylscan_images")
+# Keep in sync with main.py — default under backend/data so images survive reboots
+IMAGES_DIR = os.getenv("IMAGES_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "images"))
 
 
 def compress_image(data: bytes, content_type: str) -> tuple[bytes, str]:
@@ -74,7 +89,10 @@ def _safe_int(value) -> int | None:
 async def _deduct_credit(user: User, scan: Scan, reason: CreditReason, db: AsyncSession):
     if scan.credit_deducted:
         return
-    user.credits = max(0, user.credits - 1)
+    # SQL-side decrement — concurrent deductions each subtract 1 instead of
+    # both writing the same stale python-side value (CASE, not greatest():
+    # tests run on SQLite which lacks it)
+    user.credits = case((User.credits > 0, User.credits - 1), else_=0)
     scan.credit_deducted = True
     txn = CreditTransaction(user_id=user.id, amount=-1, reason=reason)
     db.add(txn)
@@ -504,7 +522,7 @@ async def _process_scan_async(
     then broadcasts the result over SSE — same payload shape the desktop already handles.
     """
     scan = None
-    async with AsyncSessionLocal() as db:
+    async with _analysis_semaphore, AsyncSessionLocal() as db:
         try:
             scan_result = await db.execute(select(Scan).where(Scan.id == scan_id))
             scan = scan_result.scalar_one_or_none()
@@ -601,7 +619,7 @@ async def _process_enhance_async(
 ) -> None:
     """Background twin of enhance_scan, used by the mobile fast-ack endpoint."""
     scan = None
-    async with AsyncSessionLocal() as db:
+    async with _analysis_semaphore, AsyncSessionLocal() as db:
         try:
             scan_result = await db.execute(select(Scan).where(Scan.id == scan_id))
             scan = scan_result.scalar_one_or_none()
@@ -736,7 +754,7 @@ async def upload_scan_mobile(
     await db.refresh(scan)
 
     base_url = str(request.base_url).rstrip("/")
-    asyncio.create_task(_process_scan_async(scan.id, user.id, image_data, content_type, image2_data, base_url))
+    _spawn_background(_process_scan_async(scan.id, user.id, image_data, content_type, image2_data, base_url))
 
     _set_credit_header(response, user)
     return MobileUploadAck(scan_id=scan.id, status="queued")
@@ -767,7 +785,7 @@ async def enhance_scan_mobile(
         pass
 
     base_url = str(request.base_url).rstrip("/")
-    asyncio.create_task(_process_enhance_async(scan.id, user.id, image_data, base_url))
+    _spawn_background(_process_enhance_async(scan.id, user.id, image_data, base_url))
 
     return MobileUploadAck(scan_id=scan.id, status="queued")
 

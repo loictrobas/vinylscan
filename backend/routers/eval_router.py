@@ -148,7 +148,8 @@ async def list_prompts(_admin=Depends(require_admin)):
 # POST /admin/eval/save-image
 # ---------------------------------------------------------------------------
 
-_IMAGES_DIR = os.getenv("IMAGES_DIR", "/tmp/vinylscan_images")
+# Keep in sync with main.py — default under backend/data so images survive reboots
+_IMAGES_DIR = os.getenv("IMAGES_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "images"))
 _TEST_IMAGES_DIR = EVAL_DIR / "test_images"
 
 

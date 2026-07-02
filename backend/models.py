@@ -124,6 +124,10 @@ class Scan(Base):
     user: Mapped["User"] = relationship("User", back_populates="scans")
     record: Mapped["Record | None"] = relationship("Record", back_populates="scan", uselist=False)
 
+    __table_args__ = (
+        Index("ix_scans_user_id_status", "user_id", "status"),
+    )
+
 
 class CreditTransaction(Base):
     __tablename__ = "credit_transactions"
@@ -146,7 +150,7 @@ class Lot(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    purchase_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    purchase_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
