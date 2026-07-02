@@ -351,8 +351,30 @@ export interface PublicStore {
   store_hours: string | null;
   store_theme_config: string | null;
   store_hero_layout: string;
-  records: PublicRecord[];
+  records: PublicRecord[]; // first page only — use getStoreRecords for the rest
   accessories: PublicAccessory[];
+  total_records: number;
+  genres: Record<string, number>;
+  formats: string[];
+  page_size: number;
+}
+
+export interface PublicRecordsPage {
+  records: PublicRecord[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export interface StoreRecordsParams {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  genre?: string;
+  format?: string;
+  condition?: string;
+  max_price?: number;
+  sort?: "newest" | "price_asc" | "price_desc" | "artist_az";
 }
 
 export interface CatalogStats {
@@ -1051,6 +1073,14 @@ export const api = {
   getThemeHistory: () => apiFetch<ThemeGenerationEntry[]>("/store/theme/history"),
 
   getPublicStore: (slug: string) => apiFetch<PublicStore>(`/store/${slug}`),
+
+  getStoreRecords: (slug: string, params: StoreRecordsParams = {}) => {
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null && v !== "") p.set(k, String(v));
+    }
+    return apiFetch<PublicRecordsPage>(`/store/${slug}/records?${p}`);
+  },
 
   submitSellTradeLead: (slug: string, body: { name: string; email: string; approx_records: string; payout_preference: string; notes?: string }) =>
     apiFetch<{ ok: boolean }>(`/store/${slug}/sell-trade`, { method: "POST", body: JSON.stringify(body) }),

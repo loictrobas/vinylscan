@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Disc3, Wifi, WifiOff, Settings, Check, Trash2, Loader2 } from "lucide-react";
 import { api, clearToken, getApiUrl, setApiUrl, clearApiUrl, _BUILT_IN_URL, type PendingScan } from "../lib/api";
+import { enqueueShot, flushQueue, isRetryable, subscribeQueue } from "../lib/offlineQueue";
 import CameraScreen, { type CaptureMode, type CaptureStatus } from "./CameraScreen";
 
 interface Props {
@@ -20,7 +21,26 @@ export default function ScanScreen({ onLogout }: Props) {
   const [serverSaved, setServerSaved] = useState(false);
   const [pending, setPending] = useState<PendingScan[]>([]);
   const [clearingHistory, setClearingHistory] = useState(false);
+  const [queuedOffline, setQueuedOffline] = useState(0);
   const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => subscribeQueue(setQueuedOffline), []);
+
+  // Backend back up + shots waiting → flush the offline queue
+  useEffect(() => {
+    if (backendReachable !== true || queuedOffline === 0) return;
+    flushQueue().then((r) => {
+      if (r.sent > 0) {
+        setSentCount((n) => n + r.sent);
+        if (r.lastScanId) setLastScanId(r.lastScanId);
+        flashStatus({ kind: "sent", text: `${r.sent} queued shot${r.sent !== 1 ? "s" : ""} sent ✓` }, 2500);
+      }
+      if (r.failed > 0) {
+        flashStatus({ kind: "error", text: `${r.failed} queued shot${r.failed !== 1 ? "s" : ""} rejected` }, 4000);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backendReachable, queuedOffline]);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,20 +99,33 @@ export default function ScanScreen({ onLogout }: Props) {
   // Fire-and-forget: never blocks capture. The phone doesn't wait on Claude/Discogs —
   // it just needs scan_id back fast enough to chain a "same record" follow-up photo.
   // Mode comes straight from which button was tapped, not a separate toggle.
+  // Tracks the last shot in this session even when it only exists locally, so a
+  // "same record" follow-up can chain onto a queued shot and resolve at flush time.
+  const lastShotRef = useRef<string | null>(null);
+
   const handleCapture = useCallback((file: File, _preview: string, mode: CaptureMode) => {
     flashStatus({ kind: "sending", text: "Sending…" }, 10000);
-    const useEnhance = mode === "same" && lastScanId != null;
+    const enhanceTarget = mode === "same" ? (lastScanId ?? lastShotRef.current) : null;
 
-    const req = useEnhance
-      ? api.enhanceScan(lastScanId!, file)
-      : api.uploadScan(file);
+    const req = enhanceTarget && !enhanceTarget.startsWith("local-")
+      ? api.enhanceScan(enhanceTarget, file)
+      : enhanceTarget
+        ? Promise.reject(Object.assign(new Error("offline chain"), { status: undefined })) // previous shot still queued → queue this one too
+        : api.uploadScan(file);
 
     req.then((ack) => {
       setLastScanId(ack.scan_id);
+      lastShotRef.current = ack.scan_id;
       setSentCount((n) => n + 1);
       flashStatus({ kind: "sent", text: "Sent ✓" }, 1500);
     }).catch((e: unknown) => {
       if ((e as { status?: number }).status === 401) { clearToken(); onLogout(); return; }
+      if (isRetryable(e)) {
+        const shot = enqueueShot(file, enhanceTarget);
+        lastShotRef.current = enhanceTarget ? lastShotRef.current : shot.localId;
+        flashStatus({ kind: "sent", text: "No signal — queued, will retry ✓" }, 2000);
+        return;
+      }
       const msg = (e instanceof Error ? e.message : null) || "Upload failed";
       flashStatus({ kind: "error", text: msg }, 4000);
     });
@@ -100,6 +133,7 @@ export default function ScanScreen({ onLogout }: Props) {
 
   function openCamera() {
     setLastScanId(null);
+    lastShotRef.current = null;
     setSentCount(0);
     setLastSessionCount(null);
     setStatus(null);
@@ -234,6 +268,12 @@ export default function ScanScreen({ onLogout }: Props) {
             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-vs-raised border border-vs-border text-xs text-vs-muted">
               <Check size={11} className="text-vs-success" />
               Last session: {lastSessionCount} sent
+            </span>
+          )}
+          {queuedOffline > 0 && (
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-vs-raised border border-vs-danger/40 text-xs text-vs-danger/90">
+              <WifiOff size={11} />
+              {queuedOffline} queued — will send when back online
             </span>
           )}
         </div>

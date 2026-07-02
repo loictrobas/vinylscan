@@ -66,6 +66,7 @@ export interface StoreTranslations {
     noMatch: string;
     noneAvailable: string;
     clearFilters: string;
+    loadMore: string;
   };
   sidebar: { genreStyle: string; format: string; condition: string; maxPrice: string; any: string; all: string; clearAll: string };
   product: {
@@ -181,6 +182,7 @@ const en: StoreTranslations = {
     noMatch: "No records match your filters.",
     noneAvailable: "No records available right now.",
     clearFilters: "Clear filters",
+    loadMore: "Load more",
   },
   sidebar: { genreStyle: "Genre / Style", format: "Format", condition: "Condition", maxPrice: "Max price", any: "Any", all: "All", clearAll: "Clear all filters" },
   product: {
@@ -296,6 +298,7 @@ const es: StoreTranslations = {
     noMatch: "Ningún disco coincide con tus filtros.",
     noneAvailable: "No hay discos disponibles por ahora.",
     clearFilters: "Limpiar filtros",
+    loadMore: "Ver más",
   },
   sidebar: { genreStyle: "Género / Estilo", format: "Formato", condition: "Condición", maxPrice: "Precio máximo", any: "Cualquiera", all: "Todos", clearAll: "Limpiar todos los filtros" },
   product: {
@@ -411,6 +414,7 @@ const fr: StoreTranslations = {
     noMatch: "Aucun disque ne correspond à vos filtres.",
     noneAvailable: "Aucun disque disponible pour le moment.",
     clearFilters: "Effacer les filtres",
+    loadMore: "Voir plus",
   },
   sidebar: { genreStyle: "Genre / Style", format: "Format", condition: "État", maxPrice: "Prix max", any: "Tous", all: "Tous", clearAll: "Effacer tous les filtres" },
   product: {
@@ -526,6 +530,7 @@ const de: StoreTranslations = {
     noMatch: "Keine Platten entsprechen deinen Filtern.",
     noneAvailable: "Derzeit keine Platten verfügbar.",
     clearFilters: "Filter zurücksetzen",
+    loadMore: "Mehr laden",
   },
   sidebar: { genreStyle: "Genre / Stil", format: "Format", condition: "Zustand", maxPrice: "Höchstpreis", any: "Beliebig", all: "Alle", clearAll: "Alle Filter zurücksetzen" },
   product: {
@@ -641,6 +646,7 @@ const pt: StoreTranslations = {
     noMatch: "Nenhum disco corresponde aos seus filtros.",
     noneAvailable: "Nenhum disco disponível no momento.",
     clearFilters: "Limpar filtros",
+    loadMore: "Ver mais",
   },
   sidebar: { genreStyle: "Gênero / Estilo", format: "Formato", condition: "Condição", maxPrice: "Preço máximo", any: "Qualquer", all: "Todos", clearAll: "Limpar todos os filtros" },
   product: {

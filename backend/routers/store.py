@@ -18,7 +18,7 @@ from functools import partial
 import anthropic
 import cloudinary
 import cloudinary.uploader
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -128,6 +128,9 @@ class SellTradeLeadRequest(BaseModel):
     notes: str = ""
 
 
+STORE_PAGE_SIZE = 48
+
+
 class PublicStore(BaseModel):
     store_name: str | None
     store_description: str | None
@@ -146,8 +149,19 @@ class PublicStore(BaseModel):
     store_hours: str | None
     store_theme_config: str | None
     store_hero_layout: str
-    records: list[PublicRecord]
+    records: list[PublicRecord]  # first page only (newest first) — /records paginates the rest
     accessories: list[PublicAccessory]
+    total_records: int = 0
+    genres: dict[str, int] = {}  # tag → count, across the whole listed catalog
+    formats: list[str] = []
+    page_size: int = STORE_PAGE_SIZE
+
+
+class PublicRecordsPage(BaseModel):
+    records: list[PublicRecord]
+    total: int
+    page: int
+    per_page: int
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -623,18 +637,95 @@ async def _get_public_store_user(db: AsyncSession, slug: str) -> User:
     return store_user
 
 
+def _public_record(r: Record) -> PublicRecord:
+    return PublicRecord(
+        id=str(r.id),
+        artist=r.artist,
+        title=r.title,
+        year=r.year,
+        label=r.label,
+        catalog_number=getattr(r, "catalog_number", None),
+        format=r.format,
+        genre=getattr(r, "genre", None),
+        styles=getattr(r, "styles", None),
+        condition=r.condition if isinstance(r.condition, str) else r.condition.value,
+        asking_price=float(r.asking_price) if r.asking_price is not None else None,
+        cover_image_url=getattr(r, "cover_image_url", None),
+        discogs_synced=getattr(r, "discogs_synced", False) or False,
+        record_section=getattr(r, "record_section", "vinyl") or "vinyl",
+        tracklist=getattr(r, "tracklist", None),
+        created_at=r.created_at.isoformat(),
+    )
+
+
+def _record_tags(genre: str | None, styles: str | None) -> list[str]:
+    """Mirror of the storefront's recordTags(): styles split on commas, else genre."""
+    if styles:
+        return [s.strip() for s in styles.split(",") if s.strip()]
+    return [genre] if genre else []
+
+
+def _listed_records_query(user_id, search: str | None = None, genre: str | None = None,
+                          format_: str | None = None, condition: str | None = None,
+                          max_price: float | None = None):
+    from sqlalchemy import func as sa_func
+    q = select(Record).where(
+        Record.user_id == user_id,
+        Record.status == RecordStatus.in_stock,
+        Record.store_listed == True,  # noqa: E712
+        Record.record_section != "accessory",
+    )
+    if search:
+        term = f"%{search}%"
+        q = q.where(Record.artist.ilike(term) | Record.title.ilike(term) | Record.label.ilike(term))
+    if genre:
+        # exact tag-element match on the comma-separated styles list (or the genre column)
+        padded = sa_func.concat(", ", sa_func.coalesce(Record.styles, ""), ", ")
+        q = q.where((Record.genre == genre) | padded.ilike(f"%, {genre}, %"))
+    if format_:
+        q = q.where(Record.format == format_)
+    if condition:
+        q = q.where(Record.condition == condition)
+    if max_price is not None:
+        q = q.where(Record.asking_price.isnot(None), Record.asking_price <= max_price)
+    return q
+
+
+_STORE_SORTS = {
+    "newest": lambda: Record.created_at.desc(),
+    "price_asc": lambda: Record.asking_price.asc().nulls_last(),
+    "price_desc": lambda: Record.asking_price.desc().nulls_last(),
+    "artist_az": lambda: Record.artist.asc().nulls_last(),
+}
+
+
 @router.get("/{slug}", response_model=PublicStore)
 async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
     store_user = await _get_public_store_user(db, slug)
 
+    from sqlalchemy import func as sa_func
+    base = _listed_records_query(store_user.id)
+
     records_result = await db.execute(
-        select(Record).where(
-            Record.user_id == store_user.id,
-            Record.status == RecordStatus.in_stock,
-            Record.store_listed == True,  # noqa: E712
-        ).order_by(Record.created_at.desc())
+        base.order_by(Record.created_at.desc()).limit(STORE_PAGE_SIZE)
     )
     records = records_result.scalars().all()
+
+    total = (await db.execute(
+        select(sa_func.count()).select_from(base.subquery())
+    )).scalar_one()
+
+    # Facets across the whole listed catalog (3 tiny columns — cheap even at 10k rows)
+    facet_rows = (await db.execute(
+        select(Record.genre, Record.styles, Record.format).select_from(base.subquery())
+    )).all()
+    genre_counts: dict[str, int] = {}
+    formats: set[str] = set()
+    for g, styles, fmt in facet_rows:
+        for tag in _record_tags(g, styles):
+            genre_counts[tag] = genre_counts.get(tag, 0) + 1
+        if fmt:
+            formats.add(fmt)
 
     accessories_result = await db.execute(
         select(Accessory).where(
@@ -662,27 +753,7 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
         store_hours=store_user.store_hours,
         store_theme_config=store_user.store_theme_config,
         store_hero_layout=getattr(store_user, "store_hero_layout", None) or "gallery",
-        records=[
-            PublicRecord(
-                id=str(r.id),
-                artist=r.artist,
-                title=r.title,
-                year=r.year,
-                label=r.label,
-                catalog_number=getattr(r, "catalog_number", None),
-                format=r.format,
-                genre=getattr(r, "genre", None),
-                styles=getattr(r, "styles", None),
-                condition=r.condition if isinstance(r.condition, str) else r.condition.value,
-                asking_price=float(r.asking_price) if r.asking_price is not None else None,
-                cover_image_url=getattr(r, "cover_image_url", None),
-                discogs_synced=getattr(r, "discogs_synced", False) or False,
-                record_section=getattr(r, "record_section", "vinyl") or "vinyl",
-                tracklist=getattr(r, "tracklist", None),
-                created_at=r.created_at.isoformat(),
-            )
-            for r in records
-        ],
+        records=[_public_record(r) for r in records],
         accessories=[
             PublicAccessory(
                 id=str(a.id),
@@ -695,6 +766,43 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
             )
             for a in accessories
         ],
+        total_records=total,
+        genres=dict(sorted(genre_counts.items())),
+        formats=sorted(formats),
+        page_size=STORE_PAGE_SIZE,
+    )
+
+
+@router.get("/{slug}/records", response_model=PublicRecordsPage)
+async def get_public_store_records(
+    slug: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(STORE_PAGE_SIZE, ge=1, le=96),
+    search: str | None = Query(None),
+    genre: str | None = Query(None),
+    format: str | None = Query(None),
+    condition: str | None = Query(None),
+    max_price: float | None = Query(None, ge=0),
+    sort: str = Query("newest"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Server-side paginated/filtered listing for the public storefront."""
+    from sqlalchemy import func as sa_func
+    store_user = await _get_public_store_user(db, slug)
+
+    q = _listed_records_query(
+        store_user.id, search=search, genre=genre, format_=format,
+        condition=condition, max_price=max_price,
+    )
+    total = (await db.execute(select(sa_func.count()).select_from(q.subquery()))).scalar_one()
+
+    order = _STORE_SORTS.get(sort, _STORE_SORTS["newest"])()
+    result = await db.execute(q.order_by(order).offset((page - 1) * per_page).limit(per_page))
+    records = result.scalars().all()
+
+    return PublicRecordsPage(
+        records=[_public_record(r) for r in records],
+        total=total, page=page, per_page=per_page,
     )
 
 

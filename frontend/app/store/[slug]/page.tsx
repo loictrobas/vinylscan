@@ -114,20 +114,6 @@ function buildShareLink(
   return `mailto:${contact}?subject=${encodeURIComponent("Record order")}&body=${encodeURIComponent(msg)}`;
 }
 
-function sortRecords(records: PublicRecord[], sort: SortKey): PublicRecord[] {
-  const copy = [...records];
-  switch (sort) {
-    case "price_asc":
-      return copy.sort((a, b) => (a.asking_price ?? Infinity) - (b.asking_price ?? Infinity));
-    case "price_desc":
-      return copy.sort((a, b) => (b.asking_price ?? -Infinity) - (a.asking_price ?? -Infinity));
-    case "az":
-      return copy.sort((a, b) => (a.artist ?? "").localeCompare(b.artist ?? ""));
-    default:
-      return copy;
-  }
-}
-
 function ThemedActionButton({ accent, buttonShape, filled, label, price, onClick, disabled }: {
   accent: string; buttonShape: ButtonShape; filled: boolean; label: string;
   price?: string | null; onClick?: (e: React.MouseEvent) => void; disabled?: boolean;
@@ -556,12 +542,70 @@ export default function StorePage() {
   const [lang, setLang] = useStoreLang();
   const t = STORE_TRANSLATIONS[lang];
 
+  // Server-side paginated shop listing. store.records is only the first page
+  // (newest first) and feeds the home carousels; the shop grid works off
+  // shopRecords, which search/filter/sort refetch from the backend.
+  const [shopRecords, setShopRecords] = useState<PublicRecord[]>([]);
+  const [shopTotal, setShopTotal] = useState(0);
+  const [shopPage, setShopPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const firstFilterRun = useRef(true);
+
   useEffect(() => {
     api.getPublicStore(slug)
-      .then(setStore)
+      .then((s) => {
+        setStore(s);
+        setShopRecords(s.records.filter((r) => r.record_section !== "accessory"));
+        setShopTotal(s.total_records);
+        setShopPage(1);
+      })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  const serverSort = sort === "az" ? "artist_az" : sort;
+  const maxPriceNum = maxPrice ? parseFloat(maxPrice) : undefined;
+
+  useEffect(() => {
+    if (firstFilterRun.current) { firstFilterRun.current = false; return; }
+    const timer = setTimeout(() => {
+      api.getStoreRecords(slug, {
+        search: search || undefined,
+        genre: genreFilter || undefined,
+        format: formatFilter || undefined,
+        condition: condFilter || undefined,
+        max_price: maxPriceNum !== undefined && !isNaN(maxPriceNum) ? maxPriceNum : undefined,
+        sort: serverSort,
+      }).then((p) => {
+        setShopRecords(p.records);
+        setShopTotal(p.total);
+        setShopPage(1);
+      }).catch(() => { /* keep whatever is on screen */ });
+    }, search ? 300 : 0); // debounce typing; filter clicks fire immediately
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, search, genreFilter, formatFilter, condFilter, maxPrice, sort]);
+
+  const loadMoreRecords = useCallback(() => {
+    setLoadingMore(true);
+    api.getStoreRecords(slug, {
+      page: shopPage + 1,
+      search: search || undefined,
+      genre: genreFilter || undefined,
+      format: formatFilter || undefined,
+      condition: condFilter || undefined,
+      max_price: maxPriceNum !== undefined && !isNaN(maxPriceNum) ? maxPriceNum : undefined,
+      sort: serverSort,
+    }).then((p) => {
+      setShopRecords((prev) => {
+        const seen = new Set(prev.map((r) => r.id));
+        return [...prev, ...p.records.filter((r) => !seen.has(r.id))];
+      });
+      setShopTotal(p.total);
+      setShopPage(p.page);
+    }).finally(() => setLoadingMore(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, shopPage, search, genreFilter, formatFilter, condFilter, maxPrice, sort]);
 
   // Inject Google Fonts when store loads
   useEffect(() => {
@@ -654,34 +698,18 @@ export default function StorePage() {
   const motionClass = THEME_MOTION_CLASS[motion];
   const buttonShape = (themeConfig?.button_shape ?? "block") as ButtonShape;
 
+  // Home carousels come from the first (newest) page; the shop grid is
+  // server-filtered shopRecords. Facets come precomputed from the backend.
   const vinylRecords = store.records.filter((r) => r.record_section !== "accessory");
   const discogsRecords = vinylRecords.filter((r) => r.discogs_synced);
 
-  const newIn = [...vinylRecords].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 12);
+  const newIn = vinylRecords.slice(0, 12); // store.records already newest-first
 
-  const genres = [...new Set(vinylRecords.flatMap(recordTags))].sort();
-  const genreCounts: Record<string, number> = {};
-  for (const g of genres) genreCounts[g] = vinylRecords.filter((r) => recordTags(r).includes(g)).length;
+  const genreCounts = store.genres;
+  const genres = Object.keys(store.genres).sort();
+  const formats = store.formats;
 
-  const formats = [...new Set(vinylRecords.map((r) => r.format).filter(Boolean) as string[])].sort();
-
-  const filtered = sortRecords(
-    vinylRecords.filter((r) => {
-      if (search) {
-        const q = search.toLowerCase();
-        if (!`${r.artist} ${r.title} ${r.label ?? ""}`.toLowerCase().includes(q)) return false;
-      }
-      if (genreFilter && !recordTags(r).includes(genreFilter)) return false;
-      if (formatFilter && r.format !== formatFilter) return false;
-      if (condFilter && r.condition !== condFilter) return false;
-      if (maxPrice) {
-        const max = parseFloat(maxPrice);
-        if (!isNaN(max) && (r.asking_price == null || r.asking_price > max)) return false;
-      }
-      return true;
-    }),
-    sort
-  );
+  const filtered = shopRecords;
 
   const accessoryLines: AccessoryLine[] = store.accessories
     .filter((a) => (accessoryQty[a.id] ?? 0) > 0)
@@ -694,9 +722,10 @@ export default function StorePage() {
   const accCategories = [...new Set(store.accessories.map((a) => a.category))].sort();
   const filteredAccessories = accCategoryFilter ? store.accessories.filter((a) => a.category === accCategoryFilter) : store.accessories;
 
-  const selectedRecord = selectedRecordId ? store.records.find((r) => r.id === selectedRecordId) ?? null : null;
+  const loadedRecords = [...shopRecords, ...vinylRecords.filter((r) => !shopRecords.some((s) => s.id === r.id))];
+  const selectedRecord = selectedRecordId ? loadedRecords.find((r) => r.id === selectedRecordId) ?? null : null;
   const related = selectedRecord
-    ? vinylRecords.filter((r) => r.id !== selectedRecord.id && recordTags(r).some((t) => recordTags(selectedRecord).includes(t))).slice(0, 4)
+    ? loadedRecords.filter((r) => r.id !== selectedRecord.id && recordTags(r).some((t) => recordTags(selectedRecord).includes(t))).slice(0, 4)
     : [];
 
   const sidebar = (
@@ -1026,7 +1055,7 @@ export default function StorePage() {
 
             <div className="flex-1 min-w-0">
               <p className="text-xs text-neutral-400 mb-4">
-                {t.shop.recordCount(filtered.length, vinylRecords.length, filtered.length !== vinylRecords.length)}
+                {t.shop.recordCount(filtered.length, shopTotal, shopTotal !== store.total_records || filtered.length < shopTotal)}
               </p>
 
               {filtered.length === 0 ? (
@@ -1046,23 +1075,39 @@ export default function StorePage() {
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {filtered.map((r) => (
-                    <RecordCard
-                      key={r.id}
-                      record={r}
-                      inCart={!!cart.find((c) => c.id === r.id)}
-                      onToggle={() => toggleCart(r)}
-                      onOpen={() => navigate("product", { recordId: r.id })}
-                      accent={accent}
-                      secondary={secondary}
-                      t={t}
-                      cardTexture={cardTexture}
-                      motionClass={motionClass}
-                      buttonShape={buttonShape}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {filtered.map((r) => (
+                      <RecordCard
+                        key={r.id}
+                        record={r}
+                        inCart={!!cart.find((c) => c.id === r.id)}
+                        onToggle={() => toggleCart(r)}
+                        onOpen={() => navigate("product", { recordId: r.id })}
+                        accent={accent}
+                        secondary={secondary}
+                        t={t}
+                        cardTexture={cardTexture}
+                        motionClass={motionClass}
+                        buttonShape={buttonShape}
+                      />
+                    ))}
+                  </div>
+                  {filtered.length < shopTotal && (
+                    <div className="flex justify-center mt-8">
+                      <button
+                        onClick={loadMoreRecords}
+                        disabled={loadingMore}
+                        className="px-6 py-2.5 text-sm font-medium border transition-opacity disabled:opacity-50 hover:opacity-80"
+                        style={{ borderColor: accent, color: accent, borderRadius: "var(--vs-radius, 4px)" }}
+                      >
+                        {loadingMore
+                          ? <Loader2 size={14} className="animate-spin inline" />
+                          : `${t.shop.loadMore ?? "Load more"} (${shopTotal - filtered.length})`}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

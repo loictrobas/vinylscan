@@ -242,22 +242,21 @@ async def scan_stream(
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
-    import asyncio
-    q = sse_manager.subscribe(user_id_str)
+    sub = await sse_manager.subscribe(user_id_str)
 
     async def generate():
         try:
             yield "data: {\"type\":\"connected\"}\n\n"
-            for data in sse_manager.recent(user_id_str):
+            for data in await sse_manager.recent(user_id_str):
                 yield f"data: {data}\n\n"
             while True:
                 try:
-                    data = await asyncio.wait_for(q.get(), timeout=20.0)
+                    data = await asyncio.wait_for(sub.get(), timeout=20.0)
                     yield f"data: {data}\n\n"
                 except asyncio.TimeoutError:
                     yield ": heartbeat\n\n"
         finally:
-            sse_manager.unsubscribe(user_id_str, q)
+            await sub.close()
 
     return StreamingResponse(
         generate(),
@@ -351,17 +350,15 @@ async def upload_scan(
 
     scan_response = _scan_to_upload_response(scan)
 
-    # Push to desktop SSE listeners for this user (mobile→desktop real-time)
-    listeners = sse_manager.listener_count(str(user.id))
-    logger.info("[SSE] user=%s listeners=%d scan=%s", user.id, listeners, scan.id)
-    if listeners > 0:
-        base = str(request.base_url).rstrip("/")
-        abs_image_url = f"{base}{scan.image_url}" if scan.image_url and scan.image_url.startswith("/") else scan.image_url
-        await sse_manager.broadcast(str(user.id), {
-            **scan_response.model_dump(mode="json"),
-            "type": "scan_result",
-            "image_url": abs_image_url,
-        })
+    # Push to desktop SSE listeners (mobile→desktop real-time). Broadcast
+    # unconditionally — the replay buffer covers tabs that connect later, and
+    # with the Redis backend listener counts aren't knowable per-process anyway.
+    base = str(request.base_url).rstrip("/")
+    await sse_manager.broadcast(str(user.id), {
+        **scan_response.model_dump(mode="json"),
+        "type": "scan_result",
+        "image_url": _abs_image_url(base, scan.image_url),
+    })
 
     return scan_response
 
@@ -409,14 +406,12 @@ async def enhance_scan(
     _set_credit_header(response, user)
     enhance_response = _scan_to_upload_response(scan)
 
-    if sse_manager.listener_count(str(user.id)) > 0:
-        base = str(request.base_url).rstrip("/")
-        abs_image_url = f"{base}{scan.image_url}" if scan.image_url and scan.image_url.startswith("/") else scan.image_url
-        await sse_manager.broadcast(str(user.id), {
-            "type": "scan_enhanced",
-            "image_url": abs_image_url,
-            **enhance_response.model_dump(mode="json"),
-        })
+    base = str(request.base_url).rstrip("/")
+    await sse_manager.broadcast(str(user.id), {
+        "type": "scan_enhanced",
+        "image_url": _abs_image_url(base, scan.image_url),
+        **enhance_response.model_dump(mode="json"),
+    })
 
     return enhance_response
 
