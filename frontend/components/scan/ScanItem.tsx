@@ -218,7 +218,7 @@ export function ScanItem({
     return (
       <>
         {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
-        <div className={`card overflow-hidden${hasDebug ? " grid grid-cols-[minmax(0,1fr)_320px] items-start" : ""}`}>
+        <div className={`card overflow-hidden${hasDebug ? " grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] items-start" : ""}`}>
           {/* Left column: all scan content */}
           <div className="min-w-0">
             {/* Header: scan photo + confidence + condition */}

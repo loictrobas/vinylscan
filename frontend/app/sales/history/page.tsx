@@ -86,7 +86,7 @@ export default function SalesHistoryPage() {
   const allMarginsNull = records.length > 0 && records.every((r) => r.cost_price == null);
 
   function exportCSV() {
-    const headers = ["Artist", "Title", "Condition", "Format", "Cost", "Sold Price", "Margin %", "Sold At"];
+    const headers = ["Artist", "Title", "Condition", "Format", "Cost", "Sold Price", "Margin %", "Payment", "Sold At"];
     const rows = records.map((r) => {
       const margin =
         r.cost_price != null && r.sold_price != null
@@ -95,7 +95,7 @@ export default function SalesHistoryPage() {
       return [
         r.artist ?? "", r.title ?? "", r.condition ?? "", r.format ?? "",
         r.cost_price?.toFixed(2) ?? "", r.sold_price?.toFixed(2) ?? "",
-        margin, r.sold_at ? new Date(r.sold_at).toLocaleDateString() : "",
+        margin, r.payment_method ?? "", r.sold_at ? new Date(r.sold_at).toLocaleDateString() : "",
       ];
     });
     const csv = [headers, ...rows]
@@ -193,6 +193,7 @@ export default function SalesHistoryPage() {
                     </th>
                   );
                 })}
+                <th>Payment</th>
                 <th />
               </tr>
             </thead>
@@ -239,6 +240,9 @@ export default function SalesHistoryPage() {
                       <span className="text-xs text-vs-muted">
                         {r.sold_at ? new Date(r.sold_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
                       </span>
+                    </td>
+                    <td>
+                      <span className="text-xs text-vs-text-2 capitalize">{r.payment_method ?? "—"}</span>
                     </td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <button

@@ -717,7 +717,7 @@ async def get_public_store(slug: str, db: AsyncSession = Depends(get_db)):
 
     # Facets across the whole listed catalog (3 tiny columns — cheap even at 10k rows)
     facet_rows = (await db.execute(
-        select(Record.genre, Record.styles, Record.format).select_from(base.subquery())
+        base.with_only_columns(Record.genre, Record.styles, Record.format)
     )).all()
     genre_counts: dict[str, int] = {}
     formats: set[str] = set()

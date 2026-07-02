@@ -139,7 +139,7 @@ function DashboardPageInner() {
           <p className="text-sm text-vs-success font-medium">Subscription activated! Welcome to VinylScan Pro.</p>
         </div>
       )}
-      {!subscribed && user && (
+      {!subscribed && user && !user.is_admin && (
         <div className="mb-5 px-4 py-3.5 rounded-xl bg-vs-accent/8 border border-vs-accent/25 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Zap size={16} className="text-vs-accent flex-shrink-0" />

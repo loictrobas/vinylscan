@@ -88,8 +88,8 @@ export function Sidebar() {
 
         <div>
           <p className="sidebar-section-label">CATALOG</p>
-          <Link href="/catalog" className={`sidebar-link ${isActive(pathname, "/catalog") ? "active" : ""}`}>
-            <span className={isActive(pathname, "/catalog") ? "text-vs-accent" : "text-vs-muted"}><Disc3 size={16} /></span>
+          <Link href="/catalog" className={`sidebar-link ${isActive(pathname, "/catalog", true) ? "active" : ""}`}>
+            <span className={isActive(pathname, "/catalog", true) ? "text-vs-accent" : "text-vs-muted"}><Disc3 size={16} /></span>
             Records
           </Link>
           <Link href="/scan" className={`sidebar-link ${isActive(pathname, "/scan") ? "active" : ""}`}>
@@ -156,7 +156,7 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="border-t border-vs-border px-2 py-3 flex-shrink-0">
-        {user && !subscribed && (
+        {user && !subscribed && !user.is_admin && (
           <Link
             href="/subscription"
             className="flex items-center gap-2 mx-1 mb-2 px-3 py-2 rounded-lg bg-vs-accent/10 border border-vs-accent/20 hover:bg-vs-accent/15 transition-colors"

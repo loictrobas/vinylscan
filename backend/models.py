@@ -211,6 +211,7 @@ class Record(Base):
     asking_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     sold_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     sold_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    payment_method: Mapped[str | None] = mapped_column(String(20), nullable=True)  # cash | card | transfer
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     user: Mapped["User"] = relationship("User", back_populates="records")

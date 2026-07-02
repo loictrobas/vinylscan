@@ -163,7 +163,7 @@ export default function POSPage() {
     if (cart.length === 0 || selling) return;
     setSelling(true);
     try {
-      const results = await Promise.allSettled(cart.map((c) => api.sellRecord(c.record.id, c.price)));
+      const results = await Promise.allSettled(cart.map((c) => api.sellRecord(c.record.id, c.price, payment)));
       const succeeded = cart.filter((_, i) => results[i].status === "fulfilled");
       const failed = cart.filter((_, i) => results[i].status === "rejected");
       if (succeeded.length > 0) {

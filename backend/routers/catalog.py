@@ -62,6 +62,7 @@ class RecordOut(BaseModel):
     asking_price: float | None
     sold_price: float | None
     sold_at: str | None
+    payment_method: str | None
     tags: str | None
     notes: str | None
     store_listed: bool
@@ -109,6 +110,7 @@ class RecordOut(BaseModel):
             asking_price=float(r.asking_price) if r.asking_price is not None else None,
             sold_price=float(r.sold_price) if r.sold_price is not None else None,
             sold_at=r.sold_at.isoformat() if r.sold_at else None,
+            payment_method=getattr(r, "payment_method", None),
             tags=getattr(r, "tags", None),
             notes=getattr(r, "notes", None),
             record_section=getattr(r, "record_section", "vinyl") or "vinyl",
@@ -805,6 +807,7 @@ async def update_record(
 
 class SellRequest(BaseModel):
     sold_price: float
+    payment_method: str | None = None  # cash | card | transfer
 
 
 @router.post("/{record_id}/sell", response_model=RecordOut)
@@ -828,6 +831,7 @@ async def sell_record(
     record.status = RecordStatus.sold
     record.sold_price = body.sold_price
     record.sold_at = datetime.now(timezone.utc)
+    record.payment_method = body.payment_method
     record.discogs_listing_id = None
 
     if getattr(record, "consignor_id", None) and getattr(record, "consignor_commission_pct", None) is not None:
@@ -873,6 +877,7 @@ async def unsell_record(
     record.status = RecordStatus.in_stock
     record.sold_price = None
     record.sold_at = None
+    record.payment_method = None
     if getattr(record, "consignor_payout_status", None) == "pending":
         record.consignor_amount_owed = None
         record.consignor_payout_status = None

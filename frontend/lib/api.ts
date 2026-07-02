@@ -252,6 +252,7 @@ export interface CatalogRecord {
   asking_price: number | null;
   sold_price: number | null;
   sold_at: string | null;
+  payment_method: string | null;
   tags: string | null;
   notes: string | null;
   store_listed: boolean;
@@ -978,8 +979,8 @@ export const api = {
   updateRecord: (id: string, body: Partial<CreateRecordBody & { asking_price?: number | null; condition?: string; lot_id?: string | null; store_listed?: boolean; record_section?: string }>) =>
     apiFetch<CatalogRecord>(`/catalog/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
 
-  sellRecord: (id: string, sold_price: number) =>
-    apiFetch<CatalogRecord>(`/catalog/${id}/sell`, { method: "POST", body: JSON.stringify({ sold_price }) }),
+  sellRecord: (id: string, sold_price: number, payment_method?: string) =>
+    apiFetch<CatalogRecord>(`/catalog/${id}/sell`, { method: "POST", body: JSON.stringify({ sold_price, payment_method }) }),
 
   unsellRecord: (id: string) =>
     apiFetch<CatalogRecord>(`/catalog/${id}/unsell`, { method: "POST" }),

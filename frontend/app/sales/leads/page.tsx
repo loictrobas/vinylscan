@@ -12,7 +12,7 @@ const STATUS_STYLES: Record<SellTradeLead["status"], string> = {
 };
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default function LeadsPage() {
