@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { X, ExternalLink, Wand2, Loader2, Clock, Search } from "lucide-react";
 import { toast } from "sonner";
-import { api, isStore, isCollector, type CatalogRecord, type Lot, type RecordEvent, type DiscogsMatch, type User } from "@/lib/api";
+import { api, type CatalogRecord, type Lot, type RecordEvent, type DiscogsMatch, type User, type Consignor } from "@/lib/api";
 import { CoverThumb } from "./CoverThumb";
 
 const CONDITIONS = ["M", "NM", "VG+", "VG", "G"] as const;
@@ -32,7 +32,6 @@ interface RecordModalProps {
 }
 
 export function RecordModal({ record, lots, onClose, onSaved, discogsConnected = false, user }: RecordModalProps) {
-  const pureCollector = isCollector(user) && !isStore(user);
   const isNew = !record;
   const [lightbox, setLightbox] = useState(false);
   const [listing, setListing] = useState(false);
@@ -58,11 +57,17 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
     genre: record?.genre ?? "",
     country: record?.country ?? "",
     condition: record?.condition ?? "VG+",
+    disc_condition: record?.disc_condition ?? (record?.condition ?? "VG+"),
+    cover_condition: record?.cover_condition ?? "VG+",
     lot_id: record?.lot_id ?? "",
     cost_price: record?.cost_price != null ? String(record.cost_price) : "",
     tags: record?.tags ?? "",
     notes: record?.notes ?? "",
+    record_section: record?.record_section ?? "vinyl",
   });
+  const [tracklist, setTracklist] = useState<{ position: string; title: string; duration: string }[]>(
+    record?.tracklist ?? []
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [history, setHistory] = useState<RecordEvent[]>([]);
@@ -74,6 +79,23 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
   const [findDiscogsArtist, setFindDiscogsArtist] = useState(record?.artist ?? "");
   const [findDiscogsTitle, setFindDiscogsTitle] = useState(record?.title ?? "");
   const [findDiscogsLinking, setFindDiscogsLinking] = useState<number | null>(null);
+
+  const [consignors, setConsignors] = useState<Consignor[]>([]);
+  const [consignorOpen, setConsignorOpen] = useState(false);
+  const [consignorSaving, setConsignorSaving] = useState(false);
+  const [selectedConsignorId, setSelectedConsignorId] = useState<number | null>(record?.consignor_id ?? null);
+  const [consignorAgreedPrice, setConsignorAgreedPrice] = useState(
+    record?.consignor_agreed_price != null ? String(record.consignor_agreed_price) : ""
+  );
+  const [consignorCommissionPct, setConsignorCommissionPct] = useState(
+    record?.consignor_commission_pct != null ? String(record.consignor_commission_pct) : ""
+  );
+
+  useEffect(() => {
+    if (!isNew) {
+      api.listConsignors().then(setConsignors).catch(() => {});
+    }
+  }, [isNew]);
 
   function set(k: string, v: string) { setFormState((f) => ({ ...f, [k]: v })); }
 
@@ -136,33 +158,69 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
     if (price != null && price > 0) handlePriceChange(String(price));
   }
 
+  function buildBody() {
+    return {
+      artist: form.artist || null,
+      title: form.title || null,
+      year: form.year ? parseInt(form.year) : null,
+      label: form.label || null,
+      catalog_number: form.catalog_number || null,
+      format: form.format || null,
+      genre: form.genre || null,
+      country: form.country || null,
+      condition: form.disc_condition || form.condition,
+      disc_condition: form.disc_condition || null,
+      cover_condition: form.cover_condition || null,
+      lot_id: form.lot_id || null,
+      cost_price: form.cost_price ? parseFloat(form.cost_price) : null,
+      asking_price: askingPrice ? parseFloat(askingPrice) : null,
+      tags: form.tags || null,
+      notes: form.notes || null,
+      record_section: form.record_section || "vinyl",
+      tracklist: tracklist.filter((t) => t.title.trim()).length > 0
+        ? tracklist.filter((t) => t.title.trim())
+        : null,
+    };
+  }
+
+  function resetForm() {
+    setFormState({ artist: "", title: "", year: "", label: "", catalog_number: "", format: "", genre: "", country: "", condition: "VG+", disc_condition: "VG+", cover_condition: "VG+", lot_id: form.lot_id, cost_price: "", tags: "", notes: "", record_section: "vinyl" });
+    setAskingPrice("");
+    setTracklist([]);
+    setError("");
+  }
+
   async function save() {
     if (!form.artist && !form.title) { setError("Artist or title required."); return; }
     setSaving(true);
     setError("");
     try {
-      const body: Record<string, unknown> = {
-        artist: form.artist || null,
-        title: form.title || null,
-        year: form.year ? parseInt(form.year) : null,
-        label: form.label || null,
-        catalog_number: form.catalog_number || null,
-        format: form.format || null,
-        genre: form.genre || null,
-        country: form.country || null,
-        condition: form.condition,
-        lot_id: form.lot_id || null,
-        cost_price: form.cost_price ? parseFloat(form.cost_price) : null,
-        asking_price: askingPrice ? parseFloat(askingPrice) : null,
-        tags: form.tags || null,
-        notes: form.notes || null,
-      };
+      const body = buildBody();
       const saved = isNew
         ? await api.createRecord(body as Parameters<typeof api.createRecord>[0])
         : await api.updateRecord(record!.id, body as Parameters<typeof api.updateRecord>[1]);
       onSaved(saved);
       toast.success(isNew ? "Record added" : "Changes saved");
       onClose();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Save failed";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveAndAddAnother() {
+    if (!form.artist && !form.title) { setError("Artist or title required."); return; }
+    setSaving(true);
+    setError("");
+    try {
+      const body = buildBody();
+      const saved = await api.createRecord(body as Parameters<typeof api.createRecord>[0]);
+      onSaved(saved);
+      toast.success("Record added");
+      resetForm();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Save failed";
       setError(msg);
@@ -208,7 +266,7 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
                 </p>
               )}
               <label className="text-xs text-vs-muted flex items-center gap-2">
-                {pureCollector ? "Estimated value" : "Asking price"}
+                Asking price
                 <span className={`text-2xs transition-opacity duration-300 ${autoSaved ? "opacity-100 text-vs-success" : "opacity-0"}`}>
                   ✓ Saved
                 </span>
@@ -250,6 +308,27 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
               </div>
             </div>
           </div>
+
+          {/* Market price range */}
+          {record && (record.discogs_lowest_price != null || record.discogs_suggested_price != null) && (
+            <div className="mt-3 flex items-center gap-4 text-xs text-vs-muted">
+              {record.discogs_lowest_price != null && (
+                <span title="Lowest current Discogs listing">
+                  <span className="text-vs-text-2 font-medium">${record.discogs_lowest_price.toFixed(2)}</span>
+                  <span className="ml-1 text-2xs">mkt low</span>
+                </span>
+              )}
+              {record.discogs_suggested_price != null && (
+                <span title="Discogs suggested price based on recent sales">
+                  <span className="text-vs-text-2 font-medium">${record.discogs_suggested_price.toFixed(2)}</span>
+                  <span className="ml-1 text-2xs">suggested</span>
+                </span>
+              )}
+              {record.discogs_num_for_sale != null && (
+                <span>{record.discogs_num_for_sale} for sale</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Fields */}
@@ -281,21 +360,40 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
               {FORMATS.map((f) => <option key={f}>{f}</option>)}
             </select>
           </div>
-          <div>
-            <label className="text-xs text-vs-text-2 mb-1 block">Condition</label>
-            <div className="flex gap-1">
-              {CONDITIONS.map((c) => (
-                <button
-                  key={c} type="button" onClick={() => set("condition", c)}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                    form.condition === c
-                      ? "bg-vs-accent text-vs-bg border-vs-accent"
-                      : "border-vs-border-2 text-vs-text-2 hover:border-vs-accent hover:text-vs-text"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
+          <div className="col-span-2 grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-vs-text-2 mb-1 block">Disc condition</label>
+              <div className="flex gap-1">
+                {CONDITIONS.map((c) => (
+                  <button
+                    key={c} type="button" onClick={() => { set("disc_condition", c); set("condition", c); }}
+                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                      form.disc_condition === c
+                        ? "bg-vs-accent text-vs-bg border-vs-accent"
+                        : "border-vs-border-2 text-vs-text-2 hover:border-vs-accent hover:text-vs-text"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-vs-text-2 mb-1 block">Cover condition</label>
+              <div className="flex gap-1">
+                {CONDITIONS.map((c) => (
+                  <button
+                    key={c} type="button" onClick={() => set("cover_condition", c)}
+                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                      form.cover_condition === c
+                        ? "bg-vs-accent text-vs-bg border-vs-accent"
+                        : "border-vs-border-2 text-vs-text-2 hover:border-vs-accent hover:text-vs-text"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -319,9 +417,16 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
               {lots.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
           </div>
+          <div>
+            <label className="text-xs text-vs-text-2 mb-1 block">Section</label>
+            <select className="input" value={form.record_section} onChange={(e) => set("record_section", e.target.value)}>
+              <option value="vinyl">Vinyl</option>
+              <option value="accessory">Accessory</option>
+            </select>
+          </div>
 
           <div>
-            <label className="text-xs text-vs-text-2 mb-1 block">{pureCollector ? "What I paid" : "Cost price"}</label>
+            <label className="text-xs text-vs-text-2 mb-1 block">Cost price</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-vs-muted text-xs">$</span>
               <input className="input pl-6" type="number" min="0" step="0.01" value={form.cost_price} onChange={(e) => set("cost_price", e.target.value)} placeholder="0.00" />
@@ -336,10 +441,57 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
             <label className="text-xs text-vs-text-2 mb-1 block">Notes</label>
             <textarea className="input resize-none" rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} />
           </div>
+
+          <div className="col-span-2">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-vs-text-2">Tracklist</label>
+              <p className="text-2xs text-vs-muted">
+                {record?.discogs_release_id ? "Pulled from Discogs on confirm — edit if needed" : "No Discogs release — add tracks manually"}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              {tracklist.map((t, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <input
+                    className="input text-xs py-1.5 w-14 flex-shrink-0"
+                    placeholder="A1"
+                    value={t.position}
+                    onChange={(e) => setTracklist((ts) => ts.map((x, j) => j === i ? { ...x, position: e.target.value } : x))}
+                  />
+                  <input
+                    className="input text-xs py-1.5 flex-1"
+                    placeholder="Track title"
+                    value={t.title}
+                    onChange={(e) => setTracklist((ts) => ts.map((x, j) => j === i ? { ...x, title: e.target.value } : x))}
+                  />
+                  <input
+                    className="input text-xs py-1.5 w-16 flex-shrink-0"
+                    placeholder="3:45"
+                    value={t.duration}
+                    onChange={(e) => setTracklist((ts) => ts.map((x, j) => j === i ? { ...x, duration: e.target.value } : x))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setTracklist((ts) => ts.filter((_, j) => j !== i))}
+                    className="text-vs-muted hover:text-vs-danger flex-shrink-0"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setTracklist((ts) => [...ts, { position: "", title: "", duration: "" }])}
+              className="text-2xs text-vs-accent hover:underline mt-1.5"
+            >
+              + Add track
+            </button>
+          </div>
         </div>
 
-        {/* Store listing toggle — store only */}
-        {!isNew && !pureCollector && (
+        {/* Store listing toggle */}
+        {!isNew && (
           <div className="px-6 pb-4 border-t border-vs-border pt-4">
             <div className="flex items-center justify-between">
               <div>
@@ -372,6 +524,97 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
                 {storeToggling ? "…" : storeListed ? "Hide from store" : "Show in store"}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Consignor assignment */}
+        {!isNew && record && record.status !== "sold" && (
+          <div className="px-6 pb-4 border-t border-vs-border pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-vs-text-2">Consignment</p>
+                {record.consignor_id ? (
+                  <p className="text-xs text-vs-accent mt-0.5">
+                    {consignors.find(c => c.id === record.consignor_id)?.name ?? `Consignor #${record.consignor_id}`}
+                    {record.consignor_agreed_price != null && ` · agreed $${record.consignor_agreed_price.toFixed(2)}`}
+                    {record.consignor_commission_pct != null && ` · ${record.consignor_commission_pct}%`}
+                  </p>
+                ) : (
+                  <p className="text-xs text-vs-muted mt-0.5">Not consigned</p>
+                )}
+              </div>
+              <button
+                onClick={() => setConsignorOpen(v => !v)}
+                className="text-xs px-3 py-1.5 rounded-lg border border-vs-border text-vs-text-2 hover:bg-vs-raised transition-colors"
+              >
+                {consignorOpen ? "Cancel" : record.consignor_id ? "Edit" : "Assign"}
+              </button>
+            </div>
+            {consignorOpen && (
+              <div className="mt-3 space-y-3">
+                <div>
+                  <label className="text-xs text-vs-text-2 mb-1 block">Consignor</label>
+                  <select
+                    className="input text-xs"
+                    value={selectedConsignorId ?? ""}
+                    onChange={e => setSelectedConsignorId(e.target.value ? Number(e.target.value) : null)}
+                  >
+                    <option value="">None (remove consignor)</option>
+                    {consignors.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-vs-text-2 mb-1 block">Agreed price</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-vs-muted text-xs">$</span>
+                      <input
+                        className="input pl-6 text-xs"
+                        type="number" min="0" step="0.01"
+                        placeholder="0.00"
+                        value={consignorAgreedPrice}
+                        onChange={e => setConsignorAgreedPrice(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-vs-text-2 mb-1 block">Commission %</label>
+                    <input
+                      className="input text-xs"
+                      type="number" min="0" max="100" step="0.1"
+                      placeholder={consignors.find(c => c.id === selectedConsignorId)?.default_commission_pct?.toFixed(0) ?? "30"}
+                      value={consignorCommissionPct}
+                      onChange={e => setConsignorCommissionPct(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    if (consignorSaving) return;
+                    setConsignorSaving(true);
+                    try {
+                      const updated = await api.assignConsignor(record.id, {
+                        consignor_id: selectedConsignorId,
+                        consignor_agreed_price: consignorAgreedPrice ? parseFloat(consignorAgreedPrice) : null,
+                        consignor_commission_pct: consignorCommissionPct ? parseFloat(consignorCommissionPct) : null,
+                      });
+                      onSaved({ ...record, ...updated } as CatalogRecord);
+                      setConsignorOpen(false);
+                      toast.success(selectedConsignorId ? "Consignor assigned" : "Consignor removed");
+                    } catch (e: unknown) {
+                      toast.error(e instanceof Error ? e.message : "Save failed");
+                    } finally { setConsignorSaving(false); }
+                  }}
+                  disabled={consignorSaving}
+                  className="btn-primary text-xs px-3 py-1.5 disabled:opacity-40 flex items-center gap-1.5"
+                >
+                  {consignorSaving ? <Loader2 size={12} className="animate-spin" /> : null}
+                  {consignorSaving ? "Saving…" : "Save consignor"}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -473,8 +716,8 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
           </div>
         )}
 
-        {/* Discogs marketplace listing — store only */}
-        {!isNew && !pureCollector && discogsConnected && record?.discogs_release_id && (
+        {/* Discogs marketplace listing */}
+        {!isNew && discogsConnected && record?.discogs_release_id && (
           <div className="px-6 pb-4 border-t border-vs-border pt-4">
             <div className="flex items-center justify-between">
               <div>
@@ -568,6 +811,11 @@ export function RecordModal({ record, lots, onClose, onSaved, discogsConnected =
 
         <div className="sticky bottom-0 bg-vs-card border-t border-vs-border px-6 py-4 flex justify-end gap-2 rounded-b-2xl">
           <button onClick={onClose} className="btn-secondary">Cancel</button>
+          {isNew && (
+            <button onClick={saveAndAddAnother} disabled={saving} className="btn-secondary disabled:opacity-50">
+              {saving ? "Saving…" : "Add & continue"}
+            </button>
+          )}
           <button onClick={save} disabled={saving} className="btn-primary disabled:opacity-50">
             {saving ? "Saving…" : isNew ? "Add record" : "Save changes"}
           </button>

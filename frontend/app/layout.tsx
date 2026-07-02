@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { Toaster } from "sonner";
 
@@ -33,7 +40,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       {/* Runs before paint to avoid flash — reads localStorage, defaults to light */}
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('vs-theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})()` }} />

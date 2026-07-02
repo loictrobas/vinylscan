@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ShoppingCart, Search, X, Disc3, Tag, Check,
-  Trash2, Receipt, ChevronRight,
+  Trash2, Receipt, ChevronRight, Banknote, CreditCard, ArrowLeftRight,
 } from "lucide-react";
 import { api, getToken, type CatalogRecord } from "@/lib/api";
 
@@ -29,7 +29,7 @@ interface ReceiptModal {
   payment: string;
 }
 
-function ReceiptView({ data, onClose }: { data: ReceiptModal; onClose: () => void }) {
+function ReceiptView({ data, onClose, onNewSale }: { data: ReceiptModal; onClose: () => void; onNewSale: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
@@ -70,8 +70,9 @@ function ReceiptView({ data, onClose }: { data: ReceiptModal; onClose: () => voi
             </div>
           </div>
         </div>
-        <div className="px-6 pb-4 flex justify-end">
-          <button onClick={onClose} className="btn-primary w-full text-center">Done</button>
+        <div className="px-6 pb-4 flex gap-2">
+          <button onClick={onNewSale} className="btn-secondary flex-1">New sale</button>
+          <button onClick={onClose} className="btn-primary flex-1">Done</button>
         </div>
       </div>
     </div>
@@ -88,10 +89,13 @@ export default function POSPage() {
   const [payment, setPayment] = useState<"cash" | "card" | "transfer">("cash");
   const [selling, setSelling] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptModal | null>(null);
+  const [recentRecords, setRecentRecords] = useState<CatalogRecord[]>([]);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!getToken()) { router.replace("/"); return; }
+    api.listCatalog({ status: "in_stock", per_page: 8 }).then((res) => setRecentRecords(res.records)).catch(() => {});
     // Pre-populate cart from catalog multi-select "Add to cart"
     const stored = localStorage.getItem("vinylscan_pos_cart");
     if (stored) {
@@ -102,6 +106,24 @@ export default function POSPage() {
       localStorage.removeItem("vinylscan_pos_cart");
     }
   }, [router]);
+
+  const handleNewSale = useCallback(() => {
+    setReceipt(null);
+    setSearchInput("");
+    setResults([]);
+    setTimeout(() => searchRef.current?.focus(), 50);
+  }, []);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && cart.length > 0 && !selling && !receipt) {
+        completeSale();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart, selling, receipt]);
 
   async function doSearch(q: string) {
     if (!q.trim()) { setResults([]); return; }
@@ -174,6 +196,7 @@ export default function POSPage() {
               <input
                 value={searchInput}
                 onChange={(e) => handleSearchInput(e.target.value)}
+                ref={searchRef}
                 placeholder="Search by artist or title…"
                 className="input pl-9"
                 autoFocus
@@ -209,8 +232,10 @@ export default function POSPage() {
                     disabled={cart.some((c) => c.record.id === r.id)}
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-vs-raised transition-colors text-left disabled:opacity-40 group"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-vs-raised border border-vs-border flex items-center justify-center flex-shrink-0 group-hover:border-vs-border-2">
-                      <Disc3 size={13} className="text-vs-muted" />
+                    <div className="w-8 h-8 rounded-lg bg-vs-raised border border-vs-border flex items-center justify-center flex-shrink-0 group-hover:border-vs-border-2 overflow-hidden">
+                      {r.cover_image_url
+                        ? <img src={r.cover_image_url} alt="" className="w-full h-full object-cover" />
+                        : <Disc3 size={13} className="text-vs-muted" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
@@ -236,7 +261,36 @@ export default function POSPage() {
               <p className="text-center text-sm text-vs-muted py-6">No in-stock records found.</p>
             )}
 
-            {!searchInput && (
+            {!searchInput && recentRecords.length > 0 && (
+              <div className="mt-1">
+                <p className="text-xs text-vs-muted uppercase tracking-wider mb-2">Recently added</p>
+                <div className="flex flex-col gap-1">
+                  {recentRecords.filter((r) => !cart.some((c) => c.record.id === r.id)).slice(0, 6).map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => addToCart(r)}
+                      className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-vs-raised transition-colors text-left group"
+                    >
+                      <div className="w-7 h-7 rounded bg-vs-raised border border-vs-border flex items-center justify-center flex-shrink-0 group-hover:border-vs-border-2 overflow-hidden">
+                        {r.cover_image_url
+                          ? <img src={r.cover_image_url} alt="" className="w-full h-full object-cover" />
+                          : <Disc3 size={11} className="text-vs-muted" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {r.artist && r.title ? `${r.artist} — ${r.title}` : r.artist || r.title || "Unknown"}
+                        </p>
+                        <p className="text-xs text-vs-muted">{[r.format, r.condition].filter(Boolean).join(" · ")}</p>
+                      </div>
+                      <span className="text-sm font-medium text-vs-gold flex-shrink-0">
+                        {r.asking_price != null ? fmt(r.asking_price) : "—"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!searchInput && recentRecords.length === 0 && (
               <div className="flex flex-col items-center gap-2 py-8 text-center">
                 <Search size={24} className="text-vs-muted" />
                 <p className="text-sm text-vs-muted">Type to search in-stock records</p>
@@ -257,8 +311,10 @@ export default function POSPage() {
             </div>
 
             {cart.length === 0 ? (
-              <div className="py-8 text-center">
+              <div className="py-8 text-center flex flex-col items-center gap-2">
+                <ShoppingCart size={24} className="text-vs-border" />
                 <p className="text-sm text-vs-muted">Cart is empty</p>
+                <p className="text-xs text-vs-muted/70">Search for a record on the left to add it</p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -328,15 +384,19 @@ export default function POSPage() {
                 <div>
                   <p className="text-xs text-vs-text-2 mb-2">Payment method</p>
                   <div className="flex gap-1.5">
-                    {(["cash", "card", "transfer"] as const).map((p) => (
-                      <button key={p} onClick={() => setPayment(p)}
-                        className={`flex-1 py-1.5 text-xs font-medium rounded-lg border capitalize transition-colors ${
-                          payment === p
-                            ? "bg-vs-accent text-vs-bg border-vs-accent"
+                    {([
+                      { id: "cash", label: "Cash", icon: <Banknote size={12} /> },
+                      { id: "card", label: "Card", icon: <CreditCard size={12} /> },
+                      { id: "transfer", label: "Transfer", icon: <ArrowLeftRight size={12} /> },
+                    ] as const).map((p) => (
+                      <button key={p.id} onClick={() => setPayment(p.id)}
+                        className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors flex items-center justify-center gap-1 ${
+                          payment === p.id
+                            ? "bg-vs-accent text-white border-vs-accent"
                             : "border-vs-border-2 text-vs-text-2 hover:border-vs-accent"
                         }`}
                       >
-                        {p}
+                        {p.icon}{p.label}
                       </button>
                     ))}
                   </div>
@@ -347,6 +407,7 @@ export default function POSPage() {
                   onClick={completeSale}
                   disabled={selling || total === 0}
                   className="btn-primary w-full flex items-center justify-center gap-2 py-2.5 disabled:opacity-50"
+                  title="Complete sale (⌘ Enter)"
                 >
                   <Receipt size={14} />
                   {selling ? "Processing…" : `Complete sale · ${fmt(total)}`}
@@ -358,7 +419,7 @@ export default function POSPage() {
       </div>
 
       {receipt && (
-        <ReceiptView data={receipt} onClose={() => setReceipt(null)} />
+        <ReceiptView data={receipt} onClose={() => setReceipt(null)} onNewSale={handleNewSale} />
       )}
     </div>
   );

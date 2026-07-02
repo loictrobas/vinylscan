@@ -10,9 +10,9 @@
   --vs-raised:         242 242 247;
   --vs-border:         226 226 236;
   --vs-border-2:       210 210 224;
-  --vs-accent:         74  127 160;
-  --vs-accent-dim:     58  106 138;
-  --vs-accent-bright:  90  154 184;
+  --vs-accent:         3   105 161;
+  --vs-accent-dim:     2   82  127;
+  --vs-accent-bright:  2   132 199;
   --vs-text:           22  22  42;
   --vs-text-2:         74  74  104;
   --vs-muted:          138 138 162;
@@ -51,7 +51,7 @@
 body {
   background-color: rgb(var(--vs-bg));
   color: rgb(var(--vs-text));
-  font-family: Inter, system-ui, sans-serif;
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-weight: 400;
 }
@@ -62,12 +62,7 @@ body {
 ::-webkit-scrollbar-thumb { background: rgb(var(--vs-border-2)); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: rgb(var(--vs-muted) / 0.5); }
 
-@layer utilities {
-  /* ── Mobile safe area ───────────────────── */
-  .pt-safe {
-    padding-top: calc(env(safe-area-inset-top) + 1rem);
-  }
-
+@layer components {
   /* ── Cards ─────────────────────────────── */
   .card {
     @apply bg-vs-card border border-vs-border rounded-xl;
@@ -76,22 +71,27 @@ body {
     @apply bg-vs-raised border border-vs-border-2 rounded-xl;
   }
 
+  /* Light-mode only: subtle lift — removed in dark to keep flat */
+  :root:not(.dark) .card {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  }
+
   /* ── Buttons ────────────────────────────── */
   .btn-primary {
     @apply bg-vs-accent hover:bg-vs-accent-bright text-white font-medium
-           px-4 py-2 rounded-lg transition-colors text-sm;
+           px-4 py-2 rounded-lg transition-colors text-sm cursor-pointer;
   }
   .btn-secondary {
     @apply bg-vs-raised hover:bg-vs-border-2 text-vs-text font-medium
-           border border-vs-border-2 px-4 py-2 rounded-lg transition-colors text-sm;
+           border border-vs-border-2 px-4 py-2 rounded-lg transition-colors text-sm cursor-pointer;
   }
   .btn-ghost {
     @apply text-vs-text-2 hover:text-vs-text hover:bg-vs-raised
-           px-3 py-1.5 rounded-lg transition-colors text-sm;
+           px-3 py-1.5 rounded-lg transition-colors text-sm cursor-pointer;
   }
   .btn-danger {
     @apply bg-vs-danger/15 hover:bg-vs-danger/25 text-vs-danger font-medium
-           px-4 py-2 rounded-lg transition-colors text-sm;
+           px-4 py-2 rounded-lg transition-colors text-sm cursor-pointer;
   }
 
   /* ── Inputs ─────────────────────────────── */
@@ -144,5 +144,26 @@ body {
   /* ── Metric card ────────────────────────── */
   .metric-card {
     @apply card p-5 flex flex-col gap-3;
+  }
+}
+
+@layer utilities {
+  /* ── Mobile safe area ───────────────────── */
+  .pt-safe {
+    padding-top: calc(env(safe-area-inset-top) + 1rem);
+  }
+
+  /* ── Hide scrollbar ─────────────────────── */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+/* ── Respect reduced motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

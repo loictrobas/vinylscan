@@ -9,7 +9,6 @@ function RegisterForm() {
   const params = useSearchParams();
   const token = params.get("token") ?? "";
 
-  const accountType = "store";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -28,7 +27,7 @@ function RegisterForm() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.registerViaInvite(token, password, displayName || undefined, accountType);
+      const res = await api.registerViaInvite(token, password, displayName || undefined);
       setToken(res.token);
       setDone(true);
       setTimeout(() => router.push("/onboarding"), 1500);

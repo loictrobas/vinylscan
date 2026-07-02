@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Users, Mail, Plus, Trash2, Copy, CheckCircle2, AlertCircle,
-  Loader2, Shield, Ban, RefreshCw, ExternalLink, ChevronRight,
+  Loader2, Shield, Ban, RefreshCw, ExternalLink, ChevronRight, FlaskConical, BarChart3,
 } from "lucide-react";
 import { api, type AdminUser, type AdminInvite } from "@/lib/api";
 
@@ -207,13 +207,30 @@ function InvitesTab() {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function AdminPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("users");
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-3 mb-8">
-        <Shield size={24} className="text-vs-accent" />
-        <h1 className="text-2xl font-bold text-vs-text">Admin</h1>
+      <div className="flex items-center justify-between gap-3 mb-8">
+        <div className="flex items-center gap-3">
+          <Shield size={24} className="text-vs-accent" />
+          <h1 className="text-2xl font-bold text-vs-text">Admin</h1>
+        </div>
+        <button
+          onClick={() => router.push("/admin/eval")}
+          className="btn-secondary flex items-center gap-2 text-sm"
+        >
+          <BarChart3 size={15} />
+          Eval
+        </button>
+        <button
+          onClick={() => router.push("/admin/benchmark")}
+          className="btn-secondary flex items-center gap-2 text-sm"
+        >
+          <FlaskConical size={15} />
+          Benchmark
+        </button>
       </div>
 
       <div className="flex gap-1 border-b border-vs-border mb-6">

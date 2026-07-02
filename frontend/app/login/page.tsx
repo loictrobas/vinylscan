@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Disc3, Loader2 } from "lucide-react";
-import { api, setToken } from "@/lib/api";
+import { api, setToken, _resolveApiUrl } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiUrl, setApiUrl] = useState("…");
+  useEffect(() => { setApiUrl(_resolveApiUrl()); }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +30,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-vs-bg p-4">
+    <div className="min-h-dvh bg-vs-bg p-4 flex flex-col items-center justify-center">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8 gap-2">
           <Disc3 size={40} className="text-vs-accent" />
@@ -36,12 +38,19 @@ export default function LoginPage() {
           <p className="text-vs-muted text-sm">Sign in to your account</p>
         </div>
 
+        {error && (
+          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/40 px-4 py-3">
+            <p className="text-red-400 text-sm font-medium">{error}</p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="card p-6 flex flex-col gap-4">
           <div>
             <label className="text-xs text-vs-text-2 mb-1 block">Email</label>
             <input
               type="email"
               autoComplete="email"
+              autoCapitalize="none"
               required
               className="input w-full"
               value={email}
@@ -54,6 +63,9 @@ export default function LoginPage() {
             <input
               type="password"
               autoComplete="current-password"
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
               required
               className="input w-full"
               value={password}
@@ -61,8 +73,6 @@ export default function LoginPage() {
               placeholder="••••••••"
             />
           </div>
-
-          {error && <p className="text-vs-danger text-xs">{error}</p>}
 
           <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
             {loading && <Loader2 size={16} className="animate-spin" />}
@@ -77,13 +87,15 @@ export default function LoginPage() {
         <div className="mt-8 border-t border-vs-border pt-6">
           <p className="text-center text-xs text-vs-muted mb-3">Have a Discogs account?</p>
           <a
-            href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/auth/discogs/login`}
+            href={`${apiUrl}/auth/discogs/login`}
             className="btn-secondary w-full flex items-center justify-center gap-2 text-sm"
           >
             <Disc3 size={16} />
             Connect with Discogs
           </a>
         </div>
+
+        <p className="text-center text-[10px] text-vs-muted/40 mt-4">api: {apiUrl}</p>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Disc3, Camera, Store, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
-import { api, getToken, isStore, isCollector } from "@/lib/api";
+import { api, getToken } from "@/lib/api";
 
 const STEPS = [
   {
@@ -25,7 +25,6 @@ const STEPS = [
     sub: "Add a name, URL slug, and go live for customers to browse.",
     cta: "Set up store",
     href: "/settings/store",
-    storeOnly: true,
   },
   {
     key: "upgrade",
@@ -38,7 +37,7 @@ const STEPS = [
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ display_name: string | null; account_type: string } | null>(null);
+  const [user, setUser] = useState<{ display_name: string | null } | null>(null);
   const [done, setDone] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -46,8 +45,7 @@ export default function OnboardingPage() {
     api.me().then(setUser).catch(() => null);
   }, [router]);
 
-  const storeMode = isStore(user as Parameters<typeof isStore>[0]);
-  const steps = STEPS.filter(s => !s.storeOnly || storeMode);
+  const steps = STEPS;
   const allDone = steps.every(s => done.has(s.key));
 
   function mark(key: string) {
@@ -69,7 +67,7 @@ export default function OnboardingPage() {
           Welcome{user?.display_name ? `, ${user.display_name}` : ""}!
         </h1>
         <p className="text-vs-text-2 text-center text-sm mb-8">
-          {storeMode ? "Your record store is ready." : "Your collection is ready."} Let's get you set up.
+          Your record store is ready. Let's get you set up.
         </p>
 
         {/* Steps */}

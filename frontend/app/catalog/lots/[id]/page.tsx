@@ -5,8 +5,9 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, TrendingUp, TrendingDown, DollarSign, Package,
-  AlertCircle, ExternalLink, Disc3, Loader2, Plus, Search, X, Check,
+  AlertCircle, ExternalLink, Disc3, Loader2, Plus, Search, X, Check, Percent,
 } from "lucide-react";
+import { toast } from "sonner";
 import { api, getToken, type LotSummary, type CatalogRecord } from "@/lib/api";
 import { CoverThumb } from "@/components/CoverThumb";
 import { CondBadge } from "@/components/CondBadge";
@@ -48,7 +49,7 @@ function RecordRow({ r }: { r: CatalogRecord }) {
         <p className="text-xs text-vs-muted leading-tight truncate">{r.artist || "Unknown"}</p>
         <p className="text-sm font-medium text-vs-text leading-snug truncate">{r.title || "Untitled"}</p>
       </div>
-      <CondBadge c={r.condition} />
+      <CondBadge c={r.condition} discCond={r.disc_condition} coverCond={r.cover_condition} />
       <div className="text-right min-w-[60px]">
         {r.status === "sold"
           ? <span className="text-xs text-vs-teal font-medium">{r.sold_price != null ? fmt(r.sold_price) : "Sold"}</span>
@@ -57,6 +58,18 @@ function RecordRow({ r }: { r: CatalogRecord }) {
             : <span className="text-xs text-vs-muted italic">No price</span>
         }
       </div>
+      {r.cost_price != null && r.asking_price != null && (
+        <div className="text-right min-w-[44px]">
+          {(() => {
+            const margin = ((r.asking_price - r.cost_price) / r.cost_price) * 100;
+            return (
+              <span className={`text-2xs font-medium ${margin >= 0 ? "text-vs-success" : "text-vs-danger"}`}>
+                {margin >= 0 ? "+" : ""}{margin.toFixed(0)}%
+              </span>
+            );
+          })()}
+        </div>
+      )}
       {r.discogs_release_id && (
         <a
           href={`https://www.discogs.com/release/${r.discogs_release_id}`}
@@ -78,6 +91,7 @@ export default function LotDetailPage() {
   const [lot, setLot] = useState<LotSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"in_stock" | "sold">("in_stock");
+  const [prorating, setProrating] = useState(false);
 
   // Add-records panel
   const [addOpen, setAddOpen] = useState(false);
@@ -171,6 +185,28 @@ export default function LotDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {lot.purchase_price != null && lot.record_count > 0 && (
+            <button
+              onClick={async () => {
+                if (prorating) return;
+                setProrating(true);
+                try {
+                  const res = await api.prorateLotCost(lot.id);
+                  toast.success(`Cost set to $${res.cost_per_record.toFixed(2)}/record (${res.record_count} records)`);
+                  const updated = await api.lotSummary(lot.id);
+                  setLot(updated);
+                } catch (e: unknown) {
+                  toast.error(e instanceof Error ? e.message : "Proration failed");
+                } finally { setProrating(false); }
+              }}
+              disabled={prorating}
+              title={`Distribute $${lot.purchase_price.toFixed(2)} across ${lot.record_count} records`}
+              className="flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-lg border font-medium transition-colors btn-secondary disabled:opacity-50"
+            >
+              {prorating ? <Loader2 size={12} className="animate-spin" /> : <Percent size={12} />}
+              Prorate cost
+            </button>
+          )}
           <button
             onClick={() => setAddOpen((v) => !v)}
             className={`flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-lg border font-medium transition-colors ${addOpen ? "bg-vs-accent text-white border-vs-accent" : "btn-secondary"}`}
@@ -216,7 +252,7 @@ export default function LotDetailPage() {
                     <p className="text-xs text-vs-muted leading-tight truncate">{r.artist || "Unknown"}</p>
                     <p className="text-sm font-medium text-vs-text leading-snug truncate">{r.title || "Untitled"}</p>
                   </div>
-                  <CondBadge c={r.condition} />
+                  <CondBadge c={r.condition} discCond={r.disc_condition} coverCond={r.cover_condition} />
                   {r.asking_price != null && (
                     <span className="text-sm font-medium text-vs-gold min-w-[50px] text-right">${r.asking_price.toFixed(2)}</span>
                   )}

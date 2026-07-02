@@ -1,34 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { X, Layers, Heart, History, Settings, Monitor } from "lucide-react";
+import { X, Layers, History, Settings, Monitor } from "lucide-react";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  pureCollector: boolean;
-  isStore: boolean;
-  collectorMode: boolean;
 }
 
-export default function MobileMoreDrawer({ open, onClose, pureCollector, isStore, collectorMode }: Props) {
+const ITEMS = [
+  { href: "/catalog/lots",  icon: Layers,   label: "Lots",          sub: "Track purchases" },
+  { href: "/sales/history", icon: History,  label: "Sales history", sub: "Past transactions" },
+  { href: "/mobile/settings", icon: Settings, label: "Settings",     sub: "Account & preferences" },
+  { href: "/dashboard?desktop=1", icon: Monitor,  label: "Desktop view", sub: "Full web app" },
+];
+
+export default function MobileMoreDrawer({ open, onClose }: Props) {
   if (!open) return null;
 
-  const items = [
-    ...(pureCollector
-      ? [
-          { href: "/catalog/lots", icon: Layers,  label: "Hauls",    sub: "Track acquisitions" },
-          { href: "/wantlist",     icon: Heart,   label: "Wantlist", sub: "Records to find" },
-        ]
-      : [
-          { href: "/catalog/lots",  icon: Layers,   label: "Lots",          sub: "Track purchases" },
-          { href: "/sales/history", icon: History,  label: "Sales history", sub: "Past transactions" },
-          ...(collectorMode ? [{ href: "/wantlist", icon: Heart, label: "Wantlist", sub: "Records to find" }] : []),
-        ]
-    ),
-    { href: "/mobile/settings", icon: Settings, label: "Settings",     sub: "Account & preferences" },
-    { href: "/dashboard?desktop=1", icon: Monitor,  label: "Desktop view", sub: "Full web app" },
-  ];
+  const items = ITEMS;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">

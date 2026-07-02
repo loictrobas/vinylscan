@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, DollarSign, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { api, getToken, isStore, isCollector, type CatalogRecord } from "@/lib/api";
+import { api, getToken, type CatalogRecord } from "@/lib/api";
 import { CoverThumb } from "@/components/CoverThumb";
 
 type Stage = "search" | "confirm" | "done";
@@ -32,9 +32,6 @@ export default function MobileSellPage() {
 
   useEffect(() => {
     if (!getToken()) { router.replace("/login"); return; }
-    api.me().then((u) => {
-      if (isCollector(u) && !isStore(u)) router.replace("/mobile/catalog");
-    }).catch(() => {});
   }, [router]);
 
   function handleSearch(v: string) {

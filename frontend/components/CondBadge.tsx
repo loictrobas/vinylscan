@@ -8,22 +8,49 @@ const COND_COLORS: Record<string, string> = {
   G: "bg-vs-danger/15 text-vs-danger border-vs-danger/30",
 };
 
-export function CondBadge({ c, unverified }: { c: string; unverified?: boolean }) {
-  const base = COND_COLORS[c] ?? "bg-vs-raised text-vs-text-2 border-vs-border";
+function singleColor(c: string) {
+  return COND_COLORS[c] ?? "bg-vs-raised text-vs-text-2 border-vs-border";
+}
+
+interface CondBadgeProps {
+  c: string;
+  discCond?: string | null;
+  coverCond?: string | null;
+  unverified?: boolean;
+}
+
+export function CondBadge({ c, discCond, coverCond, unverified }: CondBadgeProps) {
+  const disc = discCond ?? c;
+  const cover = coverCond ?? null;
+
+  if (cover) {
+    // Dual grading: NM/VG+
+    const discColor = singleColor(disc);
+    const coverColor = singleColor(cover);
+    return (
+      <span className="inline-flex items-center gap-0.5" title={`Disc: ${disc} / Cover: ${cover}`}>
+        <span className={`text-2xs font-medium px-1.5 py-0.5 rounded-l border ${discColor}`}>{disc}</span>
+        <span className="text-2xs text-vs-muted">/</span>
+        <span className={`text-2xs font-medium px-1.5 py-0.5 rounded-r border ${coverColor}`}>{cover}</span>
+      </span>
+    );
+  }
+
+  const base = singleColor(disc);
   if (unverified) {
     return (
       <span
         title="Default condition — not verified after import"
-        aria-label={`${c} — default condition, not verified after Discogs import`}
+        aria-label={`${disc} — default condition, not verified after Discogs import`}
         className={`text-2xs font-medium px-1.5 py-0.5 rounded border border-dashed opacity-60 cursor-help ${base}`}
       >
-        {c}?
+        {disc}?
       </span>
     );
   }
   return (
     <span className={`text-2xs font-medium px-1.5 py-0.5 rounded border ${base}`}>
-      {c}
+      {disc}
     </span>
   );
 }

@@ -437,7 +437,7 @@ Schema:
 
 Guide:
 - font: inter = clean modern, syne = editorial angular, dm-sans = friendly geometric, unbounded = bold display
-- radius: sharp = zero rounding, soft = light rounding, round = pill-shaped everything
+- radius: sharp = zero rounding, soft = light rounding, round = heavily rounded corners (for fully pill-shaped buttons, use button_shape instead)
 - shadow_style: hard-offset only looks right paired with bold border_weight and sharp/soft radius (neo-brutalist)
 - motion: playful adds a slight scale+tilt on hover — fits loud/energetic vibes, not calm/minimal ones
 - mood: max 80 chars, restate the vibe in your own words"""

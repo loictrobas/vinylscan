@@ -4,10 +4,10 @@ import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Disc3, Search, X, Plus, ExternalLink, ChevronDown, Camera,
-  Trash2, DollarSign, Check, ShoppingCart, Tag, Loader2, Store, Wand2, Download,
+  Trash2, Check, ShoppingCart, Tag, Loader2, Store, Wand2, Download,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, getToken, isStore, isCollector, type CatalogRecord, type Lot, type User } from "@/lib/api";
+import { api, getToken, type CatalogRecord, type Lot, type User } from "@/lib/api";
 import { CoverThumb } from "@/components/CoverThumb";
 import { CondBadge } from "@/components/CondBadge";
 import { RowCheckbox } from "@/components/RowCheckbox";
@@ -23,120 +23,45 @@ function StatusDot({ status }: { status: "in_stock" | "sold" }) {
 
 function fmt(n: number) { return `$${n.toFixed(2)}`; }
 
+// ── Format pill ───────────────────────────────────────────────────────────────
+
+const FORMAT_COLORS: Record<string, string> = {
+  "LP":       "bg-vs-accent/15 text-vs-accent",
+  "EP":       "bg-vs-gold/15 text-vs-gold",
+  '7"':       "bg-vs-teal/15 text-vs-teal",
+  '12"':      "bg-purple-500/15 text-purple-400 dark:text-purple-300",
+  "CD":       "bg-vs-muted/20 text-vs-text-2",
+  "Cassette": "bg-vs-warning/15 text-vs-warning",
+  "Box Set":  "bg-vs-success/15 text-vs-success",
+};
+
+function fmtAdded(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function FormatPill({ format }: { format: string | null | undefined }) {
+  if (!format) return <span className="text-xs text-vs-muted">—</span>;
+  const cls = FORMAT_COLORS[format] ?? "bg-vs-muted/20 text-vs-text-2";
+  return <span className={`text-2xs font-medium px-1.5 py-0.5 rounded ${cls}`}>{format}</span>;
+}
+
 // ── Market price display ──────────────────────────────────────────────────────
 
 interface PriceData { lowest: number; currency: string; num_for_sale: number }
 
-function MarketCell({ data, loading }: { data: PriceData | null | undefined; loading: boolean }) {
+function MarketCell({ data, loading, suggested }: { data: PriceData | null | undefined; loading: boolean; suggested?: number | null }) {
   if (loading) return <span className="text-2xs text-vs-muted animate-pulse">…</span>;
   if (!data) return <span className="text-xs text-vs-muted">—</span>;
+  const sym = data.currency === "USD" ? "$" : data.currency + " ";
   return (
     <div>
-      <span className="text-xs font-medium text-vs-text-2">
-        {data.currency === "USD" ? "$" : data.currency + " "}{data.lowest.toFixed(2)}
+      <span className="text-xs font-medium text-vs-text-2" title="Lowest current Discogs listing">
+        {sym}{data.lowest.toFixed(2)}
+        {suggested != null && suggested !== data.lowest && (
+          <span className="text-2xs text-vs-muted ml-1">· sugg {sym}{suggested.toFixed(2)}</span>
+        )}
       </span>
       <p className="text-2xs text-vs-muted">{data.num_for_sale} for sale</p>
-    </div>
-  );
-}
-
-// ── Sell button ───────────────────────────────────────────────────────────────
-
-function SellButton({ record, onSold }: { record: CatalogRecord; onSold: (r: CatalogRecord) => void }) {
-  const [open, setOpen] = useState(false);
-  const [val, setVal] = useState(record.asking_price != null ? String(record.asking_price) : "");
-  const [saving, setSaving] = useState(false);
-
-  if (record.status === "sold") {
-    return <span className="text-xs text-vs-teal font-medium px-2 py-1">Sold</span>;
-  }
-  if (!open) {
-    return (
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen(true); }}
-        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-vs-success/10 hover:bg-vs-success/20 text-vs-success text-xs font-medium transition-colors border border-vs-success/20"
-      >
-        <DollarSign size={11} />Sell
-      </button>
-    );
-  }
-  async function confirm() {
-    const n = parseFloat(val);
-    if (isNaN(n) || n < 0) return;
-    setSaving(true);
-    try { onSold(await api.sellRecord(record.id, n)); setOpen(false); }
-    finally { setSaving(false); }
-  }
-  return (
-    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-      <span className="text-xs text-vs-muted">$</span>
-      <input
-        autoFocus type="number" min="0" step="0.01" value={val}
-        onChange={(e) => setVal(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") confirm(); if (e.key === "Escape") setOpen(false); }}
-        className="w-16 bg-vs-raised border border-vs-border-2 rounded px-1.5 py-0.5 text-xs text-vs-text focus:outline-none focus:border-vs-accent"
-      />
-      <button onClick={confirm} disabled={saving} className="text-vs-success hover:text-vs-success/80 disabled:opacity-50">
-        <Check size={12} />
-      </button>
-      <button onClick={() => setOpen(false)} className="text-vs-muted hover:text-vs-text"><X size={11} /></button>
-    </div>
-  );
-}
-
-// ── Remove button (collector) ─────────────────────────────────────────────────
-
-const REMOVE_REASONS = [
-  { value: "sold", label: "Sold privately" },
-  { value: "traded", label: "Traded" },
-  { value: "gift", label: "Gift" },
-  { value: "lost", label: "Lost" },
-  { value: "broken", label: "Broken" },
-  { value: "other", label: "Other" },
-] as const;
-
-function RemoveButton({ record, onRemoved }: { record: CatalogRecord; onRemoved: (r: CatalogRecord) => void }) {
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState<string>("gift");
-  const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  if (record.status === "sold") {
-    return <span className="text-xs text-vs-teal font-medium px-2 py-1">Gone</span>;
-  }
-  if (!open) {
-    return (
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen(true); }}
-        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-vs-raised hover:bg-vs-border text-vs-text-2 text-xs font-medium transition-colors border border-vs-border"
-      >
-        Remove
-      </button>
-    );
-  }
-  async function confirm() {
-    setSaving(true);
-    try {
-      onRemoved(await api.catalogRemoveRecord(record.id, { reason, note: note || undefined }));
-      setOpen(false);
-    } finally { setSaving(false); }
-  }
-  return (
-    <div className="flex flex-col gap-1.5 p-2 bg-vs-card border border-vs-border rounded-lg shadow-lg min-w-[180px]" onClick={(e) => e.stopPropagation()}>
-      <select value={reason} onChange={(e) => setReason(e.target.value)} className="input text-xs py-0.5">
-        {REMOVE_REASONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-      </select>
-      <input
-        type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)"
-        className="input text-xs py-0.5"
-        onKeyDown={(e) => { if (e.key === "Enter") confirm(); if (e.key === "Escape") setOpen(false); }}
-      />
-      <div className="flex gap-1.5 justify-end">
-        <button onClick={() => setOpen(false)} className="text-xs text-vs-muted hover:text-vs-text px-2 py-0.5 rounded">Cancel</button>
-        <button onClick={confirm} disabled={saving} className="text-xs bg-vs-raised border border-vs-border hover:bg-vs-border rounded px-2 py-0.5 disabled:opacity-50">
-          {saving ? "…" : "Confirm"}
-        </button>
-      </div>
     </div>
   );
 }
@@ -255,6 +180,9 @@ function CatalogPageInner() {
   const [autoPricing, setAutoPricing] = useState(false);
 
   const [slowLoad, setSlowLoad] = useState(false);
+  const [coverZoom, setCoverZoom] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"title" | "artist" | "condition" | "asking_price" | "created_at" | null>("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const fetchRecords = useCallback(async (pg: number, status: string, lot: string, q: string, noDiscogs = false) => {
     setLoading(true);
@@ -476,25 +404,53 @@ function CatalogPageInner() {
 
   const lotMap = Object.fromEntries(lots.map((l) => [l.id, l.name]));
   const totalPages = Math.ceil(total / PER_PAGE);
+
+  const sortedRecords = sortBy
+    ? [...records].sort((a, b) => {
+        let av: string | number = 0, bv: string | number = 0;
+        if (sortBy === "title") { av = a.title?.toLowerCase() ?? ""; bv = b.title?.toLowerCase() ?? ""; }
+        else if (sortBy === "artist") { av = a.artist?.toLowerCase() ?? ""; bv = b.artist?.toLowerCase() ?? ""; }
+        else if (sortBy === "condition") { av = a.condition ?? ""; bv = b.condition ?? ""; }
+        else if (sortBy === "asking_price") { av = a.asking_price ?? -1; bv = b.asking_price ?? -1; }
+        else if (sortBy === "created_at") { av = a.created_at; bv = b.created_at; }
+        if (av < bv) return sortDir === "asc" ? -1 : 1;
+        if (av > bv) return sortDir === "asc" ? 1 : -1;
+        return 0;
+      })
+    : records;
+
+  function toggleSort(col: typeof sortBy) {
+    if (sortBy === col) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortBy(col); setSortDir("asc"); }
+  }
+
+  function SortTh({ col, children }: { col: typeof sortBy; children: React.ReactNode }) {
+    const active = sortBy === col;
+    return (
+      <th
+        onClick={() => toggleSort(col)}
+        className="cursor-pointer select-none hover:text-vs-text transition-colors"
+      >
+        <span className="flex items-center gap-1">
+          {children}
+          <span className="text-vs-muted/60">{active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}</span>
+        </span>
+      </th>
+    );
+  }
   const allSelected = records.length > 0 && selectedIds.size === records.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
-  const storeMode = isStore(user);
-  const collectorMode = isCollector(user);
-  const pureCollector = collectorMode && !storeMode;
-  const inStockLabel = pureCollector ? "In collection" : "In stock";
-  const soldLabel = pureCollector ? "Gone" : "Sold";
-  const priceColLabel = pureCollector ? "Value" : "Your price";
-
   return (
-    <div className="px-6 py-6 pb-28">
+    <div className="pb-28">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="sticky top-0 z-20 bg-vs-bg px-6 pt-6 pb-4 border-b border-vs-border/50 mb-5">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-medium">Records</h1>
           <p className="text-sm text-vs-text-2 mt-0.5">{total} record{total !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
-          {storeMode && records.some((r) => r.asking_price == null) && (
+          {records.some((r) => r.asking_price == null) && (
             <button
               onClick={() => { setAutoPriceScope("unpriced"); setAutoPriceOpen(true); }}
               className="btn-secondary flex items-center gap-1.5 text-sm"
@@ -544,7 +500,7 @@ function CatalogPageInner() {
           {(["in_stock", "sold", "all"] as const).map((s) => (
             <button key={s} onClick={() => { setNoDiscogsFilter(false); setStatusFilter(s); }}
               className={`px-3 py-1.5 text-sm transition-colors ${!noDiscogsFilter && statusFilter === s ? "bg-vs-accent text-vs-bg font-medium" : "text-vs-text-2 hover:text-vs-text"}`}>
-              {s === "in_stock" ? inStockLabel : s === "sold" ? soldLabel : "All"}
+              {s === "in_stock" ? "In stock" : s === "sold" ? "Sold" : "All"}
             </button>
           ))}
           <button onClick={() => setNoDiscogsFilter((v) => !v)}
@@ -563,8 +519,10 @@ function CatalogPageInner() {
           </div>
         )}
       </div>
+      </div>{/* /sticky header */}
 
       {/* Table */}
+      <div className="px-6">
       <div className="card overflow-hidden">
         {loading ? (
           <>
@@ -576,7 +534,7 @@ function CatalogPageInner() {
                 <th>Format</th>
                 <th>Cond.</th>
                 <th>Market</th>
-                <th>{priceColLabel}</th>
+                <th className="whitespace-nowrap">Your price</th>
                 <th>Lot</th>
                 <th></th>
               </tr>
@@ -600,6 +558,7 @@ function CatalogPageInner() {
                   <td><div className="h-3 w-14 bg-vs-border/60 animate-pulse rounded" /></td>
                   <td><div className="h-4 w-12 bg-vs-border animate-pulse rounded" /></td>
                   <td><div className="h-3 w-10 bg-vs-border/60 animate-pulse rounded" /></td>
+                  <td><div className="h-3 w-14 bg-vs-border/60 animate-pulse rounded" /></td>
                   <td></td>
                 </tr>
               ))}
@@ -648,17 +607,18 @@ function CatalogPageInner() {
                     onChange={toggleSelectAll}
                   />
                 </th>
-                <th className="w-[38%]">Record</th>
+                <SortTh col="title"><span className="w-[38%]">Record</span></SortTh>
                 <th>Format</th>
-                <th>Cond.</th>
+                <SortTh col="condition">Cond.</SortTh>
                 <th>Market</th>
-                <th>{priceColLabel}</th>
+                <SortTh col="asking_price"><span className="whitespace-nowrap">Your price</span></SortTh>
                 <th>Lot</th>
+                <SortTh col="created_at"><span className="whitespace-nowrap">Added</span></SortTh>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {records.map((r, rowIndex) => {
+              {sortedRecords.map((r, rowIndex) => {
                 const priceData = r.discogs_release_id != null ? prices[String(r.discogs_release_id)] : null;
                 const priceLoading = r.discogs_release_id != null && priceData === undefined;
                 const unverifiedCond = r.discogs_synced && r.condition === "VG+";
@@ -678,7 +638,13 @@ function CatalogPageInner() {
                     </td>
                     <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}>
                       <div className="flex items-center gap-3">
-                        <CoverThumb url={r.cover_image_url} />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (r.cover_image_url) setCoverZoom(r.cover_image_url); }}
+                          className={r.cover_image_url ? "cursor-zoom-in" : "cursor-default"}
+                          tabIndex={-1}
+                        >
+                          <CoverThumb url={r.cover_image_url} />
+                        </button>
                         <div
                           className="min-w-0 cursor-pointer group"
                           onClick={(e) => { e.stopPropagation(); if (e.shiftKey || isShiftRef.current) { toggleSelect(r.id, rowIndex, true); } else { openEdit(r); } }}
@@ -689,9 +655,9 @@ function CatalogPageInner() {
                         </div>
                       </div>
                     </td>
-                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><span className="text-xs text-vs-text-2">{r.format ?? "—"}</span></td>
-                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><CondBadge c={r.condition} unverified={unverifiedCond} /></td>
-                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><MarketCell data={priceData} loading={priceLoading} /></td>
+                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><FormatPill format={r.format} /></td>
+                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><CondBadge c={r.condition} discCond={r.disc_condition} coverCond={r.cover_condition} unverified={unverifiedCond} /></td>
+                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><MarketCell data={priceData} loading={priceLoading} suggested={r.discogs_suggested_price} /></td>
                     <td onClick={(e) => e.stopPropagation()}>
                       {r.status === "sold"
                         ? <span className="text-xs text-vs-teal">{r.sold_price != null ? fmt(r.sold_price) : "—"}</span>
@@ -699,25 +665,22 @@ function CatalogPageInner() {
                       }
                     </td>
                     <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><span className="text-xs text-vs-text-2">{r.lot_id && lotMap[r.lot_id] ? lotMap[r.lot_id] : "—"}</span></td>
+                    <td className="cursor-pointer" onClick={(e) => toggleSelect(r.id, rowIndex, e.shiftKey)}><span className="text-xs text-vs-text-2 whitespace-nowrap">{fmtAdded(r.created_at)}</span></td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-2 justify-end">
-                        {storeMode && <SellButton record={r} onSold={(updated) => handleSaved(updated)} />}
-                        {pureCollector && <RemoveButton record={r} onRemoved={(updated) => handleSaved(updated)} />}
-                        {storeMode && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleToggleStoreListed(r); }}
-                            title={r.store_listed ? "Remove from store" : "Show in store"}
-                            className={`p-1 rounded transition-colors ${r.store_listed ? "text-vs-accent hover:text-vs-accent/70" : "text-vs-muted hover:text-vs-text"}`}
-                          >
-                            <Store size={13} />
-                          </button>
-                        )}
-                        {storeMode && discogsConnected && r.discogs_listing_id && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleToggleStoreListed(r); }}
+                          title={r.store_listed ? "Remove from store" : "Show in store"}
+                          className={`p-1 rounded transition-colors ${r.store_listed ? "text-vs-accent hover:text-vs-accent/70" : "text-vs-muted hover:text-vs-text"}`}
+                        >
+                          <Store size={13} />
+                        </button>
+                        {discogsConnected && r.discogs_listing_id && (
                           <span className="text-2xs px-1.5 py-0.5 rounded-full bg-vs-accent/15 text-vs-accent border border-vs-accent/20 font-medium whitespace-nowrap">
                             Listed
                           </span>
                         )}
-                        {storeMode && discogsConnected && !r.discogs_listing_id && r.discogs_release_id && r.asking_price && r.status === "in_stock" && (
+                        {discogsConnected && !r.discogs_listing_id && r.discogs_release_id && r.asking_price && r.status === "in_stock" && (
                           <span title="Eligible to list on Discogs"><Tag size={12} className="text-vs-muted/40 flex-shrink-0" /></span>
                         )}
                         <div className="w-[60px] flex justify-center">
@@ -756,6 +719,8 @@ function CatalogPageInner() {
         </div>
       )}
 
+      </div>{/* /px-6 content */}
+
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-vs-card border border-vs-border rounded-xl px-3 py-2.5 shadow-2xl shadow-black/30">
@@ -790,8 +755,7 @@ function CatalogPageInner() {
 
           <div className="w-px h-5 bg-vs-border mx-0.5" />
 
-          {/* Store — store only */}
-          {storeMode && <>
+          {/* Store */}
           <button
             onClick={() => handleBulkStoreListed(true)}
             disabled={!records.some((r) => selectedIds.has(r.id) && !r.store_listed)}
@@ -808,10 +772,9 @@ function CatalogPageInner() {
           >
             <Store size={12} />Hide
           </button>
-          </>}
 
-          {/* Discogs list — store only */}
-          {storeMode && discogsConnected && (
+          {/* Discogs list */}
+          {discogsConnected && (
             <button
               onClick={handleBulkList}
               disabled={bulkListing || !records.some((r) => selectedIds.has(r.id) && r.discogs_release_id && r.asking_price && r.status === "in_stock" && !r.discogs_listing_id)}
@@ -823,25 +786,25 @@ function CatalogPageInner() {
             </button>
           )}
 
-          {/* Auto-price — store only */}
-          {storeMode && <button
+          {/* Auto-price */}
+          <button
             onClick={() => { setAutoPriceScope("selected"); setAutoPriceOpen(true); }}
             disabled={!records.some((r) => selectedIds.has(r.id) && r.asking_price == null)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-vs-text-2 hover:text-vs-accent hover:bg-vs-accent/10 transition-colors disabled:opacity-35 whitespace-nowrap"
             title="Auto-price selected"
           >
             <Wand2 size={12} />Price
-          </button>}
+          </button>
 
           <div className="w-px h-5 bg-vs-border mx-0.5" />
 
-          {/* Add to cart — store only */}
-          {storeMode && <button
+          {/* Add to cart */}
+          <button
             onClick={handleAddToCart}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-vs-accent text-white text-xs font-semibold hover:bg-vs-accent-bright transition-colors whitespace-nowrap"
           >
             <ShoppingCart size={12} />Add to cart
-          </button>}
+          </button>
         </div>
       )}
 
@@ -1028,6 +991,19 @@ function CatalogPageInner() {
           </div>
         );
       })()}
+
+      {/* Cover zoom lightbox */}
+      {coverZoom && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 backdrop-blur-sm cursor-zoom-out"
+          onClick={() => setCoverZoom(null)}
+        >
+          <button onClick={() => setCoverZoom(null)} className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+            <X size={28} />
+          </button>
+          <img src={coverZoom} alt="Cover" className="max-w-[min(400px,90vw)] max-h-[80vh] object-contain rounded-xl shadow-2xl" />
+        </div>
+      )}
     </div>
   );
 }

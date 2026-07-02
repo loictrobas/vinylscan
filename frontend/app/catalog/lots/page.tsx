@@ -3,9 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Layers, Plus, X, Disc3, TrendingUp, DollarSign, Package, ChevronRight,
+  Layers, Plus, X, Disc3, TrendingUp, DollarSign, Package, ChevronRight, Search,
 } from "lucide-react";
-import { api, getToken, isStore, isCollector, type Lot, type User } from "@/lib/api";
+import { api, getToken, type Lot } from "@/lib/api";
 
 function fmt(n: number) { return `$${n.toFixed(2)}`; }
 
@@ -17,10 +17,9 @@ function roiPct(lot: Lot): number | null {
 interface LotModalProps {
   onClose: () => void;
   onSaved: (l: Lot) => void;
-  pureCollector?: boolean;
 }
 
-function LotModal({ onClose, onSaved, pureCollector }: LotModalProps) {
+function LotModal({ onClose, onSaved }: LotModalProps) {
   const [form, setForm] = useState({ name: "", purchase_price: "", notes: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +46,7 @@ function LotModal({ onClose, onSaved, pureCollector }: LotModalProps) {
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-vs-card border border-vs-border rounded-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-vs-border">
-          <h2 className="text-base font-medium">{pureCollector ? "Create haul" : "Create lot"}</h2>
+          <h2 className="text-base font-medium">Create lot</h2>
           <button onClick={onClose} className="btn-ghost p-1.5"><X size={15} /></button>
         </div>
         <div className="p-6 flex flex-col gap-4">
@@ -71,7 +70,7 @@ function LotModal({ onClose, onSaved, pureCollector }: LotModalProps) {
         <div className="px-6 pb-4 flex justify-end gap-2">
           <button onClick={onClose} className="btn-secondary">Cancel</button>
           <button onClick={save} disabled={saving} className="btn-primary disabled:opacity-50">
-            {saving ? "Saving…" : pureCollector ? "Create haul" : "Create lot"}
+            {saving ? "Saving…" : "Create lot"}
           </button>
         </div>
       </div>
@@ -79,8 +78,8 @@ function LotModal({ onClose, onSaved, pureCollector }: LotModalProps) {
   );
 }
 
-function LotCard({ lot, onClick, pureCollector }: { lot: Lot; onClick: () => void; pureCollector?: boolean }) {
-  const r = pureCollector ? null : roiPct(lot);
+function LotCard({ lot, onClick }: { lot: Lot; onClick: () => void }) {
+  const r = roiPct(lot);
   const pct = lot.record_count > 0 ? Math.round((lot.sold_count / lot.record_count) * 100) : 0;
 
   return (
@@ -96,34 +95,30 @@ function LotCard({ lot, onClick, pureCollector }: { lot: Lot; onClick: () => voi
         <ChevronRight size={14} className="text-vs-muted group-hover:text-vs-accent transition-colors flex-shrink-0 mt-0.5" />
       </div>
 
-      <div className={`grid gap-3 mb-4 ${pureCollector ? "grid-cols-2" : "grid-cols-3"}`}>
+      <div className="grid gap-3 mb-4 grid-cols-3">
         <div>
-          <p className="text-xs text-vs-muted mb-0.5">{pureCollector ? "In collection" : "In stock"}</p>
+          <p className="text-xs text-vs-muted mb-0.5">In stock</p>
           <p className="text-base font-medium">{lot.in_stock_count}</p>
         </div>
         <div>
           <p className="text-xs text-vs-muted mb-0.5">Total records</p>
           <p className="text-base font-medium">{lot.record_count}</p>
         </div>
-        {!pureCollector && (
-          <div>
-            <p className="text-xs text-vs-muted mb-0.5">Revenue</p>
-            <p className="text-base font-medium text-vs-gold">{lot.total_sold != null ? fmt(lot.total_sold) : "—"}</p>
-          </div>
-        )}
+        <div>
+          <p className="text-xs text-vs-muted mb-0.5">Revenue</p>
+          <p className="text-base font-medium text-vs-gold">{lot.total_sold != null ? fmt(lot.total_sold) : "—"}</p>
+        </div>
       </div>
 
-      {!pureCollector && (
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-vs-muted">{pct}% sold through</span>
-            <span className="text-xs text-vs-text-2">{lot.sold_count}/{lot.record_count}</span>
-          </div>
-          <div className="h-1 bg-vs-raised rounded-full overflow-hidden">
-            <div className="h-full bg-vs-teal rounded-full" style={{ width: `${pct}%` }} />
-          </div>
+      <div className="mb-3">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs text-vs-muted">{pct}% sold through</span>
+          <span className="text-xs text-vs-text-2">{lot.sold_count}/{lot.record_count}</span>
         </div>
-      )}
+        <div className="h-1 bg-vs-raised rounded-full overflow-hidden">
+          <div className="h-full bg-vs-teal rounded-full" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
 
       {r != null && (
         <div className={`flex items-center gap-1.5 text-xs font-medium ${r >= 0 ? "text-vs-success" : "text-vs-danger"}`}>
@@ -147,7 +142,6 @@ function LotCard({ lot, onClick, pureCollector }: { lot: Lot; onClick: () => voi
 export default function LotsPage() {
   const router = useRouter();
   const [lots, setLots] = useState<Lot[]>([]);
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
@@ -159,17 +153,18 @@ export default function LotsPage() {
 
   useEffect(() => {
     if (!getToken()) { router.replace("/"); return; }
-    api.me().then(setUser).catch(() => null);
     load();
   }, [router, load]);
 
-  const pureCollector = isCollector(user) && !isStore(user);
-  const pageTitle = pureCollector ? "Hauls" : "Lots";
-  const newLabel = pureCollector ? "New haul" : "New lot";
-  const emptyLabel = pureCollector
-    ? "No hauls yet. Create one to group records by acquisition."
-    : "No lots yet. Create one to group records by purchase.";
-  const firstCreateLabel = pureCollector ? "Create first haul" : "Create first lot";
+  const [lotsSearch, setLotsSearch] = useState("");
+  const pageTitle = "Lots";
+  const newLabel = "New lot";
+  const emptyLabel = "No lots yet. Create one to group records by purchase.";
+  const firstCreateLabel = "Create first lot";
+
+  const filteredLots = lotsSearch.trim()
+    ? lots.filter((l) => l.name.toLowerCase().includes(lotsSearch.toLowerCase()))
+    : lots;
 
   const totalPaid = lots.reduce((s, l) => s + (l.purchase_price ?? 0), 0);
   const totalRevenue = lots.reduce((s, l) => s + (l.total_sold ?? 0), 0);
@@ -181,7 +176,7 @@ export default function LotsPage() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-medium">{pageTitle}</h1>
-          <p className="text-sm text-vs-text-2 mt-0.5">{lots.length} {pureCollector ? `haul${lots.length !== 1 ? "s" : ""}` : `lot${lots.length !== 1 ? "s" : ""}`}</p>
+          <p className="text-sm text-vs-text-2 mt-0.5">{lots.length} {`lot${lots.length !== 1 ? "s" : ""}`}</p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
           <Plus size={14} />
@@ -190,17 +185,30 @@ export default function LotsPage() {
       </div>
 
       {lots.length > 0 && (
+        <div className="relative max-w-xs mb-4">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-vs-muted" />
+          <input
+            value={lotsSearch}
+            onChange={(e) => setLotsSearch(e.target.value)}
+            placeholder="Search lots…"
+            className="input pl-8 pr-8"
+          />
+          {lotsSearch && (
+            <button onClick={() => setLotsSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-vs-muted hover:text-vs-text">
+              <X size={12} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {lots.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-          {(pureCollector ? [
-            { label: `Total ${pureCollector ? "hauls" : "lots"}`, value: String(lots.length), icon: <Layers size={14} /> },
-            { label: "Total paid", value: fmt(totalPaid), icon: <DollarSign size={14} /> },
-            { label: "In collection", value: `${totalInStock}`, icon: <Package size={14} />, accent: true },
-          ] : [
+          {[
             { label: "Total lots", value: String(lots.length), icon: <Layers size={14} /> },
             { label: "Total invested", value: fmt(totalPaid), icon: <DollarSign size={14} /> },
             { label: "Total revenue", value: fmt(totalRevenue), icon: <TrendingUp size={14} />, accent: true },
             { label: "In stock", value: `${totalInStock}`, icon: <Package size={14} /> },
-          ]).map((c) => (
+          ].map((c) => (
             <div key={c.label} className="metric-card">
               <div className="flex items-start justify-between">
                 <p className="text-xs text-vs-text-2">{c.label}</p>
@@ -231,9 +239,15 @@ export default function LotsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {lots.map((l) => (
-            <LotCard key={l.id} lot={l} onClick={() => router.push(`/catalog/lots/${l.id}`)} pureCollector={pureCollector} />
-          ))}
+          {filteredLots.length === 0 ? (
+            <p className="text-sm text-vs-muted col-span-full py-8 text-center">
+              No lots match &ldquo;{lotsSearch}&rdquo;
+            </p>
+          ) : (
+            filteredLots.map((l) => (
+              <LotCard key={l.id} lot={l} onClick={() => router.push(`/catalog/lots/${l.id}`)} />
+            ))
+          )}
         </div>
       )}
 
@@ -241,7 +255,6 @@ export default function LotsPage() {
         <LotModal
           onClose={() => setShowModal(false)}
           onSaved={(l) => { setLots((prev) => [l, ...prev]); setShowModal(false); }}
-          pureCollector={pureCollector}
         />
       )}
     </div>
