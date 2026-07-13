@@ -43,10 +43,15 @@ def adapt_v3(raw: dict) -> dict:
     """Schema 'v3' — v3-literal and future prompts with per-field confidence objects."""
     candidates: list[dict] = raw.get("catalog_number_candidates") or []
 
-    # Best catalog number: first candidate typed as catalog_number
+    # Best catalog number: first candidate typed as catalog_number. Fall back to
+    # the first candidate that ISN'T a known-wrong type (rights_society/matrix_runout/
+    # barcode all have their own field or are explicitly not catalog numbers) — falling
+    # back to candidates[0] unconditionally meant a lone rights_society code (e.g. an
+    # "LC ####" GEMA/BIEM label code) got used as the search catalog number.
+    _wrong_types = {"rights_society", "matrix_runout", "barcode"}
     best_catno = next(
         (c["value"] for c in candidates if c.get("type_guess") == "catalog_number"),
-        candidates[0]["value"] if candidates else None,
+        next((c["value"] for c in candidates if c.get("type_guess") not in _wrong_types), None),
     )
 
     # Matrix code: first code in all_codes_seen tagged as matrix_runout
