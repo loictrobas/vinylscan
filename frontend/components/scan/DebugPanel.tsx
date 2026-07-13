@@ -172,8 +172,8 @@ export function DebugSidePanel({ scanId, result }: { scanId: string; result: Sca
         {tracklist.length > 0 && (
           <div className="mt-1.5 pt-1.5 border-t border-vs-border/40">
             <p className="text-2xs text-vs-muted font-mono mb-0.5">tracklist ({tracklist.length})</p>
-            {tracklist.slice(0, 5).map((t) => (
-              <div key={t.position} className="flex gap-1.5 text-2xs">
+            {tracklist.slice(0, 5).map((t, i) => (
+              <div key={`${t.position}-${i}`} className="flex gap-1.5 text-2xs">
                 <span className="text-vs-muted font-mono w-5 flex-shrink-0">{t.position}</span>
                 <span className="text-vs-text truncate">{t.title}</span>
               </div>

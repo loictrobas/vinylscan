@@ -42,8 +42,8 @@ function ClaudeBox({ raw }: { raw: Record<string, unknown> | null }) {
         <div className="mt-1.5">
           <span className="text-2xs text-vs-muted font-mono">tracklist ({tracklist.length})</span>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-            {tracklist.map((t) => (
-              <span key={t.position} className="text-xs">
+            {tracklist.map((t, i) => (
+              <span key={`${t.position}-${i}`} className="text-xs">
                 <span className="text-vs-muted font-mono">{t.position}</span>
                 <span className="text-vs-text ml-1">{t.title}</span>
               </span>

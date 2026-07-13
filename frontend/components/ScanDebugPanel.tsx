@@ -162,8 +162,8 @@ export function ScanDebugPanel({
             <div className="mt-2.5 pt-2.5 border-t border-vs-border/40">
               <p className="text-2xs text-vs-muted font-mono mb-1">tracklist ({tracklist.length})</p>
               <div className="flex flex-col gap-0.5">
-                {tracklist.map((t) => (
-                  <div key={t.position} className="flex gap-2 text-xs">
+                {tracklist.map((t, i) => (
+                  <div key={`${t.position}-${i}`} className="flex gap-2 text-xs">
                     <span className="text-vs-muted font-mono w-6 flex-shrink-0">{t.position}</span>
                     <span className="text-vs-text">{t.title}</span>
                   </div>

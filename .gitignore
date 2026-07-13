@@ -49,3 +49,6 @@ Thumbs.db
 
 # Local image storage (scan photos)
 backend/data/
+
+# Supabase CLI local cache
+supabase/.temp/
