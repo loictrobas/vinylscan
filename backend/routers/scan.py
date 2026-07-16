@@ -246,6 +246,11 @@ async def scan_stream(
 
     async def generate():
         try:
+            # Render's edge proxy buffers small responses before streaming them —
+            # without enough bytes up front, no event ever reaches the client
+            # (not even after minutes). A padding comment (SSE ignores lines
+            # starting with ':') pushes past that buffer threshold immediately.
+            yield ":" + (" " * 2048) + "\n\n"
             yield "data: {\"type\":\"connected\"}\n\n"
             for data in await sse_manager.recent(user_id_str):
                 yield f"data: {data}\n\n"
