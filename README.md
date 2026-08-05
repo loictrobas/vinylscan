@@ -10,7 +10,7 @@ Scan vinyl records with AI (Claude Vision) and add them to your Discogs collecti
 |-------|------|------|
 | Frontend | Next.js 15 App Router + Tailwind | Vercel |
 | Backend | FastAPI + SQLAlchemy async | Render (free tier) |
-| Database | PostgreSQL | Render (free tier) |
+| Database | PostgreSQL | Supabase (free tier) |
 | AI | Anthropic Claude claude-sonnet-4-20250514 | Anthropic API |
 | Auth | Discogs OAuth 1.0a | — |
 | Payments | Stripe one-time payments | — |
