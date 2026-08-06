@@ -19,15 +19,60 @@ IMAGES_DIR = os.getenv("IMAGES_DIR", os.path.join(os.path.dirname(__file__), "da
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 
 
+def _bootstrap_fresh_database() -> bool:
+    """The earliest Alembic migration (baseline_users_scans_credits) is a no-op —
+    it assumes users/scans/credit_transactions already exist from the pre-Alembic
+    era, when the app just called Base.metadata.create_all() on startup. Against a
+    genuinely empty database (new local Postgres, new Supabase/RDS instance, a
+    fresh CI database) the very next migration fails with "relation users does not
+    exist" the moment anything references users.id via FK.
+
+    Detect that case up front and build the schema straight from models.py instead
+    (equivalent to every migration's cumulative effect), then let the caller stamp
+    Alembic's history at head rather than replaying migrations that no longer
+    apply. Returns True if it just bootstrapped a fresh DB, False if `users`
+    already existed and normal `alembic upgrade head` should run as usual.
+    """
+    import asyncio
+    from sqlalchemy import inspect, text
+    from database import Base, engine
+    import models  # noqa: F401 — populates Base.metadata with every table
+
+    async def _bootstrap() -> bool:
+        async with engine.begin() as conn:
+            has_users = await conn.run_sync(lambda sync_conn: inspect(sync_conn).has_table("users"))
+            if has_users:
+                return False
+            await conn.run_sync(Base.metadata.create_all)
+            # Only pieces of the schema NOT expressible as SQLAlchemy model metadata
+            # (raw SQL in migration u1v2w3x4y5z6) — everything else comes from models.py.
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+            await conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_records_artist_trgm ON records USING gin (artist gin_trgm_ops)"
+            ))
+            await conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_records_title_trgm ON records USING gin (title gin_trgm_ops)"
+            ))
+        return True
+
+    return asyncio.run(_bootstrap())
+
+
 def _run_migrations():
-    """Run alembic upgrade head synchronously at startup."""
+    """Run alembic upgrade head synchronously at startup — bootstrapping the
+    schema from models.py first if this is a brand-new empty database (see
+    _bootstrap_fresh_database)."""
     from alembic.config import Config
     from alembic import command
     import pathlib
 
     alembic_cfg = Config(str(pathlib.Path(__file__).parent / "alembic.ini"))
     alembic_cfg.set_main_option("script_location", str(pathlib.Path(__file__).parent / "alembic"))
-    command.upgrade(alembic_cfg, "head")
+
+    if _bootstrap_fresh_database():
+        command.stamp(alembic_cfg, "head")
+    else:
+        command.upgrade(alembic_cfg, "head")
 
 
 @asynccontextmanager
